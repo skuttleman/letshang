@@ -8,6 +8,8 @@
   :min-lein-version "2.6.1"
 
   :dependencies [[bidi "2.1.3"]
+                 [c3p0/c3p0 "0.9.1.2"]
+                 [clojure.jdbc/clojure.jdbc-c3p0 "0.3.3"]
                  [com.ben-allred/collaj "0.8.0"]
                  [com.ben-allred/formation "0.4.1"]
                  [com.cognitect/transit-clj "0.8.300"]
@@ -16,6 +18,7 @@
                  [compojure "1.6.0"]
                  [environ "1.1.0"]
                  [hiccup "1.0.5"]
+                 [honeysql "0.9.2"]
                  [io.nervous/kvlt "0.1.4"]
                  [kibu/pushy "0.3.8"]
                  [metosin/jsonista "0.1.1"]
@@ -27,6 +30,8 @@
                  [org.clojure/test.check "0.9.0"]
                  [org.clojure/tools.nrepl "0.2.12"]
                  [org.immutant/immutant "2.1.10"]
+                 [org.postgresql/postgresql "9.4-1206-jdbc41"]
+                 [ragtime "0.7.2"]
                  [reagent "0.8.1"]
                  [ring/ring-core "1.3.2"]
                  [ring/ring-defaults "0.2.1"]
@@ -70,6 +75,7 @@
   :sass {:src              "src/scss"
          :output-directory "resources/public/css/"}
 
+  :aliases {"migrations" ["run" "-m" "com.ben-allred.letshang.api.services.db.migrations/run"]}
   :cooper {"cljs"   ["lein" "figwheel"]
            "sass"   ["lein" "sass" "auto"]
            "server" ["lein" "run"]}

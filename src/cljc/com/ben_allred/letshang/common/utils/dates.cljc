@@ -13,8 +13,10 @@
          (goog.date DateTime)
          (goog.i18n DateTimeFormat))]))
 
-(def ^:private default-format
-  "EEE MMM d, yyyy 'at' h:mm a")
+
+(def ^:private formats
+  {:default "EEE MMM d, yyyy 'at' h:mm a"
+   :fs "yyyyMMddHHmmss"})
 
 (defn ^:private inst->dt [inst]
   #?(:clj  (if (instance? Instant inst)
@@ -26,13 +28,17 @@
 
 (defn format
   ([inst]
-   (format inst default-format))
+   (format inst (:default formats)))
   ([inst fmt]
     #?(:clj  (-> fmt
+                 (formats fmt)
                  (DateTimeFormatter/ofPattern)
                  (.withZone (ZoneId/systemDefault))
                  (.format (inst->dt inst)))
-       :cljs (.format (DateTimeFormat. fmt) (inst->dt inst)))))
+       :cljs (-> fmt
+                 (formats fmt)
+                 (DateTimeFormat.)
+                 (.format (inst->dt inst))))))
 
 (defn inst-str? [s]
   (boolean (and (string? s)
@@ -61,3 +67,7 @@
     (inst-str? v)
     #?(:clj  (->inst (ZonedDateTime/parse v))
        :cljs (->inst (gdate/fromIsoString v)))))
+
+(defn now []
+  #?(:clj  (Instant/now)
+     :cljs (DateTime.)))

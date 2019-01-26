@@ -25,6 +25,10 @@
                 (not (sequential? coll)) (into (empty coll)))
       (not @replaced?) (conj value))))
 
+(defn only! [[item & more]]
+  (assert (empty? more) "Should only be one item")
+  item)
+
 (defn prepend
   ([x]
    (fn [rf]

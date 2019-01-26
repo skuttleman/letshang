@@ -14,3 +14,8 @@
                 (catch Throwable ex
                   Double/NaN))
      :cljs (js/parseInt value)))
+
+(defn parse-int! [value]
+  (let [result (parse-int value)]
+    (assert (not (nan? result)) (format "Integer could not be parsed from: %s" value))
+    result))

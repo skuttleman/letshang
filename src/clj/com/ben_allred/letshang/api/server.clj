@@ -9,6 +9,7 @@
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]
+    [com.ben-allred.letshang.common.utils.numbers :as numbers]
     [compojure.core :refer [ANY DELETE GET POST PUT context defroutes]]
     [compojure.handler :refer [site]]
     [compojure.response :refer [Renderable]]
@@ -43,7 +44,7 @@
 
 (defn ^:private server-port [env key fallback]
   (let [port (str (or (get env key) (env/get key) fallback))]
-    (Integer/parseInt port)))
+    (numbers/parse-int! port)))
 
 (defn ^:private run [env]
   (let [port (server-port env :port 3000)]
