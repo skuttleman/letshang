@@ -1,0 +1,16 @@
+**/.DS_Store
+.idea/
+.sass-cache/
+resources/public/js
+resources/public/css
+*.log
+pom.xml
+*.iml
+*jar
+lib/
+classes/
+out/
+target/
+.lein-*
+.repl
+.nrepl-port
