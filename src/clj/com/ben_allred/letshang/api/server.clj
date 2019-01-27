@@ -3,17 +3,14 @@
     [clojure.spec.alpha :as s]
     [clojure.string :as string]
     [clojure.tools.nrepl.server :as nrepl]
-    [com.ben-allred.letshang.api.services.html :as html]
-    [com.ben-allred.letshang.api.services.middleware :as middleware]
+    [com.ben-allred.letshang.api.routes.core :as routes]
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.env :as env]
-    [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]
     [com.ben-allred.letshang.common.utils.numbers :as numbers]
     [compojure.core :refer [ANY DELETE GET POST PUT context defroutes]]
     [compojure.handler :refer [site]]
     [compojure.response :refer [Renderable]]
-    [compojure.route :as route]
     [immutant.web :as web]
     [ring.middleware.reload :refer [wrap-reload]])
   (:import
@@ -24,31 +21,13 @@
   (render [this _]
     (respond/with this)))
 
-(defroutes ^:private base
-  (context "/" []
-    (route/resources "/")
-    (GET "/health" [] [:http.status/ok {:a :ok}])
-    (GET "/*" req [:http.status/ok
-                   (-> req
-                       (select-keys #{:uri :query-string})
-                       (html/render))
-                   {"content-type" "text/html"}])
-    (ANY "/*" [] [:http.status/not-found])))
-
-(def ^:private app
-  (-> #'base
-      (site)
-      (middleware/abortable)
-      (middleware/content-type)
-      (middleware/log-response)))
-
 (defn ^:private server-port [env key fallback]
   (let [port (str (or (get env key) (env/get key) fallback))]
     (numbers/parse-int! port)))
 
 (defn ^:private run [env]
   (let [port (server-port env :port 3000)]
-    (web/run #'app {:port port})
+    (web/run #'routes/app {:port port})
     (println "Server is listening on port" port)))
 
 (defn -main [& {:as env}]

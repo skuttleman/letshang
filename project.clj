@@ -9,6 +9,7 @@
 
   :dependencies [[bidi "2.1.3"]
                  [c3p0/c3p0 "0.9.1.2"]
+                 [clj-jwt "0.1.1"]
                  [clojure.jdbc/clojure.jdbc-c3p0 "0.3.3"]
                  [com.ben-allred/collaj "0.8.0"]
                  [com.ben-allred/formation "0.4.1"]

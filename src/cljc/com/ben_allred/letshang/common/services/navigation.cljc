@@ -9,12 +9,15 @@
 
 (def api-routes
   [""
-   [["/api" :root]]])
+   [["/auth"
+     [["/callback" :auth/callback]]]
+    ["/api" :api/root]
+    [true :not-found]]])
 
 (def ui-routes
   [""
-   [["/" :home]
-    [true :not-found]]])
+   [["/" :ui/home]
+    [true :ui/not-found]]])
 
 (defn ^:private namify [[k v]]
   [k (str (keywords/safe-name v))])

@@ -49,16 +49,15 @@
   (map sql-format queries))
 
 (defn exec! [[queries f]]
-  (remove-namespaces
-    (jdbc/db-transaction*
-      db-spec
-      (fn [db]
-        (when (seq queries)
-          (loop [[query & more] queries]
-            (if (seq more)
-              (do (exec* db query)
-                  (recur more))
-              (f (exec* db query)))))))))
+  (jdbc/db-transaction*
+    db-spec
+    (fn [db]
+      (when (seq queries)
+        (loop [[query & more] queries]
+          (if (seq more)
+            (do (exec* db query)
+                (recur more))
+            (f (remove-namespaces (exec* db query)))))))))
 
 (defn single [[query f]]
   [[query] f])

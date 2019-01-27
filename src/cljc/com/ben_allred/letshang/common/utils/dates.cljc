@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [format])
   #?@(:clj
       [(:import
-         (java.time Instant ZonedDateTime ZoneId ZoneOffset)
+         (java.time Instant LocalDateTime ZonedDateTime ZoneId ZoneOffset)
          (java.time.chrono ChronoLocalDateTime ChronoZonedDateTime)
          (java.time.format DateTimeFormatter DateTimeParseException)
          (java.util Date))]
@@ -48,11 +48,9 @@
                            (catch DateTimeParseException ex
                              false))
                    :cljs (gdate/fromIsoString s)))))
+
 (defn ->inst [v]
   (cond
-    (inst? v)
-    v
-
     #?@(:clj  [(instance? Instant v)
                (Date/from v)
 
@@ -64,9 +62,28 @@
         :cljs [(instance? DateTime v)
                (.-date v)])
 
+    (inst? v)
+    v
+
     (inst-str? v)
     #?(:clj  (->inst (ZonedDateTime/parse v))
        :cljs (->inst (gdate/fromIsoString v)))))
+
+(defn plus [inst? amt interval]
+  #?(:clj  (-> inst?
+               (->inst)
+               (.toInstant)
+               (LocalDateTime/ofInstant ZoneOffset/UTC)
+               (cond->
+                 (= :years interval) (.plusYears amt)
+                 (= :month interval) (.plusMonths amt)
+                 (= :weeks interval) (.plusWeeks amt)
+                 (= :days interval) (.plusDays amt)
+                 (= :hours interval) (.plusHours amt)
+                 (= :minutes interval) (.plusMinutes amt)
+                 (= :seconds interval) (.plusSeconds amt))
+               (.toInstant ZoneOffset/UTC))
+     :cljs (throw (js/Error. "Not Implemented"))))
 
 (defn now []
   #?(:clj  (Instant/now)

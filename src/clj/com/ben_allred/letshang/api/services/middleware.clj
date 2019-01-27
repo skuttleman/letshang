@@ -1,8 +1,11 @@
 (ns com.ben-allred.letshang.api.services.middleware
   (:require
     [clojure.string :as string]
+    [com.ben-allred.letshang.api.utils.jwt :as jwt]
     [com.ben-allred.letshang.common.services.content :as content]
-    [com.ben-allred.letshang.common.utils.logging :as log])
+    [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.maps :as maps]
+    [com.ben-allred.letshang.common.utils.transit :as transit])
   (:import
     (clojure.lang ExceptionInfo)
     (java.util Date)))
@@ -34,6 +37,17 @@
       :always (content/parse (get headers "content-type"))
       :always (handler)
       (api? request) (content/prepare #{"content-type"} (get headers "accept")))))
+
+(defn auth [handler]
+  (fn [request]
+    (if-let [user (when (string/starts-with? (:uri request) "/api")
+                    (some-> request
+                            (get-in [:cookies "auth-token" :value])
+                            (jwt/decode)
+                            (:data)
+                            (transit/parse)))]
+      (handler (assoc request :user user))
+      (handler request))))
 
 (defn abortable [handler]
   (fn [request]
