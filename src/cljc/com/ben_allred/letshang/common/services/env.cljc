@@ -1,8 +1,8 @@
 (ns com.ben-allred.letshang.common.services.env
   (:refer-clojure :exclude [get])
-  #?(:clj
-     (:require
-       [environ.core :as environ])))
+  (:require
+    #?(:clj  [environ.core :as environ]
+       :cljs [com.ben-allred.letshang.common.utils.transit :as transit])))
 
 (def get
   #?(:clj  environ/env
@@ -10,4 +10,4 @@
                 :protocol (if (re-find #"https" (.-protocol (.-location js/window)))
                             :https
                             :http)}
-               (merge (js->clj (aget js/window "ENV") :keywordize-keys true)))))
+               (merge (transit/parse (aget js/window "ENV"))))))

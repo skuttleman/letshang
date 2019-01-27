@@ -39,8 +39,9 @@
       (api? request) (content/prepare #{"content-type"} (get headers "accept")))))
 
 (defn auth [handler]
-  (fn [request]
-    (if-let [user (when (string/starts-with? (:uri request) "/api")
+  (fn [{:keys [uri headers] :as request}]
+    (if-let [user (when (or (string/starts-with? uri "/api")
+                            (re-find #"text/html" (str (get headers "accept"))))
                     (some-> request
                             (get-in [:cookies "auth-token" :value])
                             (jwt/decode)

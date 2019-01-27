@@ -19,7 +19,7 @@
     (GET "/health" [] [:http.status/ok {:a :ok}])
     (GET "/*" req [:http.status/ok
                    (-> req
-                       (select-keys #{:uri :query-string})
+                       (select-keys #{:uri :query-string :user})
                        (html/render))
                    {"content-type" "text/html"}])
     (ANY "/*" [] [:http.status/not-found])))
@@ -27,10 +27,10 @@
 (def app
   (-> #'base
       (wrap-reload {:dirs ["src/clj" "src/cljc"]})
-      (middleware/auth)
-      (middleware/abortable)
-      (middleware/content-type)
-      (middleware/log-response)
+      (#'middleware/auth)
+      (#'middleware/abortable)
+      (#'middleware/content-type)
+      (#'middleware/log-response)
       (wrap-keyword-params)
       (wrap-nested-params)
       (wrap-params)

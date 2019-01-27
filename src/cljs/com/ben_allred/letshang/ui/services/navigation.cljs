@@ -1,6 +1,7 @@
 (ns com.ben-allred.letshang.ui.services.navigation
   (:require
     [com.ben-allred.letshang.common.services.navigation :as nav*]
+    [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.ui.services.store.core :as store]
     [pushy.core :as pushy]))
 
@@ -36,8 +37,8 @@
    (navigate* history page params)
    nil))
 
-(defn go-to! [path]
-  (set! (.-pathname (.-location js/window)) path)
+(defn go-to! [url]
+  (.assign (.-location js/window) url)
   nil)
 
 (defn nav-and-replace!

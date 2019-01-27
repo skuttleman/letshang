@@ -16,7 +16,10 @@
 
 (def ui-routes
   [""
-   [["/" :ui/home]
+   [["/auth"
+     [["/login" :auth/login]
+      ["/logout" :auth/logout]]]
+    ["/" :ui/home]
     [true :ui/not-found]]])
 
 (defn ^:private namify [[k v]]

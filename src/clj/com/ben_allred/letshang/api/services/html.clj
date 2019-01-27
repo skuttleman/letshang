@@ -5,13 +5,13 @@
     [com.ben-allred.letshang.common.services.navigation :as nav*]
     [com.ben-allred.letshang.common.services.ui-reducers :as ui-reducers]
     [com.ben-allred.letshang.common.templates.core :as templates]
-    [com.ben-allred.letshang.common.utils.json :as json]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]
+    [com.ben-allred.letshang.common.utils.transit :as transit]
     [com.ben-allred.letshang.common.views.core :as views]
     [hiccup.core :as hiccup]))
 
-(defn ^:private template [content]
+(defn ^:private template [content user]
   [:html
    [:head
     [:meta {:charset "UTF-8"}]
@@ -36,26 +36,28 @@
     [:script
      {:type "text/javascript"}
      (format "window.ENV=%s;" (-> {}
-                                  (maps/assoc-maybe :dev? (env/get :dev?))
-                                  (json/stringify)))]
+                                  (maps/assoc-maybe :dev? (env/get :dev?)
+                                                    :auth/user user)
+                                  (transit/stringify)
+                                  (pr-str)))]
     [:script {:type "text/javascript" :src "/js/compiled/app.js"}]
     [:script
      {:type "text/javascript"}
      "com.ben_allred.letshang.ui.app.mount_BANG_();"]]])
 
-(defn hydrate [page]
+(defn hydrate [page user]
   (let [{:keys [get-state]} (collaj/create-store ui-reducers/root)]
     (-> (get-state)
-        (assoc :page page)
+        (assoc :page page :auth/user user)
         (views/app)
         (templates/render)
-        (template)
+        (template user)
         (hiccup/html)
         (str "<!DOCTYPE html>"))))
 
-(defn render [{:keys [uri query-string]}]
+(defn render [{:keys [uri query-string user]}]
   (-> uri
       (cond->
         query-string (str "?" query-string))
       (->> (nav*/match-route nav*/ui-routes))
-      (hydrate)))
+      (hydrate user)))
