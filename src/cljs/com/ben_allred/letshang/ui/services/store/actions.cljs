@@ -15,3 +15,9 @@
   (-> (nav/path-for :api/hangouts)
       (http/get)
       (request* dispatch :hangouts)))
+
+(defn fetch-hangout [hangout-id]
+  (fn [[dispatch]]
+    (-> (nav/path-for :api/hangout {:route-params {:hangout-id hangout-id}})
+        (http/get)
+        (request* dispatch :hangout))))

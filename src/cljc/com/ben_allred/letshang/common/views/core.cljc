@@ -10,7 +10,9 @@
 (def ^:private handler->component
   {:ui/home      main/home
    :ui/not-found main/not-found
-   :ui/hangouts  hangouts/hangouts})
+   :ui/hangouts  hangouts/hangouts
+   :ui/hangout-new hangouts/create
+   :ui/hangout hangouts/hangout})
 
 (defn ^:private render [component state]
   [:div

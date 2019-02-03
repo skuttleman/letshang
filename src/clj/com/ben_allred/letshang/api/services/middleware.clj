@@ -1,6 +1,7 @@
 (ns com.ben-allred.letshang.api.services.middleware
   (:require
     [clojure.string :as string]
+    [com.ben-allred.formation.core :as f]
     [com.ben-allred.letshang.api.utils.jwt :as jwt]
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.content :as content]
@@ -33,10 +34,10 @@
 
 (defn content-type [handler]
   (fn [{:keys [headers] :as request}]
-    (cond-> request
-      :always (content/parse (get headers "content-type"))
-      :always (handler)
-      (api? request) (content/prepare #{"content-type"} (get headers "accept")))))
+    (-> request
+        (content/parse (get headers "content-type"))
+        (handler)
+        (cond-> (api? request) (content/prepare #{"content-type"} (get headers "accept"))))))
 
 (defn auth [handler]
   (fn [{:keys [uri headers] :as request}]
@@ -65,3 +66,12 @@
     (if user
       (handler request)
       (respond/with [:http.status/forbidden {:message "You must authenticate to use this API."}]))))
+
+(defn conform-params [handler spec]
+  (if-not spec
+    handler
+    (let [transformer (f/transformer spec)]
+      (fn [request]
+        (-> request
+            (update :params transformer)
+            (handler))))))

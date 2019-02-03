@@ -20,6 +20,16 @@
      :hangouts/error [:error response]
      state)))
 
+(defn hangout
+  ([] [:init])
+  ([state [type response]]
+   (case type
+     :hangout/request [:requesting]
+     :hangout/success [:success (:data response)]
+     :hangout/error [:error response]
+     state)))
+
 (def root
-  (collaj.reducers/combine (maps/->map hangouts
+  (collaj.reducers/combine (maps/->map hangout
+                                       hangouts
                                        page)))

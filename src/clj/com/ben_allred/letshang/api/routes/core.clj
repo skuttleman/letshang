@@ -22,7 +22,8 @@
 
 (defroutes ^:private base
   (context "/api" []
-    #'api)
+    #'api
+    (ANY "/*" [] [:http.status/not-found]))
   (context "/" []
     #'auth/routes
     (route/resources "/")

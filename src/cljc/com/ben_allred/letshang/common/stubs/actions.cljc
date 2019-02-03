@@ -9,3 +9,7 @@
 (def fetch-hangouts
   #?(:clj  noop
      :cljs store.actions/fetch-hangouts))
+
+(defn fetch-hangout [hangout-id]
+  #?(:clj  noop
+     :cljs (store.actions/fetch-hangout hangout-id)))

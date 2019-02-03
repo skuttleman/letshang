@@ -4,6 +4,7 @@
     [com.ben-allred.letshang.api.services.db.models.shared :as models]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.hangouts :as repo.hangouts]
+    [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (def ^:private model
@@ -13,9 +14,19 @@
     (->db [_ hangout]
       (dissoc hangout :created-at :created-by))))
 
-(defn select-for-user [user-id]
-  (-> [:= :created-by user-id]
+(defn ^:private select* [clause]
+  (-> clause
       (repo.hangouts/select-by*)
       (entities/inner-join entities/users :creator [:= :creator.id :hangouts.created-by])
       (models/select model (models/under :hangouts))
       (repos/exec!)))
+
+(defn select-for-user [user-id]
+  (select* [:= :hangouts.created-by user-id]))
+
+(defn find-for-user [hangout-id user-id]
+  (-> [:and
+       [:= :hangouts.id hangout-id]
+       [:= :hangouts.created-by user-id]]
+      (select*)
+      (colls/only!)))
