@@ -27,7 +27,7 @@
 
 (defn ^:private run [env]
   (let [port (server-port env :port 3000)]
-    (web/run #'routes/app {:port port})
+    (web/run #'routes/app {:port port :host "0.0.0.0"})
     (println "Server is listening on port" port)))
 
 (defn -main [& {:as env}]
