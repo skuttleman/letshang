@@ -2,9 +2,9 @@
   (:require
     [#?(:clj  com.ben-allred.letshang.api.services.navigation
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
+    [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.views.auth :as auth]
-    [com.ben-allred.letshang.common.utils.reagent :as r]))
+    [com.ben-allred.letshang.common.views.auth :as auth]))
 
 (defn not-found [_state]
   [:div "page not found"])
@@ -45,5 +45,5 @@
            [auth/logout {:text "logout"}]]]]]])))
 
 (defn home [_state]
-  [:div
-   "home"])
+  [:p.has-text-centered
+   "Hi. Thanks for coming to hang out."])

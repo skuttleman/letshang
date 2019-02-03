@@ -55,7 +55,7 @@
         (hiccup/html)
         (str "<!DOCTYPE html>"))))
 
-(defn render [{:keys [uri query-string user]}]
+(defn render [{:keys [uri query-string auth/user]}]
   (-> uri
       (cond->
         query-string (str "?" query-string))

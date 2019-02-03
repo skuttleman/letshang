@@ -26,3 +26,13 @@
 .space-below {
     padding-bottom: 12px;
 }
+
+.main {
+    min-height: calc(100vh - 72px - 168px);
+}
+
+.center-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

@@ -12,11 +12,10 @@
          reducers/root
          collaj.enhancers/with-fn-dispatch
          (cond-> nil
-           #_#_(env/get :dev?) (conj (collaj.enhancers/with-log-middleware
-                                       (partial js/console.log "Action dispatched:")
-                                       (partial js/console.log "New state:"))))))
+           (env/get :dev?) (conj (collaj.enhancers/with-log-middleware
+                                   (partial js/console.log "Action dispatched:")
+                                   (partial js/console.log "New state:"))))))
 
 (def get-state (:get-state store))
 
 (def dispatch (:dispatch store))
-

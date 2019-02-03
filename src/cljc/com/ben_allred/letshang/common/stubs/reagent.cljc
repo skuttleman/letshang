@@ -1,4 +1,4 @@
-(ns com.ben-allred.letshang.common.utils.reagent
+(ns com.ben-allred.letshang.common.stubs.reagent
   (:refer-clojure :exclude [atom])
   #?(:cljs
      (:require

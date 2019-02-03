@@ -15,15 +15,16 @@
 (defn ^:private render [component state]
   [:div
    [main/header state]
-   [:div.main
+   [:div.main.inset
     {:class [(str "page-" (name (get-in state [:page :handler])))]}
-    [component state]]
+    [:div.inset
+     [component state]]]
    [dashboard/footer]])
 
 (defn app [{:keys [auth/user] :as state}]
   (let [handler (get-in state [:page :handler])
         component (handler->component handler main/not-found)]
     (cond
-      (not handler) [components/spinner]
+      (not handler) [components/spinner {:size :large}]
       (env/get :auth/user user) [render component state]
       :else [dashboard/root state])))

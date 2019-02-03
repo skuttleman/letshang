@@ -14,3 +14,6 @@
         (map (comp str safe-name))
         (string/join (safe-name separator))
         (keyword))))
+
+(defn namespaced [ns name']
+  (keyword (name ns) (name name')))

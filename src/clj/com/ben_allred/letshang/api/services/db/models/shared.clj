@@ -6,7 +6,19 @@
   (->db [this data])
   (->api [this data]))
 
-(defn select [query model]
-  (-> [query]
-      (conj (partial map (partial ->api model)))
-      (repos/single)))
+(defn under [root-key]
+  (let [root-key' (name root-key)]
+    (map (fn [item]
+           (let [groups (group-by (comp namespace first) item)
+                 others (dissoc groups nil root-key')
+                 init (into {} (concat (get groups nil) (get groups root-key')))]
+             (->> others
+                  (reduce (fn [m [k v]] (assoc m k (into {} v))) init)))))))
+
+(defn select
+  ([query model]
+   (select query model identity))
+  ([query model x-form]
+   (-> [query]
+       (conj (comp (map (partial ->api model)) x-form))
+       (repos/single))))

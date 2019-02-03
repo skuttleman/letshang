@@ -2,9 +2,9 @@
   (:require
     [clojure.string :as string]
     [com.ben-allred.letshang.api.utils.jwt :as jwt]
+    [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.content :as content]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.maps :as maps]
     [com.ben-allred.letshang.common.utils.transit :as transit])
   (:import
     (clojure.lang ExceptionInfo)
@@ -40,15 +40,16 @@
 
 (defn auth [handler]
   (fn [{:keys [uri headers] :as request}]
-    (if-let [user (when (or (string/starts-with? uri "/api")
+    (let [user (when (or (string/starts-with? uri "/api")
                             (re-find #"text/html" (str (get headers "accept"))))
                     (some-> request
                             (get-in [:cookies "auth-token" :value])
                             (jwt/decode)
                             (:data)
                             (transit/parse)))]
-      (handler (assoc request :user user))
-      (handler request))))
+      (-> request
+          (cond-> user (assoc :auth/user user))
+          (handler)))))
 
 (defn abortable [handler]
   (fn [request]
@@ -59,3 +60,8 @@
           response
           (throw ex))))))
 
+(defn restricted [handler]
+  (fn [{:keys [auth/user] :as request}]
+    (if user
+      (handler request)
+      (respond/with [:http.status/forbidden {:message "You must authenticate to use this API."}]))))

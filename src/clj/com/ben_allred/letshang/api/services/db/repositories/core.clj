@@ -57,7 +57,9 @@
           (if (seq more)
             (do (exec* db query)
                 (recur more))
-            (f (remove-namespaces (exec* db query)))))))))
+            (->> (exec* db query)
+                 (sequence f)
+                 (remove-namespaces))))))))
 
 (defn single [[query f]]
   [[query] f])

@@ -5,4 +5,5 @@
 (defn select-by* [clause]
   (-> entities/users
       (entities/select)
+      (entities/with-alias :users)
       (assoc :where clause)))

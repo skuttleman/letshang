@@ -1,10 +1,14 @@
 (ns com.ben-allred.letshang.common.views.components
   (:require
     [#?(:clj clojure.core.async :cljs cljs.core.async) :as async]
-    [com.ben-allred.letshang.common.utils.reagent :as r]))
+    [com.ben-allred.letshang.common.stubs.reagent :as r]
+    [com.ben-allred.letshang.common.stubs.store :as store]
+    [com.ben-allred.letshang.common.utils.colls :as colls]
+    [com.ben-allred.letshang.common.utils.keywords :as keywords]))
 
-(defn spinner []
-  [:div "loading"])
+(defn spinner [{:keys [size]}]
+  [:div.loader
+   {:class [(keywords/safe-name size)]}])
 
 (def unicode
   (comp (partial conj [:span]) {:© #?(:clj "&#xa9;" :cljs "©")}))
@@ -33,3 +37,29 @@
                 (map-indexed (fn [idx item]
                                [[(when (= idx (dec length)) "squish")] item]))
                 (conj [component]))))})))
+
+(def ^:private level->class
+  {:error "is-danger"})
+
+(defn alert [level tree]
+  [:div.message
+   {:class [(level->class level)]}
+   [:div.message-body
+    tree]])
+
+(defn with-status [{:keys [action]}]
+  (let [finished? (r/atom false)]
+    (async/go
+      (async/<! (store/dispatch action))
+      (reset! finished? true))
+    (fn [{:keys [tree data-fn state]}]
+      (let [[status data] (data-fn state)]
+        (cond
+          (and (= status :success) @finished?)
+          (conj (colls/force-sequential tree) data)
+
+          (and (= status :error) @finished?)
+          [alert :error (:message data "An unknown error occurred")]
+
+          :else
+          [:div.center-content [spinner {:size :large}]])))))

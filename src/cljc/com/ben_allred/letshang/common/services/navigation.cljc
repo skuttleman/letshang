@@ -16,7 +16,8 @@
       ["/logout" :auth/logout]]]
 
     ;; API
-    ["/api" :api/root]
+    ["/api"
+     [["/hangouts" :api/hangouts]]]
 
     ;; UI
     ["/" :ui/home]
