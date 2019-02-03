@@ -1,0 +1,35 @@
+.header .navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+
+    .navbar-menu {
+        &.expanded {
+            @media(max-width: 1088px) {
+                display: block;
+                min-width: 150px;
+                position: absolute;
+                right: 0;
+            }
+        }
+    }
+
+    .nav-divider {
+        height: 2px;
+        background-color: none;
+        border-bottom: 1px solid lightgray;
+        margin: 0;
+    }
+
+    .oversize {
+        @media(max-width: 1088px) {
+            display :none;
+        }
+    }
+
+    .undersize {
+        @media(min-width: 1088px) {
+            display :none;
+        }
+    }
+}
