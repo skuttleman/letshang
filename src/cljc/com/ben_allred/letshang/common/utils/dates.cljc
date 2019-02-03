@@ -16,7 +16,8 @@
 
 (def ^:private formats
   {:default "EEE MMM d, yyyy 'at' h:mm a"
-   :fs "yyyyMMddHHmmss"})
+   :fs "yyyyMMddHHmmss"
+   :year "yyyy"})
 
 (defn ^:private inst->dt [inst]
   #?(:clj  (if (instance? Instant inst)
@@ -84,6 +85,9 @@
                  (= :seconds interval) (.plusSeconds amt))
                (.toInstant ZoneOffset/UTC))
      :cljs (throw (js/Error. "Not Implemented"))))
+
+(defn year [inst]
+  (format inst (:year formats)))
 
 (defn now []
   #?(:clj  (Instant/now)

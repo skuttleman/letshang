@@ -6,19 +6,13 @@
     [pushy.core :as pushy]))
 
 (defn match-route [path]
-  (nav*/match-route nav*/ui-routes path))
+  (nav*/match-route nav*/app-routes path))
 
 (defn path-for
   ([page]
-   (nav*/path-for nav*/ui-routes page nil))
+   (nav*/path-for nav*/app-routes page nil))
   ([page params]
-   (nav*/path-for nav*/ui-routes page params)))
-
-(defn api-path-for
-  ([page]
-   (nav*/path-for nav*/api-routes page nil))
-  ([page params]
-   (nav*/path-for nav*/api-routes page params)))
+   (nav*/path-for nav*/app-routes page params)))
 
 (defonce ^:private history
   (let [history (pushy/pushy (comp store/dispatch (partial conj [:router/navigate])) match-route)]

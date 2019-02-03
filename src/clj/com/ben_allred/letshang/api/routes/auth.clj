@@ -1,11 +1,11 @@
 (ns com.ben-allred.letshang.api.routes.auth
   (:require
     [com.ben-allred.letshang.api.services.db.models.users :as models.users]
+    [com.ben-allred.letshang.api.services.navigation :as nav]
     [com.ben-allred.letshang.api.utils.jwt :as jwt]
     [com.ben-allred.letshang.common.services.env :as env]
     [compojure.core :refer [ANY DELETE GET POST PUT context defroutes]]
-    [ring.util.response :as resp]
-    [com.ben-allred.letshang.api.services.navigation :as nav]))
+    [ring.util.response :as resp]))
 
 
 (defn ^:private token->cookie [resp cookie value]
@@ -32,7 +32,7 @@
   (context "/auth" []
     (GET "/login" {:keys [params]}
       (-> (env/get :base-url)
-          (str (nav/api-path-for :auth/callback {:query-params (select-keys params #{:email})}))
+          (str (nav/path-for :auth/callback {:query-params (select-keys params #{:email})}))
           (resp/redirect)))
     (GET "/callback" {:keys [params]}
       (-> params

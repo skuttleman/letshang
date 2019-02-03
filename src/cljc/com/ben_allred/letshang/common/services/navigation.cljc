@@ -7,19 +7,23 @@
     [com.ben-allred.letshang.common.utils.query-params :as qp]
     [com.ben-allred.letshang.common.utils.uuids :as uuids]))
 
-(def api-routes
+(def app-routes
   [""
-   [["/auth"
-     [["/callback" :auth/callback]]]
-    ["/api" :api/root]
-    [true :not-found]]])
-
-(def ui-routes
-  [""
-   [["/auth"
-     [["/login" :auth/login]
+   [;; AUTH
+    ["/auth"
+     [["/callback" :auth/callback]
+      ["/login" :auth/login]
       ["/logout" :auth/logout]]]
+
+    ;; API
+    ["/api" :api/root]
+
+    ;; UI
     ["/" :ui/home]
+    ["/hangouts"
+     [["" :ui/hangouts]
+      ["/new" :ui/hangout-new]
+      [["/" [uuids/regex :hangout-id]] :ui/hangout]]]
     [true :ui/not-found]]])
 
 (defn ^:private namify [[k v]]

@@ -1,0 +1,28 @@
+.xl {
+    @media(min-width: 1200px) {
+        &.gutters {
+            margin: 0 100px;
+        }
+    }
+}
+
+.xxl {
+    @media(min-width: 1800px) {
+        &.gutters {
+            margin: 0 16vw;
+        }
+    }
+}
+
+.inset {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.space-above {
+    padding-top: 12px;
+}
+
+.space-below {
+    padding-bottom: 12px;
+}

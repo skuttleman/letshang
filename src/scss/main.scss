@@ -1,1 +1,11 @@
-* {color: blue;}
+@import 'dashboard';
+@import 'header';
+@import 'layout';
+
+* {
+    font-family: sans-serif;
+}
+
+ul {
+    list-style: none;
+}

@@ -59,5 +59,5 @@
   (-> uri
       (cond->
         query-string (str "?" query-string))
-      (->> (nav*/match-route nav*/ui-routes))
+      (->> (nav*/match-route nav*/app-routes))
       (hydrate user)))

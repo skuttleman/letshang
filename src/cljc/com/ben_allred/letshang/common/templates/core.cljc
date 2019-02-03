@@ -14,11 +14,16 @@
          (string/join ";"))
     m))
 
+(defn ^:private coll->class [class]
+  (if (string? class)
+    class
+    (string/join " " (filter some? class))))
+
 (defn ^:private clean-attrs [attrs]
   (-> attrs
       (maps/dissocp (some-fn nil? fn?))
       (maps/walk (fn [k v] [k (if (keyword? v) (name v) v)]))
-      (set/rename-keys {:class-name :class})
+      (maps/update-maybe :class coll->class)
       (maps/update-maybe :style m->css)))
 
 (defn ^:private render* [arg]
@@ -27,16 +32,6 @@
     (or (seq? arg) (list? arg)) (map render arg)
     (map? arg) (clean-attrs arg)
     :else arg))
-
-(defn classes
-  ([rules] (classes nil rules))
-  ([attrs rules]
-   (let [classes (->> rules
-                      (filter val)
-                      (map (comp name key))
-                      (string/join " "))]
-     (cond-> attrs
-       (seq classes) (update :class-name (comp strings/trim-to-nil str) " " classes)))))
 
 (defn render [[node & args :as tree]]
   (when tree
