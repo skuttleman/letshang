@@ -58,7 +58,7 @@
       (handler request)
       (catch ExceptionInfo ex
         (if-let [response (:response (.getData ex))]
-          response
+          (update response :status #(or % 500))
           (throw ex))))))
 
 (defn restricted [handler]
