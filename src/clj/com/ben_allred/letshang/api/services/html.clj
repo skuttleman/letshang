@@ -5,9 +5,9 @@
     [com.ben-allred.letshang.common.services.navigation :as nav*]
     [com.ben-allred.letshang.common.services.ui-reducers :as ui-reducers]
     [com.ben-allred.letshang.common.templates.core :as templates]
+    [com.ben-allred.letshang.common.utils.encoders.transit :as transit]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]
-    [com.ben-allred.letshang.common.utils.transit :as transit]
     [com.ben-allred.letshang.common.views.core :as views]
     [hiccup.core :as hiccup]))
 
@@ -38,7 +38,7 @@
      (format "window.ENV=%s;" (-> {}
                                   (maps/assoc-maybe :dev? (env/get :dev?)
                                                     :auth/user user)
-                                  (transit/stringify)
+                                  (transit/encode)
                                   (pr-str)))]
     [:script {:type "text/javascript" :src "/js/compiled/app.js"}]
     [:script

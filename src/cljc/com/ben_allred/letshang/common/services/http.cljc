@@ -4,12 +4,9 @@
     [#?(:clj clojure.core.async :cljs cljs.core.async) :as async]
     [clojure.set :as set]
     [com.ben-allred.letshang.common.services.content :as content]
+    [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.utils.logging :as log #?@(:cljs [:include-macros true])]
     [kvlt.chan :as kvlt]))
-
-(def ^:private content-type
-  #?(:clj  "application/json"
-     :cljs "application/transit"))
 
 (def ^:private header-keys #{:content-type :accept})
 
@@ -90,7 +87,8 @@
         [:error body status response]))))
 
 (defn go [method url request]
-  (let [headers (merge {:content-type "application/transit" :accept "application/transit"}
+  (let [content-type (if (env/get :dev?) "application/edn" "application/transit")
+        headers (merge {:content-type content-type :accept content-type}
                        (:headers request))]
     (-> request
         (assoc :method method :url url)

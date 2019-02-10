@@ -1,22 +1,35 @@
 (ns com.ben-allred.letshang.common.services.content
   (:require
-    [#?(:clj clojure.edn :cljs cljs.reader) :as edn]
-    [com.ben-allred.letshang.common.utils.json :as json]
+    #?(:clj [com.ben-allred.letshang.api.services.streams :as streams])
+    [com.ben-allred.letshang.common.utils.encoders.edn :as edn]
+    [com.ben-allred.letshang.common.utils.encoders.json :as json]
+    [com.ben-allred.letshang.common.utils.encoders.transit :as transit]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.maps :as maps]
-    [com.ben-allred.letshang.common.utils.transit :as transit]
-    #?(:clj [com.ben-allred.letshang.api.services.streams :as streams]))
-  #?(:clj
-     (:import
-       (java.io InputStream))))
+    [com.ben-allred.letshang.common.utils.maps :as maps]))
 
-(defn ^:private with-headers [request header-keys type]
-  (update request :headers (partial merge (zipmap header-keys (repeat type)))))
+(defn ^:private content-type->header [content-type]
+  (condp re-find (str content-type)
+    #"application/edn" "application/edn"
+    #"application/transit" "application/transit"
+    "application/json"))
 
-(defn ^:private maybe-slurp [value]
-  (if #?(:clj (streams/input-stream? value) :cljs true)
-    #?(:clj (slurp value))
-    value))
+(defn ^:private content-type->encoder [content-type]
+  (condp re-find (str content-type)
+    #"application/edn" edn/encode
+    #"application/json" json/encode
+    #"application/transit" transit/encode
+    nil))
+
+(defn ^:private content-type->decoder [content-type]
+  (condp re-find (str content-type)
+    #"application/edn" edn/decode
+    #"application/json" json/decode
+    #"application/transit" transit/decode
+    nil))
+
+(defn ^:private with-headers [request header-keys content-type]
+  (let [type (content-type->header content-type)]
+    (update request :headers (partial merge (zipmap header-keys (repeat type))))))
 
 (defn ^:private when-not-string [body f]
   (if (string? body)
@@ -25,42 +38,33 @@
 
 (defn ^:private try-to [value f]
   (try (f value)
-       (catch #?(:clj Throwable :cljs js/Object) _
+       (catch #?(:clj Throwable :cljs :default) _
          nil)))
 
-(def ^:private edn?
-  (comp (partial re-find #"application/edn") str))
-
-(def ^:private json?
-  (comp (partial re-find #"application/json") str))
-
-(def ^:private transit?
-  (comp (partial re-find #"application/transit") str))
+(defn ^:private blank? [value]
+  (or (nil? value)
+      (= "" value)))
 
 (defn parse [data content-type]
-  (cond-> data
-    (= "" (:body data)) (dissoc data :body)
-    (edn? content-type) (maps/update-maybe :body try-to (comp edn/read-string maybe-slurp))
-    (json? content-type) (maps/update-maybe :body try-to json/parse)
-    (transit? content-type) (maps/update-maybe :body try-to transit/parse)))
+  (let [decode (content-type->decoder content-type)]
+    (cond-> data
+      (blank? (:body data)) (dissoc data :body)
+      decode (maps/update-maybe :body try-to decode))))
 
 (defn prepare [data header-keys accept]
-  (cond-> data
-    (= "" (:body data))
-    (dissoc :body)
+  (let [encode (content-type->encoder accept)]
+    (cond-> data
+      (blank? (:body data))
+      (dissoc :body)
 
-    (edn? accept)
-    (->
-      (maps/update-maybe :body when-not-string pr-str)
-      (with-headers header-keys "application/edn"))
+      encode
+      (->
+        (maps/update-maybe :body when-not-string encode)
+        (with-headers header-keys accept))
 
-    (transit? accept)
-    (->
-      (maps/update-maybe :body when-not-string transit/stringify)
-      (with-headers header-keys "application/transit"))
-
-    (and #?(:clj (not (streams/input-stream? (:body data))))
-         (or (not accept) (re-find #"\*/\*" accept) (json? accept)))
-    (->
-      (maps/update-maybe :body when-not-string json/stringify)
-      (with-headers header-keys "application/json"))))
+      (and (not encode)
+           #?(:clj (not (streams/input-stream? (:body data))))
+           (or (not accept) (re-find #"\*/\*" accept)))
+      (->
+        (maps/update-maybe :body when-not-string json/encode)
+        (with-headers header-keys "application/json")))))

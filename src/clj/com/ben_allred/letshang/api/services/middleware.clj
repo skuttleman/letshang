@@ -2,11 +2,11 @@
   (:require
     [clojure.string :as string]
     [com.ben-allred.formation.core :as f]
-    [com.ben-allred.letshang.api.utils.jwt :as jwt]
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.content :as content]
-    [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.transit :as transit])
+    [com.ben-allred.letshang.common.utils.encoders.jwt :as jwt]
+    [com.ben-allred.letshang.common.utils.encoders.transit :as transit]
+    [com.ben-allred.letshang.common.utils.logging :as log])
   (:import
     (clojure.lang ExceptionInfo)
     (java.util Date)))
@@ -46,8 +46,7 @@
                     (some-> request
                             (get-in [:cookies "auth-token" :value])
                             (jwt/decode)
-                            (:data)
-                            (transit/parse)))]
+                            (:data)))]
       (-> request
           (cond-> user (assoc :auth/user user))
           (handler)))))

@@ -1,7 +1,6 @@
-(ns com.ben-allred.letshang.common.utils.transit
+(ns com.ben-allred.letshang.common.utils.encoders.transit
   (:require
-    [cognitect.transit :as trans]
-    [com.ben-allred.letshang.common.utils.logging :as log])
+    [cognitect.transit :as trans])
   #?(:clj
      (:import
        (java.io ByteArrayInputStream ByteArrayOutputStream InputStream))))
@@ -20,14 +19,14 @@
   #?(:clj  nil
      :cljs (trans/writer :json)))
 
-(defn parse [s]
-  #?(:clj  (if (instance? InputStream s)
-             (trans/read (trans/reader s :json))
-             (trans/read (trans/reader (string->stream s) :json)))
-     :cljs (trans/read reader s)))
+(defn decode [value]
+  #?(:clj  (if (instance? InputStream value)
+             (trans/read (trans/reader value :json))
+             (trans/read (trans/reader (string->stream value) :json)))
+     :cljs (trans/read reader value)))
 
-(defn stringify [v]
+(defn encode [value]
   #?(:clj  (let [out (ByteArrayOutputStream. 4096)]
-             (trans/write (trans/writer out :json) v)
+             (trans/write (trans/writer out :json) value)
              (.toString out))
-     :cljs (trans/write writer v)))
+     :cljs (trans/write writer value)))
