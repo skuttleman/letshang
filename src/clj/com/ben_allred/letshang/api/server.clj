@@ -1,4 +1,5 @@
 (ns com.ben-allred.letshang.api.server
+  (:gen-class)
   (:require
     [clojure.spec.alpha :as s]
     [clojure.string :as string]

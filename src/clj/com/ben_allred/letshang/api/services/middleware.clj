@@ -5,14 +5,10 @@
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.content :as content]
     [com.ben-allred.letshang.common.utils.encoders.jwt :as jwt]
-    [com.ben-allred.letshang.common.utils.encoders.transit :as transit]
     [com.ben-allred.letshang.common.utils.logging :as log])
   (:import
     (clojure.lang ExceptionInfo)
     (java.util Date)))
-
-(defn ^:private resource? [uri]
-  (or (= "/" uri) (re-find #"(^/js|^/css|^/images|^/favicon)" uri)))
 
 (defn ^:private api? [{:keys [uri websocket?]}]
   (and (not websocket?)
@@ -22,14 +18,13 @@
   (fn [request]
     (let [start (Date.)
           response (handler request)
-          end (Date.)
-          uri (:uri request)]
-      (when-not (resource? uri)
+          end (Date.)]
+      (when (api? request)
         (log/info (format "[%d](%dms) %s: %s"
                           (or (:status response) 404)
                           (- (.getTime end) (.getTime start))
                           (string/upper-case (name (:request-method request)))
-                          uri)))
+                          (:uri request))))
       response)))
 
 (defn content-type [handler]
@@ -42,11 +37,11 @@
 (defn auth [handler]
   (fn [{:keys [uri headers] :as request}]
     (let [user (when (or (string/starts-with? uri "/api")
-                            (re-find #"text/html" (str (get headers "accept"))))
-                    (some-> request
-                            (get-in [:cookies "auth-token" :value])
-                            (jwt/decode)
-                            (:data)))]
+                         (re-find #"text/html" (str (get headers "accept"))))
+                 (some-> request
+                         (get-in [:cookies "auth-token" :value])
+                         (jwt/decode)
+                         (:data)))]
       (-> request
           (cond-> user (assoc :auth/user user))
           (handler)))))

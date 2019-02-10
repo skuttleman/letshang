@@ -1,5 +1,7 @@
 (ns com.ben-allred.letshang.common.utils.numbers
-  (:refer-clojure :exclude [number?]))
+  (:refer-clojure :exclude [number?])
+  (:require
+    [com.ben-allred.letshang.common.utils.strings :as strings]))
 
 (defn nan? [value]
   #?(:clj  (and (clojure.core/number? value)
@@ -17,5 +19,5 @@
 
 (defn parse-int! [value]
   (let [result (parse-int value)]
-    (assert (not (nan? result)) (format "Integer could not be parsed from: %s" value))
+    (assert (not (nan? result)) (strings/format "Integer could not be parsed from: %s" value))
     result))
