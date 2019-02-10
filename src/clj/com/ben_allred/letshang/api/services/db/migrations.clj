@@ -46,10 +46,10 @@
     (spit (format "resources/migrations/%s.down.sql" migration-name) "\n")
     (println "created migration: " migration-name)))
 
-(defn ^:export run [command & args]
+(defn ^:export run [command & [arg :as args]]
   (case command
     "migrate" (migrate!)
-    "rollback" (rollback! (numbers/parse-int! (or (first args) "1")))
+    "rollback" (rollback! (numbers/parse-int! (or arg "1")))
     "speedbump" (speedbump!)
     "redo" (redo!)
     "create" (create! (string/join "_" args))

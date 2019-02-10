@@ -24,8 +24,17 @@
 (defn ^:private sql-format [query]
   (sql/format query :quoting :ansi))
 
+(defn ^:private sql-log [[statement & args :as query]]
+  (when (env/get :dev?)
+    (let [bindings (volatile! args)]
+      (log/info (string/replace statement #"(\(| )\?" (fn [[_ prefix]]
+                                                        (let [result (format "%s'%s'" prefix (first @bindings))]
+                                                          (vswap! bindings rest)
+                                                          result))))))
+  query)
+
 (defn ^:private exec* [db query]
-  (let [sql (sql-format query)]
+  (let [sql (sql-log (sql-format query))]
     (cond
       (:select query) (jdbc/query db sql)
       (:insert-into query) (jdbc/execute! db sql {:return-keys true})

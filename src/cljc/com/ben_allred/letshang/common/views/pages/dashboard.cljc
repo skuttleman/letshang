@@ -107,7 +107,7 @@
                            {:class classes}
                            idea]])]]]
        [:div.get-started
-        [:div [auth/login "login to get started" "skuttleman@gmail.com"]]]]]]]])
+        [:div [auth/login-as "login to get started"]]]]]]]])
 
 (defn footer []
   [:footer.footer

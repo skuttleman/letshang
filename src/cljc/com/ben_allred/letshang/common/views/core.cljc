@@ -8,11 +8,11 @@
     [com.ben-allred.letshang.common.views.main :as main]))
 
 (def ^:private handler->component
-  {:ui/home      main/home
-   :ui/not-found main/not-found
-   :ui/hangouts  hangouts/hangouts
+  {:ui/home        main/home
+   :ui/not-found   main/not-found
+   :ui/hangouts    hangouts/hangouts
    :ui/hangout-new hangouts/create
-   :ui/hangout hangouts/hangout})
+   :ui/hangout     hangouts/hangout})
 
 (defn ^:private render [component state]
   [:div
@@ -23,10 +23,11 @@
      [component state]]]
    [dashboard/footer]])
 
-(defn app [{:keys [auth/user] :as state}]
+(defn app [state]
   (let [handler (get-in state [:page :handler])
-        component (handler->component handler main/not-found)]
+        component (handler->component handler main/not-found)
+        state (update state :auth/user (partial env/get :auth/user))]
     (cond
       (not handler) [components/spinner {:size :large}]
-      (env/get :auth/user user) [render component state]
+      (:auth/user state) [render component state]
       :else [dashboard/root state])))

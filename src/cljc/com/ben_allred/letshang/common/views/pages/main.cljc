@@ -4,6 +4,8 @@
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.strings :as strings]
+    [com.ben-allred.letshang.common.utils.users :as users]
     [com.ben-allred.letshang.common.views.auth :as auth]))
 
 (defn not-found [_state]
@@ -44,6 +46,9 @@
           [:div.buttons
            [auth/logout {:text "logout"}]]]]]])))
 
-(defn home [_state]
+(defn home [state]
   [:p.has-text-centered
-   "Hi. Thanks for coming to hang out."])
+   (->> state
+        (:auth/user)
+        (users/full-name)
+        (strings/format "Hi, %s. Thanks for coming to hang out."))])

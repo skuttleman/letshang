@@ -26,6 +26,7 @@
                  [org.clojure/clojure "1.9.0"]
                  [org.clojure/clojurescript "1.9.946"]
                  [org.clojure/core.async "0.3.465"]
+                 [org.clojure/core.match "0.3.0-alpha5"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/spec.alpha "0.2.176"]
                  [org.clojure/test.check "0.9.0"]
