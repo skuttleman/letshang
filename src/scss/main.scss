@@ -1,14 +1,9 @@
+@import 'normalize';
+
+@import 'components/dropdown';
 @import 'dashboard';
 @import 'header';
 @import 'layout';
-
-* {
-    font-family: sans-serif;
-}
-
-ul {
-    list-style: none;
-}
 
 .loader.large {
     border-width: 8px;
