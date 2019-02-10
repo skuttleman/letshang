@@ -41,6 +41,14 @@
   {:fields #{:id :name :created-by :created-at}
    :table  :hangouts})
 
+(def known-associates
+  {:fields #{:id :user-id :associate-id :created-by :created-at}
+   :table  :known-associates})
+
+(def invitees
+  {:fields #{:id :hangout-id :user-id :created-by :created-at}
+   :table  :invitees})
+
 (def users
   {:fields #{:id :first-name :last-name :handle :email :mobile-number :created-at}
    :table  :users})

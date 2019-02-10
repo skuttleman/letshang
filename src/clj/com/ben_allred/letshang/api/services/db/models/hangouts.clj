@@ -2,6 +2,7 @@
   (:require
     [com.ben-allred.letshang.api.services.db.entities :as entities]
     [com.ben-allred.letshang.api.services.db.models.shared :as models]
+    [com.ben-allred.letshang.api.services.db.models.invitees :as models.invitees]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.hangouts :as repo.hangouts]
     [com.ben-allred.letshang.common.utils.colls :as colls]
@@ -29,4 +30,5 @@
        [:= :hangouts.id hangout-id]
        [:= :hangouts.created-by user-id]]
       (select*)
+      (models.invitees/with-invitees)
       (colls/only!)))

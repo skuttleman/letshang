@@ -22,3 +22,9 @@
   (-> email
       (select-by-email)
       (colls/only!)))
+
+(defn find-known-associates [user-id]
+  (-> user-id
+      (repo.users/select-known-associates)
+      (models/select model)
+      (repos/exec!)))

@@ -2,6 +2,7 @@
   (:require
     [com.ben-allred.letshang.api.routes.auth :as auth]
     [com.ben-allred.letshang.api.routes.hangouts :as hangouts]
+    [com.ben-allred.letshang.api.routes.users :as users]
     [com.ben-allred.letshang.api.services.html :as html]
     [com.ben-allred.letshang.api.services.middleware :as middleware]
     [com.ben-allred.letshang.common.utils.logging :as log]
@@ -14,7 +15,8 @@
     [ring.middleware.reload :refer [wrap-reload]]))
 
 (defroutes api*
-  #'hangouts/routes)
+  #'hangouts/routes
+  #'users/routes)
 
 (def ^:private api
   (-> #'api*
