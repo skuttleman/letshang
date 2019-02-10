@@ -1,6 +1,13 @@
 (ns com.ben-allred.letshang.common.utils.strings
+  (:refer-clojure :exclude [format])
   (:require
+    #?@(:cljs [[goog.string :as gstring]
+               [goog.string.format]])
     [clojure.string :as string]))
+
+(def format
+  #?(:clj  clojure.core/format
+     :cljs gstring/format))
 
 (defn trim-to-nil [s]
   (when-let [s (and s (string/trim s))]

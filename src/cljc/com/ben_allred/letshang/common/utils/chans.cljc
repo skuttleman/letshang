@@ -42,20 +42,21 @@
        (then on-success)
        (catch on-error))))
 
-(defn peek* [ch cb]
-  (async/go
-    (let [result (async/<! ch)]
-      (handle cb result)
-      result)))
-
 (defn peek
   ([ch cb]
-   (peek ch cb (constantly nil)))
+   (peek ch
+         (comp cb (partial conj [:success]))
+         (comp cb (partial conj [:error]))))
   ([ch on-success on-error]
-   (peek* ch (fn [[status value]]
-               (if (= :success status)
-                 (on-success value)
-                 (on-error value))))))
+   (async/go
+     (let [[status result :as response] (async/<! ch)]
+       (cond
+         (and on-success (= :success status))
+         (handle on-success result)
+
+         (and on-error (= :error status))
+         (handle on-error result))
+       response))))
 
 (defn finally [ch cb]
   (async/go
@@ -67,14 +68,16 @@
               (async/<!))
           result)))))
 
-(defmacro ->catch [ch binding & body]
-  `(com.ben-allred.letshang.common.utils.chans/catch ~ch (fn [~binding] ~@body)))
+(defn all [chs]
+  (reduce (fn [result-ch ch]
+            (then result-ch (fn [results]
+                              (then ch #(conj results %)))))
+          (resolve [])
+          chs))
 
-(defmacro ->then [ch binding & body]
-  `(com.ben-allred.letshang.common.utils.chans/then ~ch (fn [~binding] ~@body)))
-
-(defmacro ->peek [ch binding & body]
-  `(com.ben-allred.letshang.common.utils.chans/peek ~ch (fn [~binding] ~@body)))
-
-(defmacro ->finally [ch & body]
-  `(com.ben-allred.letshang.common.utils.chans/finally ~ch (fn [] ~@body)))
+(defn forever [ch]
+  (let [ch' (async/chan 2)]
+    (async/go
+      (let [result (async/<! ch)]
+        (async/onto-chan ch' (repeat result))))
+    ch'))

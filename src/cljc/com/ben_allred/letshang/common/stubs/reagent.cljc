@@ -7,3 +7,5 @@
 (def atom #?(:clj clojure.core/atom :cljs reagent/atom))
 
 (def create-class #?(:clj :reagent-render :cljs reagent/create-class))
+
+(def argv #?(:clj (constantly nil) :cljs reagent/argv))

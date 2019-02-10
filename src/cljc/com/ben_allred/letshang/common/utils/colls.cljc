@@ -6,6 +6,11 @@
     v
     [v]))
 
+(defn force-vector [v]
+  (if (vector? v)
+    v
+    [v]))
+
 (defn replace-by [compare-fn value coll]
   (let [comparator (compare-fn value)]
     (cond->> coll
@@ -64,3 +69,6 @@
    (if (vector? coll)
      (conj coll x)
      (concat coll [x]))))
+
+(defn supdate [coll seq-fn f & f-args]
+  (seq-fn #(apply f % f-args) coll))

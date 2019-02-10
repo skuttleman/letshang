@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.common.utils.logging
   (:require
+    [clojure.pprint :as pp]
     [clojure.string :as string]
     [com.ben-allred.letshang.common.utils.colors :as colors]
     [kvlt.core :refer [quiet!]]
@@ -34,6 +35,10 @@
 
 (defmacro tap-spy [expr f]
   `(spy* (quote ~expr) ~expr ~f "\uD83C\uDF7A "))
+
+(defn pprint [value]
+  [:pre {:style {:font-family :monospace}}
+   (with-out-str (pp/pprint value))])
 
 (defn ^:private ns-color [ns-str]
   (colors/with-style ns-str {:color :blue :trim? true}))

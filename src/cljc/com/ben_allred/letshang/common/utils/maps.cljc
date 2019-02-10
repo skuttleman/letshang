@@ -50,3 +50,6 @@
                        (f k v'))))
               m)
         (with-meta (meta m)))))
+
+(defn select-by [f m]
+  (into {} (map (juxt f identity)) m))
