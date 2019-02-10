@@ -20,7 +20,9 @@
     ["/api"
      [["/hangouts"
        [["" :api/hangouts]
-        [["/" [uuids/regex :hangout-id]] :api/hangout]]]]]
+        [["/" [uuids/regex :hangout-id]] :api/hangout]]]
+      ["/users"
+       [["/associates" :api/associates]]]]]
 
     ;; UI
     ["/" :ui/home]

@@ -1,9 +1,10 @@
-(ns com.ben-allred.letshang.common.views.dashboard
+(ns com.ben-allred.letshang.common.views.pages.dashboard
   (:require
     [com.ben-allred.letshang.common.utils.dates :as dates]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.views.auth :as auth]
-    [com.ben-allred.letshang.common.views.components :as components]))
+    [com.ben-allred.letshang.common.views.components.auto-scroll :as auto-scroll]
+    [com.ben-allred.letshang.common.views.components.core :as components]))
 
 (def ^:private ideas
   ["Barbecue"
@@ -118,5 +119,5 @@
   [:div.page-dashboard
    [jumbotron]
    [tiles]
-   [components/auto-scroller event-types ideas 8 1000]
+   [auto-scroll/scroller event-types ideas 8 1000]
    [footer]])

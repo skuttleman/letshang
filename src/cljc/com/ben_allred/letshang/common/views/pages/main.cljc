@@ -1,4 +1,4 @@
-(ns com.ben-allred.letshang.common.views.main
+(ns com.ben-allred.letshang.common.views.pages.main
   (:require
     [#?(:clj  com.ben-allred.letshang.api.services.navigation
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]

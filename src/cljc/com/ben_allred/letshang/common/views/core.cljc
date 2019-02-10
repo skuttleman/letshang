@@ -2,10 +2,10 @@
   (:require
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.utils.logging :as log :include-macros true]
-    [com.ben-allred.letshang.common.views.components :as components]
-    [com.ben-allred.letshang.common.views.dashboard :as dashboard]
-    [com.ben-allred.letshang.common.views.hangouts :as hangouts]
-    [com.ben-allred.letshang.common.views.main :as main]))
+    [com.ben-allred.letshang.common.views.pages.dashboard :as dashboard]
+    [com.ben-allred.letshang.common.views.pages.hangouts :as hangouts]
+    [com.ben-allred.letshang.common.views.components.loading :as loading]
+    [com.ben-allred.letshang.common.views.pages.main :as main]))
 
 (def ^:private handler->component
   {:ui/home        main/home
@@ -14,7 +14,7 @@
    :ui/hangout-new hangouts/create
    :ui/hangout     hangouts/hangout})
 
-(defn ^:private render [component state]
+(defn ^:private with-layout [component state]
   [:div
    [main/header state]
    [:div.main.inset
@@ -28,6 +28,6 @@
         component (handler->component handler main/not-found)
         state (update state :auth/user (partial env/get :auth/user))]
     (cond
-      (not handler) [components/spinner {:size :large}]
-      (:auth/user state) [render component state]
+      (not handler) [loading/spinner {:size :large}]
+      (:auth/user state) [with-layout component state]
       :else [dashboard/root state])))

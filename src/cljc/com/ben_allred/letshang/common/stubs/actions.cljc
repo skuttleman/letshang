@@ -6,6 +6,18 @@
 
 (def ^:private noop ch/resolve)
 
+(def combine
+  #?(:clj  (constantly noop)
+     :cljs store.actions/combine))
+
+(defn create-hangout [hangout]
+  #?(:clj  noop
+     :cljs (store.actions/create-hangout hangout)))
+
+(def fetch-associates
+  #?(:clj  noop
+     :cljs store.actions/fetch-associates))
+
 (def fetch-hangouts
   #?(:clj  noop
      :cljs store.actions/fetch-hangouts))
@@ -13,3 +25,7 @@
 (defn fetch-hangout [hangout-id]
   #?(:clj  noop
      :cljs (store.actions/fetch-hangout hangout-id)))
+
+(defn update-hangout [hangout-id hangout]
+  #?(:clj  noop
+     :cljs (store.actions/update-hangout hangout-id hangout)))
