@@ -6,13 +6,18 @@
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.maps :as maps]
     [honeysql.core :as sql]
-    [jdbc.pool.c3p0 :as c3p0])
-  (:import (clojure.lang Keyword)
-           (org.postgresql.util PGobject)))
+    [jdbc.pool.c3p0 :as c3p0]))
 
 (declare transact)
+
+(defn ^:private sql-value* [table column _]
+  [table column])
+
+(defmulti ->sql-value #'sql-value*)
+(defmethod ->sql-value :default
+  [_ _ value]
+  value)
 
 (def db-cfg
   {:vendor      "postgres"
@@ -29,6 +34,9 @@
   (c3p0/make-datasource-spec
     db-cfg))
 
+(defn ^:private underscore [kw]
+  (keywords/replace kw #"-" :_))
+
 (defn ^:private sql-format [query]
   (sql/format query :quoting :ansi))
 
@@ -36,26 +44,25 @@
   (when (env/get :dev?)
     (let [[statement & args] (sql-format query)
           bindings (volatile! args)]
-      (log/info (string/replace statement #"(\(| )\?" (fn [[_ prefix]]
-                                                        (let [result (format "%s'%s'" prefix (first @bindings))]
-                                                          (vswap! bindings rest)
-                                                          result)))))))
-(extend-protocol jdbc/ISQLValue
-  Keyword
-  (sql-value [val]
-    (doto (PGobject.)
-      (.setType "invitees_match_type")
-      (.setValue (name val)))))
+      (log/info
+        (string/replace statement
+                        #"(\(| )\?"
+                        (fn [[_ prefix]]
+                          (let [result (format "%s'%s'" prefix (first @bindings))]
+                            (vswap! bindings rest)
+                            result)))))))
 
 (defn ^:private exec* [db query]
-  (sql-log query)
-  (cond
-    (:select query) (jdbc/query db (sql-format query))
-    (:insert-into query) (->> (:values query)
-                              (colls/force-sequential)
-                              (map (partial maps/map-keys #(keywords/replace % #"-" :_)))
-                              (jdbc/insert-multi! db (keywords/replace (:insert-into query) #"-" :_)))
-    :else query))
+  (let [table (:insert-into query)]
+    (sql-log query)
+    (cond
+      (:select query) (jdbc/query db (sql-format query))
+      table (->> (:values query)
+                 (colls/force-sequential)
+                 (map (partial into {} (map (fn [[k v]]
+                                              [(underscore k) (->sql-value table k v)]))))
+                 (jdbc/insert-multi! db (underscore table)))
+      :else query)))
 
 (defn ^:private remove-namespaces [val]
   (cond

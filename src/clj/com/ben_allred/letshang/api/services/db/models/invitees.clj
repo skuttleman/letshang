@@ -4,11 +4,18 @@
     [com.ben-allred.letshang.api.services.db.models.shared :as models]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.users :as repo.users]
+    [com.ben-allred.letshang.api.services.db.preparations :as prep]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (defmethod models/->db ::model
   [_ hangout]
   (dissoc hangout :created-at))
+
+(def ^:private prepare-match-type (prep/prepare :invitees-match-type))
+
+(defmethod repos/->sql-value [:invitees :match-type]
+  [_ _ value]
+  (prepare-match-type value))
 
 (defn ^:private select* [db clause]
   (-> clause

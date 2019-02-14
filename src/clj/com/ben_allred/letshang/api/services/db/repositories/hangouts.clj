@@ -10,5 +10,4 @@
       (assoc :where clause)))
 
 (defn insert [hangout]
-  (-> entities/hangouts
-      (entities/insert-into [hangout])))
+  (entities/insert-into entities/hangouts [hangout]))
