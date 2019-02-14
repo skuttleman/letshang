@@ -56,7 +56,7 @@
                            :current (get-in next path)
                            :touched? true))
                  working)
-         (assoc state :errors (validator next) :working))))
+         (assoc state :api-error nil :errors (validator next) :working))))
 
 (defn ^:private init [validator model]
   {:working            (model->trackable model)
@@ -70,7 +70,8 @@
                (partial swap! state assoc :status :ready :api-error))))
 
 (defn create [api validator]
-  (let [state (r/atom nil)]
+  (let [state (r/atom nil)
+        validator (or validator (constantly nil))]
     (-> api
         (forms/fetch)
         (request* state validator))

@@ -69,3 +69,13 @@
         (-> request
             (update :params transformer)
             (handler))))))
+
+(defn validate-body! [handler spec]
+  (if-not spec
+    handler
+    (let [validator (f/validator spec)]
+      (fn [request]
+        (when-let [errors (validator (:body request))]
+          (respond/abort! [:http.status/bad-request {:message "Request does not meet spec"
+                                                     :errors  errors}]))
+        (handler request)))))

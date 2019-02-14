@@ -57,9 +57,9 @@
   {:name strings/empty-to-nil})
 
 (def validator
-  (f/validator
-    {:name [(f/pred (complement string/blank?) "Your hangout must have a name")
-            (f/required "Your hangout must have a name")]}))
+  (f/validator {:name [(f/pred (complement string/blank?) "Your hangout must have a name")
+                       (f/required "Your hangout must have a name")]
+                :invitee-ids ^::f/coll-of [(f/pred uuid? "Must be a UUID")]}))
 
 (defn form
   ([]

@@ -1,6 +1,7 @@
 (ns com.ben-allred.letshang.api.services.db.entities
   (:require
-    [clojure.set :as set]))
+    [clojure.set :as set]
+    [com.ben-allred.letshang.common.utils.colls :as colls]))
 
 (defn ^:private with-field-alias [fields alias]
   (let [alias' (name alias)]
@@ -10,20 +11,24 @@
               (keyword alias' field')]))
          fields)))
 
+(defn ^:private join* [query join entity alias on]
+  (-> query
+      (update join (fnil conj []) [(:table entity) alias] on)
+      (update :select into (with-field-alias (:fields entity) alias))))
+
 (defn with-alias [entity alias]
   (-> entity
       (update :select with-field-alias alias)
       (update :from (comp vector conj) alias)))
 
+(defn insert-into [entity rows]
+  {:insert-into (:table entity)
+   :values      (map #(select-keys % (:fields entity)) rows)})
+
 (defn select [entity]
   (-> entity
       (set/rename-keys {:fields :select :table :from})
       (update :from vector)))
-
-(defn ^:private join* [query join entity alias on]
-  (-> query
-      (update join (fnil conj []) [(:table entity) alias] on)
-      (update :select into (with-field-alias (:fields entity) alias))))
 
 (defn left-join
   ([query entity on]
@@ -46,7 +51,7 @@
    :table  :known-associates})
 
 (def invitees
-  {:fields #{:id :hangout-id :user-id :created-by :created-at}
+  {:fields #{:id :hangout-id :user-id :match-type :created-by :created-at}
    :table  :invitees})
 
 (def users

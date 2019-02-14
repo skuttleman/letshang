@@ -6,7 +6,8 @@
 
 (defn ^:private wrap* [meta handler]
   `(-> ~handler
-       (compojure/wrap-routes #'middleware/conform-params (:transformer ~meta))))
+       (compojure/wrap-routes #'middleware/conform-params (:transformer ~meta))
+       (compojure/wrap-routes #'middleware/validate-body! (:request-spec ~meta))))
 
 (defmacro context [path args & routes]
   (wrap* (meta args) `(compojure/context ~path ~args ~@routes)))

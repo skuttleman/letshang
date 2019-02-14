@@ -5,18 +5,15 @@
     [com.ben-allred.letshang.api.services.db.repositories.users :as repo.users]
     [com.ben-allred.letshang.common.utils.colls :as colls]))
 
-(def ^:private model
-  (reify models/Model
-    (->api [_ user]
-      (dissoc user :created-at))
-    (->db [_ user]
-      (dissoc user :created-at))))
+(defmethod models/->db ::model
+  [_ user]
+  (dissoc user :created-at))
 
 (defn select-by-email [email]
   (-> [:= :email email]
       (repo.users/select-by*)
-      (models/select model)
-      (repos/exec!)))
+      (models/select ::model)
+      (repos/exec! nil)))
 
 (defn find-by-email [email]
   (-> email
@@ -26,5 +23,5 @@
 (defn find-known-associates [user-id]
   (-> user-id
       (repo.users/select-known-associates)
-      (models/select model)
-      (repos/exec!)))
+      (models/select ::model)
+      (repos/exec! nil)))

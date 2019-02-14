@@ -8,3 +8,7 @@
       (entities/select)
       (entities/with-alias :hangouts)
       (assoc :where clause)))
+
+(defn insert [hangout]
+  (-> entities/hangouts
+      (entities/insert-into [hangout])))

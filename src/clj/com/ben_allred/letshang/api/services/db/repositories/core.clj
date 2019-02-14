@@ -1,14 +1,22 @@
 (ns com.ben-allred.letshang.api.services.db.repositories.core
   (:require
     [clojure.java.jdbc :as jdbc]
+    [clojure.string :as string]
     [com.ben-allred.letshang.common.services.env :as env]
+    [com.ben-allred.letshang.common.utils.colls :as colls]
+    [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.maps :as maps]
     [honeysql.core :as sql]
-    [jdbc.pool.c3p0 :as c3p0]
-    [clojure.string :as string]))
+    [jdbc.pool.c3p0 :as c3p0])
+  (:import (clojure.lang Keyword)
+           (org.postgresql.util PGobject)))
+
+(declare transact)
 
 (def db-cfg
-  {:classname   "org.postgresql.Driver"
+  {:vendor      "postgres"
+   :classname   "org.postgresql.Driver"
    :subprotocol "postgresql"
    :user        (env/get :db-user)
    :password    (env/get :db-password)
@@ -24,21 +32,30 @@
 (defn ^:private sql-format [query]
   (sql/format query :quoting :ansi))
 
-(defn ^:private sql-log [[statement & args :as query]]
+(defn ^:private sql-log [query]
   (when (env/get :dev?)
-    (let [bindings (volatile! args)]
+    (let [[statement & args] (sql-format query)
+          bindings (volatile! args)]
       (log/info (string/replace statement #"(\(| )\?" (fn [[_ prefix]]
                                                         (let [result (format "%s'%s'" prefix (first @bindings))]
                                                           (vswap! bindings rest)
-                                                          result))))))
-  query)
+                                                          result)))))))
+(extend-protocol jdbc/ISQLValue
+  Keyword
+  (sql-value [val]
+    (doto (PGobject.)
+      (.setType "invitees_match_type")
+      (.setValue (name val)))))
 
 (defn ^:private exec* [db query]
-  (let [sql (sql-log (sql-format query))]
-    (cond
-      (:select query) (jdbc/query db sql)
-      (:insert-into query) (jdbc/execute! db sql {:return-keys true})
-      :else (log/spy sql))))
+  (sql-log query)
+  (cond
+    (:select query) (jdbc/query db (sql-format query))
+    (:insert-into query) (->> (:values query)
+                              (colls/force-sequential)
+                              (map (partial maps/map-keys #(keywords/replace % #"-" :_)))
+                              (jdbc/insert-multi! db (keywords/replace (:insert-into query) #"-" :_)))
+    :else query))
 
 (defn ^:private remove-namespaces [val]
   (cond
@@ -48,32 +65,16 @@
     (coll? val) (map remove-namespaces val)
     :else val))
 
-(defn collapse [query-fn & query-fns]
-  (reduce (fn [[queries] [queries' f']]
-            [(concat queries queries') f'])
-          query-fn
-          query-fns))
+(defn exec! [queries db]
+  (if db
+    (let [[query & query-fs] (colls/force-sequential queries)]
+      (->> query-fs
+           (reduce (fn [result query-f]
+                     (conj result (query-f result)))
+                   [(exec* db query)])
+           peek
+           (remove-namespaces)))
+    (transact (constantly queries))))
 
-(defn to-sqls [[queries]]
-  (map sql-format queries))
-
-(defn exec! [[queries f]]
-  (jdbc/db-transaction*
-    db-spec
-    (fn [db]
-      (when (seq queries)
-        (loop [[query & more] queries]
-          (if (seq more)
-            (do (exec* db query)
-                (recur more))
-            (->> (exec* db query)
-                 (sequence f)
-                 (remove-namespaces))))))))
-
-(defn single [[query f]]
-  [[query] f])
-
-(defn simple [[queries]]
-  [queries identity])
-
-(def single-simple (comp single simple vector))
+(defn transact [f]
+  (jdbc/db-transaction* db-spec #(exec! (f %) %) {:isolation :read-uncommitted}))

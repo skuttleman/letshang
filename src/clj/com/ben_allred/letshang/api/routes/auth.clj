@@ -1,10 +1,11 @@
 (ns com.ben-allred.letshang.api.routes.auth
   (:require
     [com.ben-allred.letshang.api.services.db.models.users :as models.users]
+    [com.ben-allred.letshang.api.services.handlers :refer [GET context]]
     [com.ben-allred.letshang.api.services.navigation :as nav]
-    [com.ben-allred.letshang.common.utils.encoders.jwt :as jwt]
     [com.ben-allred.letshang.common.services.env :as env]
-    [compojure.core :refer [ANY DELETE GET POST PUT context defroutes]]
+    [com.ben-allred.letshang.common.utils.encoders.jwt :as jwt]
+    [compojure.core :refer [defroutes]]
     [ring.util.response :as resp]))
 
 

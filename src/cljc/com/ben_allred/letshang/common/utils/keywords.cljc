@@ -1,4 +1,5 @@
 (ns com.ben-allred.letshang.common.utils.keywords
+  (:refer-clojure :exclude [replace])
   (:require
     [clojure.string :as string]))
 
@@ -17,3 +18,9 @@
 
 (defn namespaced [ns name']
   (keyword (name ns) (name name')))
+
+(defn replace [kw re replacement]
+  (-> kw
+      (safe-name)
+      (string/replace re (safe-name replacement))
+      (keyword)))

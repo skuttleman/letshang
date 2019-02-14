@@ -58,7 +58,8 @@
               :options (map (juxt :id users/full-name) associates)}
              (hangouts.res/with-attrs form [:invitee-ids]))]
         [:button.button.is-primary
-         {:type :submit}
+         {:type     :submit
+          :disabled (and (forms/attempted? form) (not (forms/valid? form)))}
          "Submit"]]])))
 
 (defn hangouts [state]

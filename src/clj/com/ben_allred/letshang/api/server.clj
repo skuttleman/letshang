@@ -1,7 +1,6 @@
 (ns com.ben-allred.letshang.api.server
   (:gen-class)
   (:require
-    [clojure.spec.alpha :as s]
     [clojure.string :as string]
     [clojure.tools.nrepl.server :as nrepl]
     [com.ben-allred.letshang.api.routes.core :as routes]
@@ -36,7 +35,6 @@
 
 (defn -dev [& {:as env}]
   (alter-var-root #'env/get assoc :dev? true)
-  (s/check-asserts true)
   (let [env (maps/map-keys (comp keyword
                                  string/lower-case
                                  #(string/replace % #"_" "-"))
