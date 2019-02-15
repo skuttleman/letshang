@@ -16,6 +16,15 @@
   [_ hangout]
   (dissoc hangout :created-at))
 
+(defn ^:private has-hangout [user-id]
+  [:or
+   [:= :hangouts.created-by user-id]
+   [:exists {:select [:id]
+             :from   [:invitees]
+             :where  [:and
+                      [:= :invitees.hangout-id :hangouts.id]
+                      [:= :invitees.user-id user-id]]}]])
+
 (defn ^:private select* [db clause]
   (-> clause
       (repo.hangouts/select-by*)
@@ -27,7 +36,7 @@
   ([user-id]
    (select-for-user nil user-id))
   ([db user-id]
-   (select* db [:= :hangouts.created-by user-id])))
+   (select* db (has-hangout user-id))))
 
 (defn find-for-user
   ([hangout-id user-id]
@@ -35,7 +44,7 @@
   ([db hangout-id user-id]
    (->> [:and
          [:= :hangouts.id hangout-id]
-         [:= :hangouts.created-by user-id]]
+         (has-hangout user-id)]
         (select* db)
         (models.invitees/with-invitees)
         (colls/only!))))

@@ -38,3 +38,9 @@
       (if (empty? more)
         (str result ", and " s)
         (recur (str result ", " s) more)))))
+
+(defn snake->kebab [s]
+  (string/replace (str s) #"_" "-"))
+
+(defn kebab->snake [s]
+  (string/replace (str s) #"-" "_"))

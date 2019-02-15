@@ -24,3 +24,9 @@
       (safe-name)
       (string/replace re (safe-name replacement))
       (keyword)))
+
+(defn snake->kebab [kw]
+  (replace kw #"_" :-))
+
+(defn kebab->snake [kw]
+  (replace kw #"-" :_))

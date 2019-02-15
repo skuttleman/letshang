@@ -51,4 +51,4 @@
    (->> state
         (:auth/user)
         (users/full-name)
-        (strings/format "Hi, %s. Thanks for coming to hang out."))])
+        (strings/format "Hi, %s. Thanks for hanging out."))])

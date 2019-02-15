@@ -6,6 +6,7 @@
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.maps :as maps]
     [honeysql.core :as sql]
     [jdbc.pool.c3p0 :as c3p0]))
 
@@ -34,9 +35,6 @@
   (c3p0/make-datasource-spec
     db-cfg))
 
-(defn ^:private underscore [kw]
-  (keywords/replace kw #"-" :_))
-
 (defn ^:private sql-format [query]
   (sql/format query :quoting :ansi))
 
@@ -60,15 +58,13 @@
       table (->> (:values query)
                  (colls/force-sequential)
                  (map (partial into {} (map (fn [[k v]]
-                                              [(underscore k) (->sql-value table k v)]))))
-                 (jdbc/insert-multi! db (underscore table)))
+                                              [(keywords/kebab->snake k) (->sql-value table k v)]))))
+                 (jdbc/insert-multi! db (keywords/kebab->snake table)))
       :else query)))
 
 (defn ^:private remove-namespaces [val]
   (cond
-    (map? val) (->> val
-                    (map (fn [[k v]] [(keyword (string/replace (name k) #"_" "-")) (remove-namespaces v)]))
-                    (into {}))
+    (map? val) (maps/map-kv keywords/snake->kebab remove-namespaces val)
     (coll? val) (map remove-namespaces val)
     :else val))
 

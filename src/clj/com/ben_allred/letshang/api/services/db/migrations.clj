@@ -2,8 +2,9 @@
   (:require
     [clojure.string :as string]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
-    [com.ben-allred.letshang.common.utils.numbers :as numbers]
     [com.ben-allred.letshang.common.utils.dates :as dates]
+    [com.ben-allred.letshang.common.utils.numbers :as numbers]
+    [com.ben-allred.letshang.common.utils.strings :as strings]
     [ragtime.jdbc :as rag-db]
     [ragtime.repl :as rag]))
 
@@ -40,7 +41,7 @@
   (let [migration-name (format "%s_%s"
                                (date-str)
                                (-> name
-                                   (string/replace #"-" "_")
+                                   (strings/kebab->snake)
                                    (string/lower-case)))]
     (spit (format "resources/migrations/%s.up.sql" migration-name) "\n")
     (spit (format "resources/migrations/%s.down.sql" migration-name) "\n")

@@ -8,6 +8,7 @@
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.utils.maps :as maps]
     [com.ben-allred.letshang.common.utils.numbers :as numbers]
+    [com.ben-allred.letshang.common.utils.strings :as strings]
     [compojure.core :refer [ANY DELETE GET POST PUT context defroutes]]
     [compojure.handler :refer [site]]
     [compojure.response :refer [Renderable]]
@@ -35,10 +36,7 @@
 
 (defn -dev [& {:as env}]
   (alter-var-root #'env/get assoc :dev? true)
-  (let [env (maps/map-keys (comp keyword
-                                 string/lower-case
-                                 #(string/replace % #"_" "-"))
-                           env)
+  (let [env (maps/map-keys (comp keyword string/lower-case strings/snake->kebab) env)
         nrepl-port (server-port env :nrepl-port 7000)]
     (run env #'routes/app-dev)
     (println "Server is running with #'wrap-reload")
