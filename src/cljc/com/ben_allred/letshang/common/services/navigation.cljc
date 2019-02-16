@@ -35,16 +35,16 @@
 (defn ^:private namify [[k v]]
   [k (str (keywords/safe-name v))])
 
-(defn ^:private re-format [route]
-  (-> route
-      (maps/update-maybe :route-params maps/update-maybe :hangout-id uuids/->uuid)))
+(defn ^:private re-format [{:keys [handler] :as route}]
+  (cond-> route
+    (#{:api/hangout :ui/hangout} handler) (update-in [:route-params :hangout-id] uuids/->uuid)))
 
 (defn match-route [routes path]
   (let [qp (qp/decode (second (string/split path #"\?")))]
     (-> routes
         (bidi/match-route path)
-        (re-format)
-        (cond-> (seq qp) (assoc :query-params qp)))))
+        (cond-> (seq qp) (assoc :query-params qp))
+        (re-format))))
 
 (defn path-for [routes page {:keys [query-params route-params]}]
   (let [qp (qp/encode query-params)]

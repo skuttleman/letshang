@@ -43,6 +43,11 @@
   [key value]
   [[key (str (keywords/safe-name value))]])
 
+(defn ^:private decodify [k v]
+  (cond
+    (seq v) [[(keyword k) v]]
+    :else [[(keyword k) true]]))
+
 (defn encode [qp]
   (->> qp
        (mapcat encodify)
@@ -50,4 +55,7 @@
        (string/join "&")))
 
 (defn decode [s]
-  )
+  (when s
+    (->> (string/split s #"&")
+         (map (comp vec #(string/split % #"=")))
+         (reduce (fn [qp [k v]] (into qp (decodify k v))) {}))))
