@@ -1,12 +1,9 @@
 (ns com.ben-allred.letshang.common.views.components.dropdown
   (:require
     [clojure.set :as set]
-    [clojure.string :as string]
-    [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]
-    [com.ben-allred.letshang.common.utils.strings :as strings]
     [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
     [com.ben-allred.letshang.common.views.components.loading :as loading]))
@@ -32,7 +29,7 @@
   (let [selected-count (count (:selected attrs))]
     [:button.button
      (-> attrs
-         (select-keys #{:class :on-blur :ref :on-click})
+         (select-keys #{:class :disabled :on-blur :on-click :ref})
          (assoc :type :button))
      (case selected-count
        0 "Select…"

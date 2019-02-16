@@ -19,3 +19,9 @@
       (or :<>)
       (colls/force-vector)
       (into more-args)))
+
+(defn render-with-attrs [component attrs & more-args]
+  (-> component
+      (colls/force-vector)
+      (update 1 merge attrs)
+      (into more-args)))

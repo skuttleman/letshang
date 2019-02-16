@@ -35,18 +35,16 @@
           (dispatch)
           (ch/then source->model)))))
 
-(defn ^:private edit-api [hangout-id]
+(defn ^:private edit-api [hangout]
   (reify
     forms/IFetch
     (fetch [_]
-      (-> (actions/fetch-hangout hangout-id)
-          (dispatch)
-          (ch/then source->model)))
+      (ch/resolve (select-keys hangout #{:name})))
     forms/ISave
     (save! [_ model]
       (-> model
           (model->source)
-          (->> (actions/update-hangout hangout-id))
+          (->> (actions/update-hangout (:id hangout)))
           (dispatch)
           (ch/then source->model)))))
 
@@ -64,9 +62,9 @@
 (defn form
   ([]
    (form nil))
-  ([hangout-id]
+  ([hangout]
     #?(:clj  (forms.noop/create nil)
-       :cljs (forms.std/create (if hangout-id (edit-api hangout-id) create-api) validator))))
+       :cljs (forms.std/create (if hangout (edit-api hangout) create-api) validator))))
 
 (defn create->modify [response]
   (nav/nav-and-replace! :ui/hangout {:route-params {:hangout-id (:id response)}}))

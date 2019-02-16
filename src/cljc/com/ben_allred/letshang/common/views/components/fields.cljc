@@ -4,7 +4,8 @@
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.strings :as strings]))
+    [com.ben-allred.letshang.common.utils.strings :as strings]
+    [com.ben-allred.letshang.common.views.components.core :as components]))
 
 (defn ^:private modify-coll [xform coll]
   (transduce (comp (map-indexed vector) xform) conj coll))
@@ -107,23 +108,28 @@
 
 (defn openable [_component]
   (let [open? (r/atom false)
-        listeners (atom nil)]
-    (swap! listeners conj
-           (dom/add-listener dom/window "click" #(reset! open? false))
-           (dom/add-listener dom/window "keypress" #(when (= :esc (dom/event->key %))
-                                                     (reset! open? false))))
+        listeners [(dom/add-listener dom/window "click" #(reset! open? false))
+                   (dom/add-listener dom/window "keypress" #(when (= :esc (dom/event->key %))
+                                                              (reset! open? false)))]]
     (r/create-class
       {:component-will-unmount
        (fn [_]
-         (run! dom/remove-listener @listeners))
+         (run! dom/remove-listener listeners))
        :reagent-render
        (fn [component]
-         (let [control (colls/force-vector component)
-               attrs {:on-toggle (fn [e]
+         (let [attrs {:on-toggle (fn [e]
                                    (dom/stop-propagation e)
                                    (swap! open? not))
                       :open?     @open?}]
-           (update control 1 merge attrs)))})))
+           (components/render-with-attrs component attrs)))})))
+
+(defn stateful [initial-state _component]
+  (let [state (r/atom initial-state)
+        change-state (partial reset! state)]
+    (fn [_initial-state component]
+      (let [attrs {:state @state
+                   :change-state change-state}]
+        (components/render-with-attrs component attrs)))))
 
 (defn multi [{:keys [key-fn value new-fn on-change errors class] :as attrs} component]
   [form-field

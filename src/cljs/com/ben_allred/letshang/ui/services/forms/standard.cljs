@@ -67,7 +67,7 @@
 (defn ^:private request* [request state validator]
   (-> request
       (ch/peek (comp (partial reset! state) (partial init validator))
-               (partial swap! state assoc :status :ready :api-error))))
+               (comp (partial swap! state assoc :status :ready :api-error) :errors))))
 
 (defn create [api validator]
   (let [state (r/atom nil)
