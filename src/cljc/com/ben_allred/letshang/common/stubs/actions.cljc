@@ -26,6 +26,14 @@
   #?(:clj  noop
      :cljs (store.actions/fetch-hangout hangout-id)))
 
+(defn remove-toast [toast-id]
+  #?(:clj  noop
+     :cljs (store.actions/remove-toast toast-id)))
+
+(defn toast [level body]
+  #?(:clj  noop
+     :cljs (store.actions/toast level body)))
+
 (defn update-hangout [hangout-id hangout]
   #?(:clj  noop
      :cljs (store.actions/update-hangout hangout-id hangout)))

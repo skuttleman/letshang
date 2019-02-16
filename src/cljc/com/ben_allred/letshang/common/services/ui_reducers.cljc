@@ -1,9 +1,9 @@
 (ns com.ben-allred.letshang.common.services.ui-reducers
   (:require
     [com.ben-allred.collaj.reducers :as collaj.reducers]
+    [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log #?@(:cljs [:include-macros true])]
-    [com.ben-allred.letshang.common.utils.maps :as maps #?@(:cljs [:include-macros true])]
-    [com.ben-allred.letshang.common.utils.keywords :as keywords]))
+    [com.ben-allred.letshang.common.utils.maps :as maps #?@(:cljs [:include-macros true])]))
 
 (defn ^:private resource [namespace]
   (let [[request success error] (->> [:request :success :error]
@@ -28,8 +28,19 @@
      :router/navigate page
      state)))
 
+(defn ^:private toasts
+  ([] {})
+  ([state [type {:keys [id level body]}]]
+   (case type
+     :toast/add (assoc state id {:state :init :level level :body body})
+     :toast/show (maps/update-maybe state id assoc :state :showing)
+     :toast/hide (maps/update-maybe state id assoc :state :removing)
+     :toast/remove (dissoc state id)
+     state)))
+
 (def root
   (collaj.reducers/combine (maps/->map associates
                                        hangout
                                        hangouts
-                                       page)))
+                                       page
+                                       toasts)))

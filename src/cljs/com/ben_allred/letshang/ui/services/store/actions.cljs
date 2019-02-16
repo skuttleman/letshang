@@ -1,10 +1,12 @@
 (ns com.ben-allred.letshang.ui.services.store.actions
   (:require
+    [clojure.core.async :as async]
     [com.ben-allred.letshang.common.services.http :as http]
     [com.ben-allred.letshang.common.utils.chans :as ch]
+    [com.ben-allred.letshang.common.utils.dates :as dates]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
-    [com.ben-allred.letshang.ui.services.navigation :as nav]
-    [com.ben-allred.letshang.common.utils.logging :as log]))
+    [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.ui.services.navigation :as nav]))
 
 (defn ^:private request* [request dispatch kwd-ns]
   (dispatch [(keywords/namespaced kwd-ns :request)])
@@ -40,6 +42,28 @@
   (-> (nav/path-for :api/hangouts)
       (http/get)
       (request* dispatch :hangouts)))
+
+(defn remove-toast [toast-id]
+  (fn [[dispatch]]
+    (dispatch [:toast/hide {:id toast-id}])
+    (async/go
+      (async/<! (async/timeout 500))
+      (dispatch [:toast/remove {:id toast-id}]))
+    nil))
+
+(defn toast [level body]
+  (fn [[dispatch]]
+    (let [toast-id (dates/inst->ms (dates/now))]
+      (->> {:id    toast-id
+            :level level
+            :body  (delay (async/go
+                            (dispatch [:toast/show {:id toast-id}])
+                            (async/<! (async/timeout 6000))
+                            (dispatch (remove-toast toast-id)))
+                          body)}
+           (conj [:toast/add])
+           (dispatch))
+      nil)))
 
 (defn update-hangout [hangout-id hangout]
   (fn [[dispatch]]

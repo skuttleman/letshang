@@ -92,3 +92,6 @@
 (defn now []
   #?(:clj  (Instant/now)
      :cljs (DateTime.)))
+
+(defn inst->ms [inst?]
+  (.getTime (->inst inst?)))

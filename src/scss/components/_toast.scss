@@ -1,0 +1,43 @@
+.toast-container {
+    height: 100vh;
+    left: 0;
+    pointer-events: none;
+    position: fixed;
+    top: 0;
+    width: 100vw;
+    z-index: 100;
+
+    .toast-messages {
+        align-items: flex-end;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+
+        .toast-message {
+            background-color: white;
+            box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, .2);
+            margin: 1px;
+            pointer-events: auto;
+            transition: margin-right 0.25s linear,
+                        margin-top 0.25s linear 0.25s;
+            width: 400px;
+
+            &.adding {
+                margin-right: -401px;
+            }
+
+            &.removing {
+                margin-right: -401px;
+            }
+
+            .message-body {
+                display: flex;
+                width: 100%;
+                .body-text {
+                    flex-grow: 1;
+                }
+            }
+        }
+    }
+}

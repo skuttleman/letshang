@@ -2,9 +2,10 @@
   (:require
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.utils.logging :as log :include-macros true]
+    [com.ben-allred.letshang.common.views.components.loading :as loading]
+    [com.ben-allred.letshang.common.views.components.toast :as toast]
     [com.ben-allred.letshang.common.views.pages.dashboard :as dashboard]
     [com.ben-allred.letshang.common.views.pages.hangouts :as hangouts]
-    [com.ben-allred.letshang.common.views.components.loading :as loading]
     [com.ben-allred.letshang.common.views.pages.main :as main]))
 
 (def ^:private handler->component
@@ -21,7 +22,8 @@
     {:class [(str "page-" (name (get-in state [:page :handler])))]}
     [:div.inset
      [component state]]]
-   [dashboard/footer]])
+   [dashboard/footer]
+   [toast/toasts (:toasts state)]])
 
 (defn app [state]
   (let [handler (get-in state [:page :handler])
