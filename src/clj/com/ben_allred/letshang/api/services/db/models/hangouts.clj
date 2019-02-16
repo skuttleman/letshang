@@ -32,30 +32,23 @@
       (models/select ::model (models/under :hangouts))
       (repos/exec! db)))
 
-(defn select-for-user
-  ([user-id]
-   (select-for-user nil user-id))
-  ([db user-id]
-   (select* db (has-hangout user-id))))
+(defn select-for-user [db user-id]
+  (select* db (has-hangout user-id)))
 
-(defn find-for-user
-  ([hangout-id user-id]
-   (find-for-user nil hangout-id user-id))
-  ([db hangout-id user-id]
-   (->> [:and
-         [:= :hangouts.id hangout-id]
-         (has-hangout user-id)]
-        (select* db)
-        (models.invitees/with-invitees)
-        (colls/only!))))
+(defn find-for-user [db hangout-id user-id]
+  (->> [:and
+        [:= :hangouts.id hangout-id]
+        (has-hangout user-id)]
+       (select* db)
+       (models.invitees/with-invitees db)
+       (colls/only!)))
 
-(defn create [hangout created-by]
-  (repos/transact
-    (fn [db]
-      [(-> hangout
+(defn create [db hangout created-by]
+  (-> [(-> hangout
            (assoc :created-by created-by)
            (repo.hangouts/insert))
        (fn [[[{hangout-id :id}]]]
          (models.invitees/insert-many! db [hangout-id] (:invitee-ids hangout) created-by))
        (fn [[[{hangout-id :id}]]]
-         (find-for-user db hangout-id created-by))])))
+         (find-for-user db hangout-id created-by))]
+      (repos/exec! db)))

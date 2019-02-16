@@ -35,10 +35,10 @@
       (-> (env/get :base-url)
           (str (nav/path-for :auth/callback {:query-params (select-keys params #{:email})}))
           (resp/redirect)))
-    (GET "/callback" {:keys [params]}
-      (-> params
-          (:email)
-          (models.users/find-by-email)
-          (login)))
+    (GET "/callback" {:keys [db params]}
+      (->> params
+           (:email)
+           (models.users/find-by-email db)
+           (login)))
     (GET "/logout" []
       (logout))))

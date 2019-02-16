@@ -2,6 +2,7 @@
   (:require
     [clojure.string :as string]
     [com.ben-allred.formation.core :as f]
+    [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.content :as content]
     [com.ben-allred.letshang.common.utils.encoders.jwt :as jwt]
@@ -45,6 +46,12 @@
       (-> request
           (cond-> user (assoc :auth/user user))
           (handler)))))
+
+(defn with-transaction [handler]
+  (fn [request]
+    (repos/transact
+      (fn [db]
+        (handler (assoc request :db db))))))
 
 (defn abortable [handler]
   (fn [request]

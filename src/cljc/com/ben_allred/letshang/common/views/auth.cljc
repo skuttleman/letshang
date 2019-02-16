@@ -16,7 +16,10 @@
   (let [email (r/atom nil)]
     (fn [text]
       [:div
-       [:input {:type :text :value @email :on-change #(reset! email (strings/trim-to-nil (.-value (.-target %))))}]
+       [:input {:type      :text
+                :value     @email
+                :on-change #(reset! email (strings/trim-to-nil (.-value (.-target %))))
+                #?@(:clj [:disabled true])}]
        [login text @email]])))
 
 (defn logout [{:keys [text minimal? class]}]

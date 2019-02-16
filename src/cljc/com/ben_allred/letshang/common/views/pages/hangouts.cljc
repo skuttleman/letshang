@@ -13,13 +13,26 @@
     [com.ben-allred.letshang.common.views.components.loading :as loading]
     [com.ben-allred.letshang.common.utils.users :as users]))
 
-(defn ^:private hangout* [{{:keys [name invitees]} :hangout}]
+(defn ^:private creator's-hangout [{:keys [name invitees]}]
   [:div
    [:h1.label name]
    [:ul
     (for [invitee invitees]
       ^{:key (:id invitee)}
       [:li (:handle invitee)])]])
+
+(defn ^:private invitee's-hangout [user {:keys [name invitees]}]
+  [:div
+   [:h1.label name]
+   [:ul
+    (for [invitee invitees]
+      ^{:key (:id invitee)}
+      [:li (:handle invitee)])]])
+
+(defn ^:private hangout* [user {:keys [hangout]}]
+  (if (= (:id user) (:created-by hangout))
+    [creator's-hangout hangout]
+    [invitee's-hangout user hangout]))
 
 (defn ^:private hangouts* [{:keys [hangouts]}]
   [:div
@@ -75,7 +88,7 @@
                              actions/fetch-associates)
     :keys   #{:hangout :associates}
     :state  state}
-   hangout*])
+   [hangout* (:auth/user state)]])
 
 (defn create [state]
   [loading/with-status

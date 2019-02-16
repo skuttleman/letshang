@@ -41,6 +41,7 @@
 
 (def app
   (-> #'base
+      (#'middleware/with-transaction)
       (#'middleware/auth)
       (#'middleware/log-response)
       (wrap-multipart-params)

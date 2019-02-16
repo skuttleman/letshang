@@ -10,8 +10,6 @@
     [honeysql.core :as sql]
     [jdbc.pool.c3p0 :as c3p0]))
 
-(declare transact)
-
 (defn ^:private sql-value* [table column _]
   [table column])
 
@@ -69,15 +67,13 @@
     :else val))
 
 (defn exec! [queries db]
-  (if db
-    (let [[query & query-fs] (colls/force-sequential queries)]
-      (->> query-fs
-           (reduce (fn [result query-f]
-                     (conj result (query-f result)))
-                   [(exec* db query)])
-           peek
-           (remove-namespaces)))
-    (transact (constantly queries))))
+  (let [[query & query-fs] (colls/force-sequential queries)]
+    (->> query-fs
+         (reduce (fn [result query-f]
+                   (conj result (query-f result)))
+                 [(exec* db query)])
+         peek
+         (remove-namespaces))))
 
 (defn transact [f]
-  (jdbc/db-transaction* db-spec #(exec! (f %) %) {:isolation :read-uncommitted}))
+  (jdbc/db-transaction* db-spec f {:isolation :read-uncommitted}))

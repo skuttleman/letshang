@@ -7,8 +7,8 @@
 
 (defroutes routes
   (context "/users" []
-    (GET "/associates" {:keys [auth/user]}
+    (GET "/associates" {:keys [auth/user db]}
       (->> (:id user)
-           (models.users/find-known-associates)
+           (models.users/find-known-associates db)
            (hash-map :data)
            (conj [:http.status/ok])))))

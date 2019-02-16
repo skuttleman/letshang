@@ -16,17 +16,17 @@
 
 (defroutes routes
   (context "/hangouts" []
-    (POST "/" ^{:request-spec post-spec} {:keys [auth/user body]}
+    (POST "/" ^{:request-spec post-spec} {:keys [auth/user body db]}
       (->> (:id user)
-           (models.hangouts/create (:data body))
+           (models.hangouts/create db (:data body))
            (hash-map :data)
            (conj [:http.status/created])))
-    (GET "/" {:keys [auth/user]}
+    (GET "/" {:keys [auth/user db]}
       (->> (:id user)
-           (models.hangouts/select-for-user)
+           (models.hangouts/select-for-user db)
            (hash-map :data)
            (conj [:http.status/ok])))
-    (GET "/:hangout-id" ^{:transformer transform-spec} {{:keys [hangout-id]} :params :keys [auth/user]}
-      (if-let [hangout (models.hangouts/find-for-user hangout-id (:id user))]
+    (GET "/:hangout-id" ^{:transformer transform-spec} {{:keys [hangout-id]} :params :keys [auth/user db]}
+      (if-let [hangout (models.hangouts/find-for-user db hangout-id (:id user))]
         [:http.status/ok {:data hangout}]
         [:http.status/not-found {:message "Hangout not found"}]))))

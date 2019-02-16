@@ -9,19 +9,19 @@
   [_ user]
   (dissoc user :created-at))
 
-(defn select-by-email [email]
+(defn select-by-email [db email]
   (-> [:= :email email]
       (repo.users/select-by*)
       (models/select ::model)
-      (repos/exec! nil)))
+      (repos/exec! db)))
 
-(defn find-by-email [email]
-  (-> email
-      (select-by-email)
-      (colls/only!)))
+(defn find-by-email [db email]
+  (->> email
+       (select-by-email db)
+       (colls/only!)))
 
-(defn find-known-associates [user-id]
+(defn find-known-associates [db user-id]
   (-> user-id
       (repo.users/select-known-associates)
       (models/select ::model)
-      (repos/exec! nil)))
+      (repos/exec! db)))

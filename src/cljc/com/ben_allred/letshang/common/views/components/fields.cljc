@@ -1,10 +1,10 @@
 (ns com.ben-allred.letshang.common.views.components.fields
   (:require
     [com.ben-allred.letshang.common.stubs.reagent :as r]
+    [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.strings :as strings]
-    [com.ben-allred.letshang.common.views.components.core :as components]))
+    [com.ben-allred.letshang.common.utils.strings :as strings]))
 
 (defn ^:private modify-coll [xform coll]
   (transduce (comp (map-indexed vector) xform) conj coll))
@@ -118,11 +118,12 @@
          (run! dom/remove-listener @listeners))
        :reagent-render
        (fn [component]
-         (let [attrs {:on-toggle (fn [e]
+         (let [control (colls/force-vector component)
+               attrs {:on-toggle (fn [e]
                                    (dom/stop-propagation e)
                                    (swap! open? not))
                       :open?     @open?}]
-           [components/render component attrs]))})))
+           (update control 1 merge attrs)))})))
 
 (defn multi [{:keys [key-fn value new-fn on-change errors class] :as attrs} component]
   [form-field
