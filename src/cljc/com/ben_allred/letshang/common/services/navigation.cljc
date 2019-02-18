@@ -21,6 +21,8 @@
      [["/hangouts"
        [["" :api/hangouts]
         [["/" [uuids/regex :hangout-id]] :api/hangout]]]
+      ["/invitations"
+       [[["/" [uuids/regex :invitation-id]] :api/invitation]]]
       ["/users"
        [["/associates" :api/associates]]]]]
 

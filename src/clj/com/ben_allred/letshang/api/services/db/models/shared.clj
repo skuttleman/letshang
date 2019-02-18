@@ -22,8 +22,8 @@
    (select query model identity))
   ([query model x-form]
    [query
-    (comp (partial sequence (comp (map (partial ->api model)) x-form))
-          peek)]))
+    x-form
+    (map (partial ->api model))]))
 
 (defn insert-many [query entity model]
   (update query :values (comp (partial map #(->db model (select-keys % (:fields entity))))

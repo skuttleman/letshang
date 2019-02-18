@@ -51,6 +51,12 @@
       (dispatch [:toast/remove {:id toast-id}]))
     nil))
 
+(defn set-response [invitation-id body]
+  (fn [[dispatch]]
+    (-> (nav/path-for :api/invitation {:route-params {:invitation-id invitation-id}})
+        (http/patch {:body body})
+        (request* dispatch :invitations))))
+
 (defn toast [level body]
   (fn [[dispatch]]
     (let [toast-id (dates/inst->ms (dates/now))]

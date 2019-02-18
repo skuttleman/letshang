@@ -54,9 +54,9 @@
   {:fields #{:id :user-id :associate-id :created-by :created-at}
    :table  :known-associates})
 
-(def invitees
-  {:fields #{:id :hangout-id :user-id :match-type :created-by :created-at}
-   :table  :invitees})
+(def invitations
+  {:fields #{:id :hangout-id :user-id :match-type :response :created-by :created-at}
+   :table  :invitations})
 
 (def users
   {:fields #{:id :first-name :last-name :handle :email :mobile-number :created-at}

@@ -35,8 +35,9 @@
        0 "Select…"
        1 "1 Item Selected"
        (str selected-count " Items Selected"))
-     [(if (:open? attrs) :i.fas.fa-chevron-up :i.fas.fa-chevron-down)
-      {:style {:margin-left "10px"}}]]))
+     [:span
+      {:style {:margin-left "10px"}}
+      [components/icon (if (:open? attrs) :chevron-up :chevron-down)]]]))
 
 (defn ^:private dropdown* [{:keys [button-control loading? list-control on-search open? options options-by-id value]
                             :or   {list-control lazy-list button-control button}

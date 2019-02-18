@@ -59,7 +59,7 @@
      [:article.tile.is-child.notification
       [:div.dashboard-tile
        [:div
-        [:h1.title [:i.fas.fa-users] " Who?"]
+        [:h1.title [components/icon :users] " Who?"]
         [:h2.subtitle "Limit the invitees or welcome friends of friends"]
         [:p "Do you want to do brunch with a select few friends? Are your co-workers welcome to invite other people to
           happy hour? Maybe there's room for extra people at your Talk Like a Pirate Day gala, but you want to have
@@ -71,7 +71,7 @@
      [:article.tile.is-child.notification
       [:div.dashboard-tile
        [:div
-        [:h1.title [:i.fas.fa-calendar-alt] " When?"]
+        [:h1.title [components/icon :calendar-alt] " When?"]
         [:h2.subtitle "Specify the date and time or coordinate with everyone's schedule"]
         [:p "Coordinating people's schedules can be challenging, but it shouldn't be a chore. Everyone can indicate what
           works best for them. Decide democratically, or limit it to the guest of honor's availability. Plans change.
@@ -82,7 +82,7 @@
      [:article.tile.is-child.notification
       [:div.dashboard-tile
        [:div
-        [:h1.title [:i.fas.fa-map-marked-alt] " Where?"]
+        [:h1.title [components/icon :map-marked-alt] " Where?"]
         [:h2.subtitle "Pick the place or let others make suggestions and vote on it"]
         [:p "Whether you know where you want to meet or you're hoping one of your friends will step up and volunteer to
           host, planning a get-together shouldn't be difficult. Suggest a few options. Let your friends make

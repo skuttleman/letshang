@@ -22,7 +22,7 @@
   (comp (partial hash-map :data)
         (f/transformer
           {:name strings/trim-to-nil})
-        #(select-keys % #{:name :invitee-ids})))
+        #(select-keys % #{:name :invitation-ids})))
 
 (def ^:private create-api
   (reify
@@ -50,6 +50,18 @@
           (dispatch)
           (ch/then source->model)))))
 
+(defn ^:private response-api [model]
+  (reify
+    forms/IFetch
+    (fetch [_]
+      (ch/resolve model))
+    forms/ISave
+    (save! [_ {:keys [response] :as next}]
+      (-> {:data {:response response}}
+          (->> (actions/set-response (:id model)))
+          (dispatch)
+          (ch/then (constantly next))))))
+
 (def ^:private model->view
   {})
 
@@ -64,7 +76,7 @@
 (def validator
   (f/validator {:name [(f/pred (complement string/blank?) "Your hangout must have a name")
                        (f/required "Your hangout must have a name")]
-                :invitee-ids ^::f/coll-of [(f/pred uuid? "Must be a UUID")]}))
+                :invitation-ids ^::f/coll-of [(f/pred uuid? "Must be a UUID")]}))
 
 (defn form
   ([]
@@ -72,6 +84,10 @@
   ([hangout]
     #?(:clj  (forms.noop/create nil)
        :cljs (forms.std/create (if hangout (edit-api hangout) create-api) validator))))
+
+(defn response-form [model]
+  #?(:clj  (forms.noop/create nil)
+     :cljs (forms.std/create (response-api model) nil)))
 
 (defn create->modify [response]
   (nav/nav-and-replace! :ui/hangout {:route-params {:hangout-id (:id response)}}))

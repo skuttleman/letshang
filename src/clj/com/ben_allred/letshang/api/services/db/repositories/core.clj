@@ -50,15 +50,19 @@
                             result)))))))
 
 (defn ^:private exec* [db query]
-  (let [table (:insert-into query)]
+  (let [{insert-table :insert-into update-table :update} query]
     (sql-log query)
     (cond
       (:select query) (jdbc/query db (sql-format query))
-      (:update query) (jdbc/execute! db (sql-format query))
-      table (->> (:values query)
-                 (colls/force-sequential)
-                 (map (prep/prepare ->sql-value (keywords/kebab->snake table)))
-                 (jdbc/insert-multi! db (keywords/kebab->snake table)))
+      update-table (->> (keywords/kebab->snake update-table)
+                        (prep/prepare ->sql-value)
+                        (update query :set)
+                        (sql-format)
+                        (jdbc/execute! db))
+      insert-table (->> (:values query)
+                        (colls/force-sequential)
+                        (map (prep/prepare ->sql-value (keywords/kebab->snake insert-table)))
+                        (jdbc/insert-multi! db (keywords/kebab->snake insert-table)))
       :else query)))
 
 (defn ^:private remove-namespaces [val]
@@ -68,13 +72,11 @@
     :else val))
 
 (defn exec! [queries db]
-  (let [[query & query-fs] (colls/force-sequential queries)]
-    (->> query-fs
-         (reduce (fn [result query-f]
-                   (conj result (query-f result)))
-                 [(exec* db query)])
-         peek
-         (remove-namespaces))))
+  (let [[query xform-before xform-after] (colls/force-sequential queries)]
+    (-> (exec* db query)
+        (cond->> xform-before (sequence xform-before))
+        (remove-namespaces)
+        (cond->> xform-after (sequence xform-after)))))
 
 (defn transact [f]
   (jdbc/db-transaction* db-spec f {:isolation :read-uncommitted}))

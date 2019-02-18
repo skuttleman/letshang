@@ -1,7 +1,7 @@
 (ns com.ben-allred.letshang.api.services.db.models.hangouts
   (:require
     [com.ben-allred.letshang.api.services.db.entities :as entities]
-    [com.ben-allred.letshang.api.services.db.models.invitees :as models.invitees]
+    [com.ben-allred.letshang.api.services.db.models.invitations :as models.invitations]
     [com.ben-allred.letshang.api.services.db.models.shared :as models]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.hangouts :as repo.hangouts]
@@ -20,14 +20,14 @@
   [:or
    [:= :hangouts.created-by user-id]
    [:exists {:select [:id]
-             :from   [:invitees]
+             :from   [:invitations]
              :where  [:and
-                      [:= :invitees.hangout-id :hangouts.id]
-                      [:= :invitees.user-id user-id]]}]])
+                      [:= :invitations.hangout-id :hangouts.id]
+                      [:= :invitations.user-id user-id]]}]])
 
 (defn ^:private select* [db clause]
   (-> clause
-      (repo.hangouts/select-by*)
+      (repo.hangouts/select-by)
       (entities/inner-join entities/users :creator [:= :creator.id :hangouts.created-by])
       (models/select ::model (models/under :hangouts))
       (repos/exec! db)))
@@ -42,7 +42,7 @@
         [:= :hangouts.id hangout-id]
         (has-hangout user-id)]
        (select* db)
-       (models.invitees/with-invitees db)
+       (models.invitations/with-invitations db)
        (colls/only!)))
 
 (defn create [db hangout created-by]
@@ -52,19 +52,20 @@
                        (repos/exec! db)
                        (colls/only!)
                        (:id))]
-    (models.invitees/insert-many! db [hangout-id] (:invitee-ids hangout) created-by)
+    (models.invitations/insert-many! db [hangout-id] (:invitation-ids hangout) created-by)
     (find-for-user db hangout-id created-by)))
 
 (defn modify [db hangout-id hangout created-by]
   (when (-> [:and
              [:= :hangouts.id hangout-id]
              [:= :hangouts.created-by created-by]]
-            (repo.hangouts/select-by*)
+            (repo.hangouts/select-by)
             (repos/exec! db)
             (colls/only!))
     (-> hangout
         (repo.hangouts/modify [:= :hangouts.id hangout-id])
+        (models/modify entities/hangouts ::model)
         (update :set select-keys #{:name})
         (repos/exec! db))
-    (models.invitees/insert-many! db [hangout-id] (:invitee-ids hangout) created-by)
+    (models.invitations/insert-many! db [hangout-id] (:invitation-ids hangout) created-by)
     (find-for-user db hangout-id created-by)))

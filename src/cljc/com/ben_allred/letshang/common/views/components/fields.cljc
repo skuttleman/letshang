@@ -34,11 +34,10 @@
            [:li.error
             {:key error}
             error])])]
-     (into [:div
-            (cond-> {}
-              tooltip? (assoc :data-tooltip (strings/commanate errors)
-                              :class ["tooltip" "is-tooltip-danger" "is-tooltip-multiline"]))]
-           body)]))
+     [:div
+      (into [components/tooltip {:text  (when tooltip? (strings/commanate errors))
+                                 :class ["is-tooltip-danger" "is-tooltip-multiline"]}]
+            body)]]))
 
 (defn ^:private with-auto-focus [component]
   (fn [{:keys [auto-focus?]} & _]

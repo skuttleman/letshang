@@ -11,7 +11,7 @@
 
 (defn select-by-email [db email]
   (-> [:= :email email]
-      (repo.users/select-by*)
+      (repo.users/select-by)
       (models/select ::model)
       (repos/exec! db)))
 

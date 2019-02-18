@@ -30,6 +30,10 @@
   #?(:clj  noop
      :cljs (store.actions/remove-toast toast-id)))
 
+(defn set-response [invitation-id body]
+  #?(:clj  noop
+     :cljs (store.actions/set-response invitation-id body)))
+
 (defn toast [level body]
   #?(:clj  noop
      :cljs (store.actions/toast level body)))
