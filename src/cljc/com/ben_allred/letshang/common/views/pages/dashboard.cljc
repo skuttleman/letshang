@@ -47,13 +47,13 @@
    [:div.logo-wrapper
     [:img.logo
      {:src "/images/logo.png"}]]
-   [:div.tag-line.space-below
+   [:div.tag-line.layout--space-below
     [:p "Organizing a get together"]
     [:p "shouldn't be a chore."]
     [auth/login "login to get started" "skuttleman@gmail.com"]]])
 
 (defn ^:private tiles []
-  [:div.gutters.xl.xxl
+  [:div.gutters.layout--xl.layout--xxl
    [:div.tile.is-parent
     [:div.tile.is-parent
      [:article.tile.is-child.notification
@@ -92,9 +92,9 @@
         [:div [auth/login "get started" "skuttleman@gmail.com"]]]]]]]])
 
 (defn ^:private event-types [items]
-  [:div.gutters.xl.xxl.space-below
-   [:div.inset
-    [:div.inset
+  [:div.gutters.layout--xl.layout--xxl.layout--space-below
+   [:div.layout--inset
+    [:div.layout--inset
      [:article.has-text-centered
       [:div.dashboard-tile
        [:div

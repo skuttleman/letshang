@@ -14,30 +14,37 @@
     [com.ben-allred.letshang.common.views.resources.core :as res]
     [com.ben-allred.letshang.common.views.resources.hangouts :as hangouts.res]))
 
-(defn hangout-form [form associates]
-  [:form.form
+(defn ^:private hangout-form [form associates on-saved & buttons]
+  [:form.form.layout--stack
    {:on-submit (fn [e]
                  (dom/prevent-default e)
                  (-> form
                      (forms/persist!)
-                     (ch/then hangouts.res/create->modify)
-                     (ch/catch res/toast-error)))}
+                     (ch/peek (res/toast-success "Your hangout has been saved.")
+                              res/toast-error)
+                     (ch/then on-saved)))}
    [fields/input
     (-> {:label "Name"}
         (hangouts.res/with-attrs form [:name]))]
-   [dropdown/dropdown
-    (-> {:label   "Invitees"
-         :options (map (juxt :id users/full-name) associates)}
-        (hangouts.res/with-attrs form [:invitee-ids]))]
-   [:button.button.is-primary
-    {:type     :submit
-     :disabled (or (not (forms/ready? form))
-                   (and (forms/attempted? form) (not (forms/valid? form))))}
-    "Save"]])
+   (when (seq associates)
+     [dropdown/dropdown
+      (-> {:label   "Invitees"
+           :options (map (juxt :id users/full-name) associates)}
+          (hangouts.res/with-attrs form [:invitee-ids]))])
+   (-> [:div.buttons
+        [:button.button.is-primary
+         {:type     :submit
+          :disabled (or (not (forms/ready? form))
+                        (and (forms/attempted? form) (not (forms/valid? form))))}
+         "Save"]]
+       (into buttons)
+       (cond->
+         (not (forms/ready? form))
+         (conj [:div {:style {:margin-bottom "8px"}} [loading/spinner]])))])
 
 (defn ^:private creator's-hangout-view [{:keys [change-state]} {{:keys [name invitees]} :hangout}]
   [:div
-   [:nav.buttons
+   [:div.buttons
     [:button.button.is-info
      {:on-click #(change-state :edit)}
      "Edit"]]
@@ -52,11 +59,14 @@
         already-invited? (comp (set (map :id (:invitees hangout))) :id)]
     (fn [{:keys [change-state]} {:keys [associates]}]
       [:div
-       [:nav.buttons
+       [hangout-form
+        form
+        (remove already-invited? associates)
+        (hangouts.res/on-modify change-state)
         [:button.button.is-info
-         {:on-click #(change-state :normal)}
-         "Cancel"]]
-       [hangout-form form (remove already-invited? associates)]])))
+         {:on-click #(change-state :normal)
+          :type :button}
+         "Cancel"]]])))
 
 (defn ^:private creator's-hangout [attrs resources]
   (case (:state attrs)
@@ -78,7 +88,7 @@
 
 (defn ^:private hangouts* [{:keys [hangouts]}]
   [:div
-   [:nav.buttons
+   [:div.buttons
     [:a.button.is-primary
      {:href (nav/path-for :ui/hangout-new)}
      "Create"]]
@@ -95,15 +105,17 @@
   (let [form (hangouts.res/form)]
     (fn [{:keys [associates]}]
       [:div
-       [:nav.buttons
+       [hangout-form
+        form
+        associates
+        hangouts.res/create->modify
         (if (not (forms/ready? form))
-          [:button.button.is-warning.is-text
-           {:disabled true}
+          [:button.button.is-warning
+           {:disabled true :type :button}
            "Cancel"]
-          [:a.button.is-warning.is-text
+          [:a.button.is-warning
            {:href (nav/path-for :ui/hangouts)}
-           "Cancel"])]
-       [hangout-form form associates]])))
+           "Cancel"])]])))
 
 (defn hangouts [state]
   [loading/with-status

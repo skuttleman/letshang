@@ -8,6 +8,7 @@
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.stubs.actions :as actions]
+    [com.ben-allred.letshang.common.stubs.store :as store]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.strings :as strings]))
@@ -20,13 +21,14 @@
 (def ^:private model->source
   (comp (partial hash-map :data)
         (f/transformer
-          {:name strings/trim-to-nil})))
+          {:name strings/trim-to-nil})
+        #(select-keys % #{:name :invitee-ids})))
 
 (def ^:private create-api
   (reify
     forms/IFetch
     (fetch [_]
-      (ch/resolve (source->model nil)))
+      (ch/resolve nil))
     forms/ISave
     (save! [_ model]
       (-> model
@@ -39,7 +41,7 @@
   (reify
     forms/IFetch
     (fetch [_]
-      (ch/resolve (select-keys hangout #{:name})))
+      (ch/resolve hangout))
     forms/ISave
     (save! [_ model]
       (-> model
@@ -53,6 +55,11 @@
 
 (def ^:private view->model
   {:name strings/empty-to-nil})
+
+(defn on-modify [change-state]
+  (fn [response]
+    (store/dispatch [:hangout/success {:data response}])
+    (change-state :normal)))
 
 (def validator
   (f/validator {:name [(f/pred (complement string/blank?) "Your hangout must have a name")

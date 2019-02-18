@@ -5,6 +5,12 @@
     [com.ben-allred.letshang.common.stubs.actions :as actions]))
 
 (defn toast-error [error]
-  (->> (:message error "Something went wrong.")
-       (actions/toast :error)
-       (store/dispatch)))
+  (some->> (:message error)
+           (actions/toast :error)
+           (store/dispatch)))
+
+(defn toast-success [msg]
+  (fn [_]
+    (->> msg
+         (actions/toast :success)
+         (store/dispatch))))

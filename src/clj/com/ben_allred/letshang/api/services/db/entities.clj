@@ -1,7 +1,6 @@
 (ns com.ben-allred.letshang.api.services.db.entities
   (:require
-    [clojure.set :as set]
-    [com.ben-allred.letshang.common.utils.colls :as colls]))
+    [clojure.set :as set]))
 
 (defn ^:private with-field-alias [fields alias]
   (let [alias' (name alias)]
@@ -24,6 +23,11 @@
 (defn insert-into [entity rows]
   {:insert-into (:table entity)
    :values      (map #(select-keys % (:fields entity)) rows)})
+
+
+(defn modify [entity m]
+  {:update (:table entity)
+   :set    (select-keys m (:fields entity))})
 
 (defn select [entity]
   (-> entity

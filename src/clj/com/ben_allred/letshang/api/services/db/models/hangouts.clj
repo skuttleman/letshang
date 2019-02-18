@@ -14,7 +14,7 @@
 
 (defmethod models/->db ::model
   [_ hangout]
-  (dissoc hangout :created-at))
+  (dissoc hangout :created-at :id))
 
 (defn ^:private has-hangout [user-id]
   [:or
@@ -33,7 +33,9 @@
       (repos/exec! db)))
 
 (defn select-for-user [db user-id]
-  (select* db (has-hangout user-id)))
+  (-> user-id
+      (has-hangout)
+      (->> (select* db))))
 
 (defn find-for-user [db hangout-id user-id]
   (->> [:and
@@ -44,11 +46,25 @@
        (colls/only!)))
 
 (defn create [db hangout created-by]
-  (-> [(-> hangout
-           (assoc :created-by created-by)
-           (repo.hangouts/insert))
-       (fn [[[{hangout-id :id}]]]
-         (models.invitees/insert-many! db [hangout-id] (:invitee-ids hangout) created-by))
-       (fn [[[{hangout-id :id}]]]
-         (find-for-user db hangout-id created-by))]
-      (repos/exec! db)))
+  (let [hangout-id (-> hangout
+                       (assoc :created-by created-by)
+                       (repo.hangouts/insert)
+                       (repos/exec! db)
+                       (colls/only!)
+                       (:id))]
+    (models.invitees/insert-many! db [hangout-id] (:invitee-ids hangout) created-by)
+    (find-for-user db hangout-id created-by)))
+
+(defn modify [db hangout-id hangout created-by]
+  (when (-> [:and
+             [:= :hangouts.id hangout-id]
+             [:= :hangouts.created-by created-by]]
+            (repo.hangouts/select-by*)
+            (repos/exec! db)
+            (colls/only!))
+    (-> hangout
+        (repo.hangouts/modify [:= :hangouts.id hangout-id])
+        (update :set select-keys #{:name})
+        (repos/exec! db))
+    (models.invitees/insert-many! db [hangout-id] (:invitee-ids hangout) created-by)
+    (find-for-user db hangout-id created-by)))

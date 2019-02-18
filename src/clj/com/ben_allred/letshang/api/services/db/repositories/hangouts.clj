@@ -11,3 +11,8 @@
 
 (defn insert [hangout]
   (entities/insert-into entities/hangouts [hangout]))
+
+(defn modify [hangout clause]
+  (-> entities/hangouts
+      (entities/modify hangout)
+      (assoc :where clause)))

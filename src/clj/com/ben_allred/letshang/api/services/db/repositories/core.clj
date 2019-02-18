@@ -2,6 +2,7 @@
   (:require
     [clojure.java.jdbc :as jdbc]
     [clojure.string :as string]
+    [com.ben-allred.letshang.api.services.db.preparations :as prep]
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
@@ -53,10 +54,10 @@
     (sql-log query)
     (cond
       (:select query) (jdbc/query db (sql-format query))
+      (:update query) (jdbc/execute! db (sql-format query))
       table (->> (:values query)
                  (colls/force-sequential)
-                 (map (partial into {} (map (fn [[k v]]
-                                              [(keywords/kebab->snake k) (->sql-value table k v)]))))
+                 (map (prep/prepare ->sql-value (keywords/kebab->snake table)))
                  (jdbc/insert-multi! db (keywords/kebab->snake table)))
       :else query)))
 

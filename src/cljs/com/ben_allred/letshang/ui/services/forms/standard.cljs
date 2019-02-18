@@ -1,9 +1,9 @@
 (ns com.ben-allred.letshang.ui.services.forms.standard
   (:require
-    [cljs.core.async.impl.protocols :as async.protocols]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.chans :as ch]
+    [com.ben-allred.letshang.common.utils.fns :as fns]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]))
 
@@ -64,6 +64,13 @@
    :status             :ready
    :persist-attempted? false})
 
+(defn ^:private with-default-error [ch]
+  (ch/catch ch
+            (fn [error]
+              (-> error
+                  (update :message fns/or "Something went wrong")
+                  (ch/reject)))))
+
 (defn ^:private request* [request state validator]
   (-> request
       (ch/peek (comp (partial reset! state) (partial init validator))
@@ -74,6 +81,7 @@
         validator (or validator (constantly nil))]
     (-> api
         (forms/fetch)
+        (with-default-error)
         (request* state validator))
     (reify
       forms/IPersist
@@ -88,18 +96,20 @@
           (not (forms/valid? this))
           (ch/reject {:message "Form not valid" :errors (forms/errors this)})
 
+          (not (forms/changed? this))
+          (ch/resolve @this)
+
           :else
           (let [model @this]
             (swap! state assoc :status :pending)
             (-> api
                 (forms/save! model)
+                (with-default-error)
                 (request* state validator)))))
 
       forms/ISync
-      (ready? [this]
-        (= :ready (forms/status this)))
-      (status [_]
-        (:status @state))
+      (ready? [_]
+        (= :ready (:status @state)))
 
       forms/IChange
       (changed? [_]

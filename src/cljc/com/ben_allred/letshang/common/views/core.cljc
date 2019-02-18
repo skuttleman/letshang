@@ -18,9 +18,9 @@
 (defn ^:private with-layout [component state]
   [:div
    [main/header state]
-   [:div.main.inset
+   [:div.main.layout--inset
     {:class [(str "page-" (name (get-in state [:page :handler])))]}
-    [:div.inset
+    [:div.layout--inset
      [component state]]]
    [dashboard/footer]
    [toast/toasts (:toasts state)]])

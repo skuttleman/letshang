@@ -11,7 +11,7 @@
   [_ hangout]
   (dissoc hangout :created-at))
 
-(def ^:private prepare-match-type (prep/prepare :invitees-match-type))
+(def ^:private prepare-match-type (prep/for-type :invitees-match-type))
 
 (defmethod repos/->sql-value [:invitees :match-type]
   [_ _ value]

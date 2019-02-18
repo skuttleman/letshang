@@ -28,3 +28,6 @@
 (defn insert-many [query entity model]
   (update query :values (comp (partial map #(->db model (select-keys % (:fields entity))))
                               colls/force-sequential)))
+
+(defn modify [query entity model]
+  (update query :set #(->db model (select-keys % (:fields entity)))))

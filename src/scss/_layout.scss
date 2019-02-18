@@ -1,4 +1,12 @@
-.xl {
+.main {
+    min-height: calc(100vh - 72px - 168px);
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.layout--xl {
     @media(min-width: 1200px) {
         &.gutters {
             margin: 0 100px;
@@ -6,7 +14,7 @@
     }
 }
 
-.xxl {
+.layout--xxl {
     @media(min-width: 1800px) {
         &.gutters {
             margin: 0 16vw;
@@ -14,29 +22,29 @@
     }
 }
 
-.inset {
+.layout--inset {
     padding-left: 12px;
     padding-right: 12px;
 }
 
-.space-above {
+.layout--space-above {
     padding-top: 12px;
 }
 
-.space-below {
+.layout--space-below {
     padding-bottom: 12px;
 }
 
-.main {
-    min-height: calc(100vh - 72px - 168px);
-}
-
-.center-content {
+.layout--center-content {
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.pointer {
-    cursor: pointer;
+.layout--stack {
+    display: flex;
+    flex-direction: column;
+    & > *:not(:first-child) {
+        margin-top: 12px;
+    }
 }

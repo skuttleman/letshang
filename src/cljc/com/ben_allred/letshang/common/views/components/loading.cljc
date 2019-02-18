@@ -43,4 +43,4 @@
           [components/render control (maps/map-vals second resources)]
 
           :else
-          [:div.center-content [spinner {:size :large}]])))))
+          [:div.layout--center-content [spinner {:size :large}]])))))
