@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.api.services.db.migrations
   (:require
+    [clojure.java.io :as io]
     [clojure.string :as string]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.common.utils.dates :as dates]
@@ -14,7 +15,7 @@
 
 (defn load-config []
   {:datastore  (rag-db/sql-database repos/db-cfg)
-   :migrations (rag-db/load-resources "migrations")})
+   :migrations (rag-db/load-resources "db/migrations")})
 
 (defn migrate! []
   (rag/migrate (load-config)))
@@ -43,9 +44,14 @@
                                (-> name
                                    (strings/kebab->snake)
                                    (string/lower-case)))]
-    (spit (format "resources/migrations/%s.up.sql" migration-name) "\n")
-    (spit (format "resources/migrations/%s.down.sql" migration-name) "\n")
+    (spit (format "resources/db/migrations/%s.up.sql" migration-name) "\n")
+    (spit (format "resources/db/migrations/%s.down.sql" migration-name) "\n")
     (println "created migration: " migration-name)))
+
+(defn seed! [file]
+  (repos/transact
+    (fn [db]
+      (repos/exec-raw! db (slurp (io/resource file))))))
 
 (defn ^:export run [command & [arg :as args]]
   (case command
@@ -54,4 +60,5 @@
     "speedbump" (speedbump!)
     "redo" (redo!)
     "create" (create! (string/join "_" args))
+    "seed" (seed! (or arg "db/seed.sql"))
     (throw (ex-info (str "unknown command: " command) {:command command :args args}))))

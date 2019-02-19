@@ -71,6 +71,9 @@
     (coll? val) (map remove-namespaces val)
     :else val))
 
+(defn exec-raw! [db sql]
+  (jdbc/execute! db [sql]))
+
 (defn exec! [queries db]
   (let [[query xform-before xform-after] (colls/force-sequential queries)]
     (-> (exec* db query)

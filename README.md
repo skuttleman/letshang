@@ -4,6 +4,33 @@ A web app for simplifying the grueling process of organizing a simple get togeth
 
 ## Development
 
+Requires a local install of Java and the JRE and leiningen. The app uses a postgres
+database (local or otherwise).
+
+### Clone the repo
+```bash
+$ git clone git@github.com:skuttleman/letshang.git
+```
+### Setup the environment
+
+```bash
+$ echo \
+'{"BASE_URL" "http://localhost:3000"
+ "JWT_SECRET" "keyboard-cat"
+ "USER_AGENT" "LetsHang/1.0"
+ "DB_USER" "user"
+ "DB_PASSWORD" "password"
+ "DB_HOST" "www.db-host.net"
+ "DB_PORT" "5432"
+ "DB_NAME" "lets_hang"}' > .lein-env
+```
+
+### Initialize the Database
+
+```bash
+$ lein migrations migrate
+$ lein migrations seed
+```
 
 ### Run It
 
