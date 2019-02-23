@@ -94,16 +94,29 @@
 
 (def ^{:arglists '([attrs])} input
   (with-auto-focus
-    (fn [{:keys [disabled on-change value class type] :as attrs}]
+    (fn [{:keys [disabled on-change value type] :as attrs}]
       [form-field
        attrs
        [:input.input
         (-> {:value    value
-             :class    class
              :type     (or type :text)
              :disabled #?(:clj true :cljs disabled)
              #?@(:cljs [:on-change (comp on-change dom/target-value)])}
             (merge (select-keys attrs #{:class :on-blur :ref})))]])))
+
+(def ^{:arglists '([attrs body])} button
+  (with-auto-focus
+    (fn [{:keys [class disabled href on-change] :as attrs} body]
+      (let [disabled #?(:cljs disabled :default true)]
+        [form-field
+         attrs
+         [(if href :a.button :button.button)
+          (cond-> {:disabled disabled
+                   :class    class}
+            disabled (update :class conj "is-disabled")
+            href (assoc :href (if disabled "#" href))
+            (not href) (assoc :on-click on-change :type :button))
+          body]]))))
 
 (defn openable [_component]
   (let [open? (r/atom false)

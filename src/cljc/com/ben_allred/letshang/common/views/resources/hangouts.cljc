@@ -1,6 +1,7 @@
 (ns com.ben-allred.letshang.common.views.resources.hangouts
   (:require
-    #?(:cljs [com.ben-allred.letshang.ui.services.forms.standard :as forms.std])
+    #?@(:cljs [[com.ben-allred.letshang.ui.services.forms.standard :as forms.std]
+               [com.ben-allred.letshang.ui.services.forms.live :as forms.live]])
     [#?(:clj  com.ben-allred.letshang.api.services.navigation
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [clojure.string :as string]
@@ -9,12 +10,10 @@
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.stubs.actions :as actions]
     [com.ben-allred.letshang.common.stubs.store :as store]
+    [com.ben-allred.letshang.common.stubs.store :as store]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.strings :as strings]))
-
-(defn ^:private dispatch [action]
-  (action [(constantly nil)]))
 
 (def ^:private source->model :data)
 
@@ -34,7 +33,7 @@
       (-> model
           (model->source)
           (actions/create-hangout)
-          (dispatch)
+          (store/dispatch)
           (ch/then source->model)))))
 
 (defn ^:private edit-api [hangout]
@@ -47,7 +46,7 @@
       (-> model
           (model->source)
           (->> (actions/update-hangout (:id hangout)))
-          (dispatch)
+          (store/dispatch)
           (ch/then source->model)))))
 
 (defn ^:private response-api [model]
@@ -59,7 +58,7 @@
     (save! [_ {:keys [response] :as next}]
       (-> {:data {:response response}}
           (->> (actions/set-response (:id model)))
-          (dispatch)
+          (store/dispatch)
           (ch/then (constantly next))))))
 
 (def ^:private model->view
@@ -87,7 +86,7 @@
 
 (defn response-form [model]
   #?(:clj  (forms.noop/create nil)
-     :cljs (forms.std/create (response-api model) nil)))
+     :cljs (forms.live/create (response-api model) nil)))
 
 (defn create->modify [response]
   (nav/nav-and-replace! :ui/hangout {:route-params {:hangout-id (:id response)}}))

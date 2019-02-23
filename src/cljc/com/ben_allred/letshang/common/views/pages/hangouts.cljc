@@ -62,12 +62,18 @@
    :neutral  :black})
 
 (defn ^:private response-component [attrs response]
-  [(if (:on-click attrs) :button.button.is-white.is-small :span.is-small)
-   attrs
-   [components/tooltip
-    {:text     (response->text response)
-     :position :right}
-    [components/icon {:style {:color (response->color response)}} (response->icon response)]]])
+  (-> (if attrs
+        [fields/button
+         (-> attrs
+             (update :class into ["is-white"
+                                  "is-small"
+                                  (when (= response (:value attrs)) "selected")])
+             (update :on-change partial response))]
+        [:span.is-small])
+      (conj [components/tooltip
+             {:text     (response->text response)
+              :position :right}
+             [components/icon {:style {:color (response->color response)}} (response->icon response)]])))
 
 (defn ^:private responses [{:keys [invitation-id response]}]
   (let [form (hangouts.res/response-form {:id invitation-id :response response})]
@@ -76,18 +82,11 @@
        [:ul.invitation-responses
         {:style {:display :flex}}
         (doall
-          (for [option (remove #{:none} (keys response->icon))
-                :let [selected? (= option (:response @form))]]
+          (for [option (remove #{:none} (keys response->icon))]
             ^{:key option}
             [:li.response
              [response-component
-              {:class    [(when selected? "selected")]
-               :disabled (not (forms/ready? form))
-               :on-click (fn [_]
-                           (let [response (:response @form)]
-                             (swap! form assoc :response option)
-                             (forms/persist! form)
-                             (swap! form assoc :response response)))}
+              (hangouts.res/with-attrs form [:response])
               option]]))]
        (when-not (forms/ready? form)
          [loading/spinner])])))
@@ -99,7 +98,7 @@
     handle
     (if logged-in?
       [responses invitation]
-      [response-component {} response])]])
+      [response-component nil response])]])
 
 (defn ^:private creator's-hangout-view [{:keys [change-state]} {{:keys [name invitations]} :hangout}]
   [:div
