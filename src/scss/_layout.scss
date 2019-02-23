@@ -35,16 +35,35 @@
     padding-bottom: 12px;
 }
 
+.layout--stack-between {
+    display: flex;
+    flex-direction: column;
+
+    & > *:not(:first-child) {
+        margin-top: 12px;
+    }
+}
+
+.layout--space-between {
+    display: flex;
+    flex-direction: row;
+
+    & > *:not(:first-child) {
+        margin-left: 12px;
+    }
+}
+
 .layout--center-content {
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.layout--stack {
+.layout--align-center {
     display: flex;
-    flex-direction: column;
-    & > *:not(:first-child) {
-        margin-top: 12px;
-    }
+    align-items: center;
+}
+
+.is-small {
+    font-size: 0.75em;
 }

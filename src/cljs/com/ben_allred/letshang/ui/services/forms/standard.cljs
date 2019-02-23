@@ -12,7 +12,6 @@
         validator (or validator (constantly nil))]
     (-> api
         (forms/fetch)
-        (forms.shared/with-default-error)
         (forms.shared/request* state validator))
     (reify
       forms/IPersist
@@ -35,7 +34,6 @@
             (swap! state assoc :status :pending)
             (-> api
                 (forms/save! model)
-                (forms.shared/with-default-error)
                 (forms.shared/request* state validator)))))
 
       forms/ISync

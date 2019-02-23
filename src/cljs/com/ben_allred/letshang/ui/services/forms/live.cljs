@@ -1,26 +1,27 @@
 (ns com.ben-allred.letshang.ui.services.forms.live
-  (:require [com.ben-allred.letshang.common.services.forms.core :as forms]
-            [com.ben-allred.letshang.common.stubs.reagent :as r]
-            [com.ben-allred.letshang.ui.services.forms.shared :as forms.shared]
-            [com.ben-allred.letshang.common.utils.chans :as ch]))
+  (:require
+    [com.ben-allred.letshang.common.services.forms.core :as forms]
+    [com.ben-allred.letshang.common.stubs.reagent :as r]
+    [com.ben-allred.letshang.common.utils.chans :as ch]
+    [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.ui.services.forms.shared :as forms.shared]))
 
-(defn ^:private swap* [form api state validator f f-args]
-  (when (forms/ready? form)
-    (swap! state forms.shared/swap* validator f f-args)
-    (when (and (forms/valid? form)
-               (forms/changed? form))
+(defn ^:private swap* [api state validator f f-args]
+  (let [current @state
+        next (forms.shared/swap* current validator f f-args)]
+    (when (and (nil? (:errors next))
+               (not= (:working current) (:working next)))
       (swap! state assoc :status :pending)
       (-> api
-          (forms/save! @form)
-          (forms.shared/with-default-error)
-          (forms.shared/request* state validator)))))
+          (forms/save! (forms.shared/trackable->model (:working next)))
+          (forms.shared/request* state validator)
+          (ch/peek #(reset! state next) #(reset! state current))))))
 
 (defn create [api validator]
   (let [state (r/atom nil)
         validator (or validator (constantly nil))]
     (-> api
         (forms/fetch)
-        (forms.shared/with-default-error)
         (forms.shared/request* state validator))
     (reify
       forms/ISync
@@ -64,14 +65,18 @@
 
       ISwap
       (-swap! [this f]
-        (swap* this api state validator f [])
-        nil)
+        (when (forms/ready? this)
+          (swap* api state validator f [])
+          nil))
       (-swap! [this f a]
-        (swap* this api state validator f [a])
-        nil)
+        (when (forms/ready? this)
+          (swap* api state validator f [a])
+          nil))
       (-swap! [this f a b]
-        (swap* this api state validator f [a b])
-        nil)
+        (when (forms/ready? this)
+          (swap* api state validator f [a b])
+          nil))
       (-swap! [this f a b xs]
-        (swap* this api state validator f (into [a b] xs))
-        nil))))
+        (when (forms/ready? this)
+          (swap* api state validator f (into [a b] xs))
+          nil)))))

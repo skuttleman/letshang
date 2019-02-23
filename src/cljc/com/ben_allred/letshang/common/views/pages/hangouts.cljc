@@ -12,17 +12,14 @@
     [com.ben-allred.letshang.common.views.components.dropdown :as dropdown]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
     [com.ben-allred.letshang.common.views.components.loading :as loading]
-    [com.ben-allred.letshang.common.views.resources.core :as res]
     [com.ben-allred.letshang.common.views.resources.hangouts :as hangouts.res]))
 
 (defn ^:private hangout-form [form associates on-saved & buttons]
-  [:form.form.layout--stack
+  [:form.form.layout--stack-between
    {:on-submit (fn [e]
                  (dom/prevent-default e)
                  (-> form
                      (forms/persist!)
-                     (ch/peek (res/toast-success "Your hangout has been saved.")
-                              res/toast-error)
                      (ch/then on-saved)))}
    [fields/input
     (-> {:label "Name"}
@@ -43,62 +40,55 @@
          (not (forms/ready? form))
          (conj [:div {:style {:margin-bottom "8px"}} [loading/spinner]])))])
 
+(def ^:private response-options
+  [[:neutral "Undecided"]
+   [:negative "Not attending"]
+   [:positive "Attending"]])
+
+(def ^:private response->text
+  (into {:none "No response yet" :creator "Creator"} response-options))
+
 (def ^:private response->icon
-  {:none     :minus
+  {:none     :ban
    :positive :thumbs-up
    :negative :thumbs-down
    :neutral  :question})
 
-(def ^:private response->text
-  {:none     "No response yet"
-   :positive "Attending"
-   :negative "Not attending"
-   :neutral  "Undecided"})
+(def ^:private response->level
+  {:positive "is-success"
+   :negative "is-warning"
+   :neutral "is-info"})
 
-(def ^:private response->color
-  {:none     :gray
-   :positive :green
-   :negative :red
-   :neutral  :black})
-
-(defn ^:private response-component [attrs response]
-  (-> (if attrs
-        [fields/button
-         (-> attrs
-             (update :class into ["is-white"
-                                  "is-small"
-                                  (when (= response (:value attrs)) "selected")])
-             (update :on-change partial response))]
-        [:span.is-small])
-      (conj [components/tooltip
-             {:text     (response->text response)
-              :position :right}
-             [components/icon {:style {:color (response->color response)}} (response->icon response)]])))
+(defn ^:private response-component [response]
+  (let [icon (response->icon response)]
+    (cond->> [:span.tag.is-rounded
+              {:class [(response->level response)]
+               :style {:text-transform :lowercase}}
+              (if icon
+                [components/icon {:class ["is-small"]} icon]
+                (response->text response))]
+      icon (conj [components/tooltip
+                  {:text     (response->text response)
+                   :position :right}]))))
 
 (defn ^:private responses [{:keys [invitation-id response]}]
   (let [form (hangouts.res/response-form {:id invitation-id :response response})]
     (fn [_response]
-      [:div
-       [:ul.invitation-responses
-        {:style {:display :flex}}
-        (doall
-          (for [option (remove #{:none} (keys response->icon))]
-            ^{:key option}
-            [:li.response
-             [response-component
-              (hangouts.res/with-attrs form [:response])
-              option]]))]
+      [:div.layout--space-between.layout--align-center
+       [fields/button-group
+        (-> {:class ["is-small"]}
+            (hangouts.res/with-attrs form [:response]))
+        response-options]
        (when-not (forms/ready? form)
          [loading/spinner])])))
 
-(defn ^:private invitation-item [{:keys [handle response] :as invitation} logged-in?]
+(defn ^:private invitation-item [{:keys [handle response] :as invitation} current-user?]
   [:li
-   [:span
-    {:style {:display :flex}}
-    handle
-    (if logged-in?
+   [:span.layout--space-between.layout--align-center
+    [:span handle]
+    (if current-user?
       [responses invitation]
-      [response-component nil response])]])
+      [response-component response])]])
 
 (defn ^:private creator's-hangout-view [{:keys [change-state]} {{:keys [name invitations]} :hangout}]
   [:div
@@ -107,7 +97,7 @@
      {:on-click #(change-state :edit)}
      "Edit"]]
    [:h1.label name]
-   [:ul
+   [:ul.layout--stack-between
     (for [invitation invitations]
       ^{:key (:id invitation)}
       [invitation-item invitation false])]])
@@ -131,10 +121,12 @@
     :normal [creator's-hangout-view attrs resources]
     :edit [creator's-hangout-edit attrs resources]))
 
-(defn ^:private invitee's-hangout [{user-id :id} {{:keys [name invitations]} :hangout}]
+(defn ^:private invitee's-hangout [{user-id :id} {{:keys [creator name invitations]} :hangout}]
   [:div
-   [:h1.label name]
-   [:ul
+   [:h1.is-size-3 name]
+   [:label.label "Invitees"]
+   [:ul.layout--stack-between
+    [invitation-item (assoc creator :response :creator) false]
     (for [{invitation-id :id :as invitation} invitations]
       ^{:key invitation-id}
       [invitation-item invitation (= invitation-id user-id)])]])

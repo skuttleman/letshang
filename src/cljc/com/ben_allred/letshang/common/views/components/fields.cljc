@@ -1,7 +1,6 @@
 (ns com.ben-allred.letshang.common.views.components.fields
   (:require
     [com.ben-allred.letshang.common.stubs.reagent :as r]
-    [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.strings :as strings]
@@ -104,19 +103,23 @@
              #?@(:cljs [:on-change (comp on-change dom/target-value)])}
             (merge (select-keys attrs #{:class :on-blur :ref})))]])))
 
-(def ^{:arglists '([attrs body])} button
-  (with-auto-focus
-    (fn [{:keys [class disabled href on-change] :as attrs} body]
-      (let [disabled #?(:cljs disabled :default true)]
-        [form-field
-         attrs
-         [(if href :a.button :button.button)
-          (cond-> {:disabled disabled
-                   :class    class}
-            disabled (update :class conj "is-disabled")
-            href (assoc :href (if disabled "#" href))
-            (not href) (assoc :on-click on-change :type :button))
-          body]]))))
+(defn button-group [{:keys [class disabled on-change value] :as attrs} options]
+  [form-field
+   attrs
+   [:ul.button-group
+    (cond-> {:class class}
+      disabled (update :class conj "is-disabled"))
+    (for [[option display] options
+          :let [active? (= value option)]]
+      ^{:key option}
+      [:li.grouped-button
+       (-> attrs
+           (assoc :class [(when active? "is-selected")])
+           (dissoc :button-class :label :on-change :value)
+           (cond->
+             (and (not active?) (not disabled))
+             (assoc :on-click #(on-change option))))
+       display])]])
 
 (defn openable [_component]
   (let [open? (r/atom false)

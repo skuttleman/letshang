@@ -61,12 +61,6 @@
    :status             :ready
    :persist-attempted? false})
 
-(defn with-default-error [ch]
-  (ch/catch ch (fn [error]
-                 (-> error
-                     (update :message fns/or "Something went wrong")
-                     (ch/reject)))))
-
 (defn request* [request state validator]
   (-> request
       (ch/peek (comp (partial reset! state) (partial init validator))

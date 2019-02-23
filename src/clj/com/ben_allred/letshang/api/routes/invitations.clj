@@ -17,7 +17,6 @@
            ^{:request-spec save-spec
              :transformer  transform-spec}
            {{:keys [invitation-id]} :params :keys [auth/user body db]}
-      (Thread/sleep 1111)
       (if (models.invitations/set-response db invitation-id (get-in body [:data :response]) (:id user))
         [:http.status/no-content]
         [:http.status/not-found {:message "Invitation not found for user"}]))))

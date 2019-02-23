@@ -4,10 +4,11 @@
     [com.ben-allred.letshang.common.stubs.store :as store]
     [com.ben-allred.letshang.common.stubs.actions :as actions]))
 
-(defn toast-error [error]
-  (some->> (:message error)
-           (actions/toast :error)
-           (store/dispatch)))
+(defn toast-error [msg]
+  (fn [error]
+    (some->> (:message error msg)
+             (actions/toast :error)
+             (store/dispatch))))
 
 (defn toast-success [msg]
   (fn [_]

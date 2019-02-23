@@ -10,10 +10,10 @@
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.stubs.actions :as actions]
     [com.ben-allred.letshang.common.stubs.store :as store]
-    [com.ben-allred.letshang.common.stubs.store :as store]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.strings :as strings]))
+    [com.ben-allred.letshang.common.utils.strings :as strings]
+    [com.ben-allred.letshang.common.views.resources.core :as res]))
 
 (def ^:private source->model :data)
 
@@ -34,7 +34,8 @@
           (model->source)
           (actions/create-hangout)
           (store/dispatch)
-          (ch/then source->model)))))
+          (ch/then source->model)
+          (ch/peek (res/toast-success "Your hangout has been created.") (res/toast-error "Something went wrong."))))))
 
 (defn ^:private edit-api [hangout]
   (reify
@@ -47,7 +48,8 @@
           (model->source)
           (->> (actions/update-hangout (:id hangout)))
           (store/dispatch)
-          (ch/then source->model)))))
+          (ch/then source->model)
+          (ch/peek (res/toast-success "Your hangout has been saved.") (res/toast-error "Something went wrong."))))))
 
 (defn ^:private response-api [model]
   (reify
@@ -55,11 +57,11 @@
     (fetch [_]
       (ch/resolve model))
     forms/ISave
-    (save! [_ {:keys [response] :as next}]
+    (save! [_ {:keys [response]}]
       (-> {:data {:response response}}
           (->> (actions/set-response (:id model)))
           (store/dispatch)
-          (ch/then (constantly next))))))
+          (ch/peek (constantly nil) (res/toast-error "Something went wrong."))))))
 
 (def ^:private model->view
   {})

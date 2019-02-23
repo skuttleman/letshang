@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.api.services.db.repositories.core
   (:require
+    [clojure.core.async :as async]
     [clojure.java.jdbc :as jdbc]
     [clojure.string :as string]
     [com.ben-allred.letshang.api.services.db.preparations :as prep]
@@ -38,16 +39,17 @@
   (sql/format query :quoting :ansi))
 
 (defn ^:private sql-log [query]
-  (when (env/get :dev?)
-    (let [[statement & args] (sql-format query)
-          bindings (volatile! args)]
-      (log/info
-        (string/replace statement
-                        #"(\(| )\?"
-                        (fn [[_ prefix]]
-                          (let [result (format "%s'%s'" prefix (first @bindings))]
-                            (vswap! bindings rest)
-                            result)))))))
+  (async/go
+    (when (env/get :dev?)
+      (let [[statement & args] (sql-format query)
+            bindings (volatile! args)]
+        (log/info
+          (string/replace statement
+                          #"(\(| )\?"
+                          (fn [[_ prefix]]
+                            (let [result (format "%s'%s'" prefix (first @bindings))]
+                              (vswap! bindings rest)
+                              result))))))))
 
 (defn ^:private exec* [db query]
   (let [{insert-table :insert-into update-table :update} query]

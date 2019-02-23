@@ -11,7 +11,8 @@ VALUES
     ('Jill', 'Abercrombe', 'jillybean', 'jill85@yahoo.com', '2179773016'),
     ('Katie', 'Thompson', 'k8_kitty', 'k.thom@greatykatie.net', '3362084115'),
     ('Sarah', 'Gunderston', 'sgunderston', 'sgunderston@comcast.net', '5526563774'),
-    ('Dirk', 'Diggler', 'thedirk', 'dirk@longjohns.xxx', '4493024417');
+    ('Dirk', 'Diggler', 'thedirk', 'dirk@longjohns.xxx', '4493024417'),
+    ('Martif','Pharti', 'partiboy','ambassador@domincan.republic','7333951247');
 
 INSERT INTO hangouts
     (name, created_by)
