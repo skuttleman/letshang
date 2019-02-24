@@ -32,6 +32,6 @@
 (defn toasts [toasts]
   [:div.toast-container
    [:ul.toast-messages
-    (for [[toast-id toast] (take 3 (sort-by key toasts))]
+    (for [[toast-id toast] (take 2 (sort-by key toasts))]
       ^{:key toast-id}
       [toast-message toast-id toast])]])
