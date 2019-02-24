@@ -6,7 +6,6 @@
     [com.ben-allred.letshang.ui.services.forms.shared :as forms.shared]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-
 (defn create [api validator]
   (let [state (r/atom nil)
         validator (or validator (constantly nil))]
@@ -19,22 +18,22 @@
         (:persist-attempted? @state))
       (persist! [this]
         (swap! state assoc :persist-attempted? true)
-        (cond
-          (not (forms/ready? this))
-          (ch/reject {:message "Form not ready"})
+        (-> (cond
+              (not (forms/ready? this))
+              (ch/reject {:message "Form not ready"})
 
-          (not (forms/valid? this))
-          (ch/reject {:message "Form not valid" :errors (forms/errors this)})
+              (not (forms/valid? this))
+              (ch/reject {:message "Form not valid" :errors (forms/errors this)})
 
-          (not (forms/changed? this))
-          (ch/resolve @this)
+              (not (forms/changed? this))
+              (ch/resolve @this)
 
-          :else
-          (let [model @this]
-            (swap! state assoc :status :pending)
-            (-> api
-                (forms/save! model)
-                (forms.shared/request* state validator)))))
+              :else
+              (let [model @this]
+                (swap! state assoc :status :pending)
+                (-> api
+                    (forms/save! model)
+                    (forms.shared/request* state validator))))))
 
       forms/ISync
       (ready? [_]

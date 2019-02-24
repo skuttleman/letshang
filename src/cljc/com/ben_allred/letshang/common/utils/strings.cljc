@@ -10,13 +10,8 @@
      :cljs gstring/format))
 
 (defn trim-to-nil [s]
-  (when-let [s (and s (string/trim s))]
-    (when-not (empty? s)
-      s)))
-
-(defn empty-to-nil [s]
-  (when (seq s)
-    s))
+  (when s
+    (not-empty (string/trim s))))
 
 (defn maybe-pr-str [s]
   (cond-> s

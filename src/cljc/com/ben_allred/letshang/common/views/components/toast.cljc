@@ -1,7 +1,7 @@
 (ns com.ben-allred.letshang.common.views.components.toast
   (:require
-    [com.ben-allred.letshang.common.stubs.actions :as actions]
-    [com.ben-allred.letshang.common.stubs.store :as store]
+    [com.ben-allred.letshang.common.services.store.actions :as actions]
+    [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
 

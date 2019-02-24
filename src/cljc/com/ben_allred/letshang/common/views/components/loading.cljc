@@ -2,7 +2,7 @@
   (:require
     [clojure.core.async :as async]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
-    [com.ben-allred.letshang.common.stubs.store :as store]
+    [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.maps :as maps]
@@ -19,9 +19,12 @@
      [:p "An unknown error occurred."])
    [:p "Please try again."]])
 
-(defn spinner [{:keys [size]}]
-  [:div.loader
-   {:class [(keywords/safe-name size)]}])
+(defn spinner
+  ([]
+   (spinner nil))
+  ([{:keys [size]}]
+   [:div.loader
+    {:class [(keywords/safe-name size)]}]))
 
 (defn with-status [{:keys [action]} _control]
   (let [finished? (r/atom false)]

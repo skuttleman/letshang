@@ -6,14 +6,16 @@
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.content :as content]
     [com.ben-allred.letshang.common.utils.encoders.jwt :as jwt]
-    [com.ben-allred.letshang.common.utils.logging :as log])
+    [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.maps :as maps])
   (:import
     (clojure.lang ExceptionInfo)
     (java.util Date)))
 
 (defn ^:private api? [{:keys [uri websocket?]}]
   (and (not websocket?)
-       (re-find #"(^/api|^/health)" uri)))
+       (or (= "/auth/register" uri)
+           (re-find #"(^/api|^/health)" uri))))
 
 (defn log-response [handler]
   (fn [request]
@@ -37,14 +39,14 @@
 
 (defn auth [handler]
   (fn [{:keys [uri headers] :as request}]
-    (let [user (when (or (string/starts-with? uri "/api")
-                         (re-find #"text/html" (str (get headers "accept"))))
-                 (some-> request
-                         (get-in [:cookies "auth-token" :value])
-                         (jwt/decode)
-                         (:data)))]
+    (let [{:keys [user sign-up]} (when (or (string/starts-with? uri "/api")
+                                           (re-find #"text/html" (str (get headers "accept"))))
+                                   (some-> request
+                                           (get-in [:cookies "auth-token" :value])
+                                           (jwt/decode)
+                                           (:data)))]
       (-> request
-          (cond-> user (assoc :auth/user user))
+          (maps/assoc-maybe :auth/user user :auth/sign-up sign-up)
           (handler)))))
 
 (defn with-transaction [handler]
@@ -63,8 +65,8 @@
           (throw ex))))))
 
 (defn restricted [handler]
-  (fn [{:keys [auth/user] :as request}]
-    (if user
+  (fn [request]
+    (if (:auth/user request)
       (handler request)
       (respond/with [:http.status/forbidden {:message "You must authenticate to use this API."}]))))
 

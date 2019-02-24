@@ -3,7 +3,7 @@
     [#?(:clj  com.ben-allred.letshang.api.services.navigation
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
-    [com.ben-allred.letshang.common.stubs.actions :as actions]
+    [com.ben-allred.letshang.common.services.store.actions :as actions]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log]
@@ -11,16 +11,15 @@
     [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.dropdown :as dropdown]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
+    [com.ben-allred.letshang.common.views.components.form-view :as form-view]
     [com.ben-allred.letshang.common.views.components.loading :as loading]
     [com.ben-allred.letshang.common.views.resources.hangouts :as hangouts.res]))
 
 (defn ^:private hangout-form [form associates on-saved & buttons]
-  [:form.form.layout--stack-between
-   {:on-submit (fn [e]
-                 (dom/prevent-default e)
-                 (-> form
-                     (forms/persist!)
-                     (ch/then on-saved)))}
+  [form-view/form
+   {:buttons  buttons
+    :on-saved on-saved
+    :form     form}
    [fields/input
     (-> {:label "Name"}
         (hangouts.res/with-attrs form [:name]))]
@@ -28,17 +27,7 @@
      [dropdown/dropdown
       (-> {:label   "Invitees"
            :options (map (juxt :id users/full-name) associates)}
-          (hangouts.res/with-attrs form [:invitation-ids]))])
-   (-> [:div.buttons
-        [:button.button.is-primary
-         {:type     :submit
-          :disabled (or (not (forms/ready? form))
-                        (and (forms/attempted? form) (not (forms/valid? form))))}
-         "Save"]]
-       (into buttons)
-       (cond->
-         (not (forms/ready? form))
-         (conj [:div {:style {:margin-bottom "8px"}} [loading/spinner]])))])
+          (hangouts.res/with-attrs form [:invitation-ids]))])])
 
 (def ^:private response-options
   [[:neutral "Undecided"]

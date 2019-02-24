@@ -8,8 +8,8 @@
     [com.ben-allred.formation.core :as f]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
-    [com.ben-allred.letshang.common.stubs.actions :as actions]
-    [com.ben-allred.letshang.common.stubs.store :as store]
+    [com.ben-allred.letshang.common.services.store.actions :as actions]
+    [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.strings :as strings]
@@ -67,7 +67,7 @@
   {})
 
 (def ^:private view->model
-  {:name strings/empty-to-nil})
+  {:name not-empty})
 
 (defn on-modify [change-state]
   (fn [response]

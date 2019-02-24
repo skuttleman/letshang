@@ -25,3 +25,9 @@
       (repo.users/select-known-associates)
       (models/select ::model)
       (repos/exec! db)))
+
+(defn create [db user]
+  (when (-> user
+            (repo.users/insert)
+            (repos/exec! db))
+    (find-by-email db (:email user))))

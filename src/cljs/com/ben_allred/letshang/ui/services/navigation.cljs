@@ -3,7 +3,7 @@
     [com.ben-allred.letshang.common.services.navigation :as nav*]
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.ui.services.store.core :as store]
+    [com.ben-allred.letshang.common.services.store.core :as store]
     [pushy.core :as pushy]))
 
 (defn match-route [path]

@@ -110,3 +110,13 @@
         }
     }
 }
+
+.page-sign-up {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+
+    .sign-up-content {
+        flex-grow: 1;
+    }
+}

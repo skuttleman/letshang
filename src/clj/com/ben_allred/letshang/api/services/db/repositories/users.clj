@@ -20,3 +20,6 @@
                        [:in :associates.id (assoc known-associates
                                                   :select #{:associate-id}
                                                   :where [:= :user-id user-id])]]))))
+
+(defn insert [user]
+  (entities/insert-into entities/users [user]))

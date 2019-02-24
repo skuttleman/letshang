@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.common.views.components.fields
   (:require
+    [com.ben-allred.letshang.common.services.transformers :as transformers]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log]
@@ -102,6 +103,11 @@
              :disabled #?(:clj true :cljs disabled)
              #?@(:cljs [:on-change (comp on-change dom/target-value)])}
             (merge (select-keys attrs #{:class :on-blur :ref})))]])))
+
+(defn phone-number [attrs]
+  [input (-> attrs
+             (update :value transformers/phone->view)
+             (update :on-change comp transformers/phone->model))])
 
 (defn button-group [{:keys [class disabled on-change value] :as attrs} options]
   [form-field

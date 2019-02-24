@@ -3,7 +3,7 @@
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log :include-macros true]
     [com.ben-allred.letshang.common.views.core :as views]
-    [com.ben-allred.letshang.ui.services.store.core :as store]
+    [com.ben-allred.letshang.common.services.store.core :as store]
     [reagent.core :as r]
     com.ben-allred.letshang.ui.services.navigation))
 

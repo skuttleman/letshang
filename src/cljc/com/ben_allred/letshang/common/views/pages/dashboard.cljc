@@ -41,17 +41,6 @@
    "Car Wash Fund Raiser"
    "Juggling Competition"])
 
-(defn ^:private jumbotron []
-  [:div.jumbotron
-   [:div.background-image]
-   [:div.logo-wrapper
-    [:img.logo
-     {:src "/images/logo.png"}]]
-   [:div.tag-line.layout--space-below
-    [:p "Organizing a get together"]
-    [:p "shouldn't be a chore."]
-    [auth/login "login to get started" "skuttleman@gmail.com"]]])
-
 (defn ^:private tiles []
   [:div.gutters.layout--xl.layout--xxl
    [:div.tile.is-parent
@@ -110,6 +99,18 @@
        [:div.get-started
         [:div [auth/login-as "login to get started"]]]]]]]])
 
+(defn jumbotron [login?]
+  [:div.jumbotron
+   [:div.background-image]
+   [:div.logo-wrapper
+    [:img.logo
+     {:src "/images/logo.png"}]]
+   [:div.tag-line.layout--space-below
+    [:p "Organizing a get together"]
+    [:p "shouldn't be a chore."]
+    (when login?
+      [auth/login "login to get started" "skuttleman@gmail.com"])]])
+
 (defn footer []
   [:footer.footer
    [:div.content.has-text-centered
@@ -117,7 +118,7 @@
 
 (defn root [_state]
   [:div.page-dashboard
-   [jumbotron]
+   [jumbotron true]
    [tiles]
    [auto-scroll/scroller event-types ideas 8 1000]
    [footer]])

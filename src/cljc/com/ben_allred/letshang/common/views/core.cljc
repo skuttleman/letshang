@@ -6,7 +6,8 @@
     [com.ben-allred.letshang.common.views.components.toast :as toast]
     [com.ben-allred.letshang.common.views.pages.dashboard :as dashboard]
     [com.ben-allred.letshang.common.views.pages.hangouts :as hangouts]
-    [com.ben-allred.letshang.common.views.pages.main :as main]))
+    [com.ben-allred.letshang.common.views.pages.main :as main]
+    [com.ben-allred.letshang.common.views.pages.sign-up :as sign-up]))
 
 (def ^:private handler->component
   {:ui/home        main/home
@@ -28,8 +29,11 @@
 (defn app [state]
   (let [handler (get-in state [:page :handler])
         component (handler->component handler main/not-found)
-        state (update state :auth/user (partial env/get :auth/user))]
+        {:keys [auth/sign-up] :as state} (-> state
+                                             (update :auth/user (partial env/get :auth/user))
+                                             (update :auth/sign-up (partial env/get :auth/sign-up)))]
     (cond
       (not handler) [loading/spinner {:size :large}]
       (:auth/user state) [with-layout component state]
+      sign-up [sign-up/root state sign-up]
       :else [dashboard/root state])))

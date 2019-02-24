@@ -11,7 +11,7 @@
     [com.ben-allred.letshang.common.views.core :as views]
     [hiccup.core :as hiccup]))
 
-(defn ^:private template [content user]
+(defn ^:private template [content user sign-up]
   [:html
    [:head
     [:meta {:charset "UTF-8"}]
@@ -37,7 +37,8 @@
      {:type "text/javascript"}
      (format "window.ENV=%s;" (-> {}
                                   (maps/assoc-maybe :dev? (env/get :dev?)
-                                                    :auth/user user)
+                                                    :auth/user user
+                                                    :auth/sign-up sign-up)
                                   (transit/encode)
                                   (pr-str)))]
     [:script {:type "text/javascript" :src "/js/compiled/app.js"}]
@@ -45,19 +46,19 @@
      {:type "text/javascript"}
      "com.ben_allred.letshang.ui.app.mount_BANG_();"]]])
 
-(defn hydrate [page user]
+(defn hydrate [page user sign-up]
   (let [{:keys [get-state]} (collaj/create-store ui-reducers/root)]
     (-> (get-state)
-        (assoc :page page :auth/user user)
+        (assoc :page page :auth/user user :auth/sign-up sign-up)
         (views/app)
         (templates/render)
-        (template user)
+        (template user sign-up)
         (hiccup/html)
         (str "<!DOCTYPE html>"))))
 
-(defn render [{:keys [uri query-string auth/user]}]
+(defn render [{:keys [auth/sign-up auth/user query-string uri]}]
   (-> uri
       (cond->
         query-string (str "?" query-string))
       (->> (nav*/match-route nav*/app-routes))
-      (hydrate user)))
+      (hydrate user sign-up)))

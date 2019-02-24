@@ -60,7 +60,7 @@
          [:div.dropdown-body
           (cond
             loading?
-            [loading/spinner {}]
+            [loading/spinner]
 
             (seq options)
             [list-control attrs]

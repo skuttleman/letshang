@@ -4,7 +4,6 @@
     [clojure.string :as string]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.maps :as maps]
     [com.ben-allred.letshang.common.utils.encoders.query-params :as qp]
     [com.ben-allred.letshang.common.utils.uuids :as uuids]))
 
@@ -14,7 +13,8 @@
     ["/auth"
      [["/callback" :auth/callback]
       ["/login" :auth/login]
-      ["/logout" :auth/logout]]]
+      ["/logout" :auth/logout]
+      ["/register" :auth/register]]]
 
     ;; API
     ["/api"

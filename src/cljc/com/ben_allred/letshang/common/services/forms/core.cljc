@@ -1,12 +1,17 @@
 (ns com.ben-allred.letshang.common.services.forms.core
   (:require
-    [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.maps :as maps])
+    [com.ben-allred.letshang.common.utils.logging :as log])
   #?(:clj
      (:import
        (clojure.lang IAtom IDeref))))
 
-#?(:clj (def ISwap IAtom))
+(defn ^:private derefable? [value]
+  #?(:clj  (.isInstance IDeref value)
+     :cljs (satisfies? IDeref value)))
+
+(defn ^:private swapable? [value]
+  #?(:clj  (.isInstance IAtom value)
+     :cljs (satisfies? ISwap value)))
 
 ;; API
 (defprotocol IFetch
@@ -53,10 +58,10 @@
     (-> attrs
         (assoc :attempted? attempted? :touched? touched?)
         (cond->
-          (satisfies? IDeref form)
+          (derefable? form)
           (assoc :value (get-in @form path))
 
-          (satisfies? ISwap form)
+          (swapable? form)
           (assoc :on-change (partial swap! form assoc-in path))
 
           (and (or attempted? touched? just-errors?) errors)

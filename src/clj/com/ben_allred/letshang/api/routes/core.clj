@@ -36,7 +36,7 @@
     (GET "/health" [] [:http.status/ok {:a :ok}])
     (GET "/*" req [:http.status/ok
                    (-> req
-                       (select-keys #{:uri :query-string :auth/user})
+                       (select-keys #{:auth/sign-up :auth/user :query-string :uri})
                        (html/render))
                    {"content-type" "text/html"}])
     (ANY "/*" [] [:http.status/not-found])))
