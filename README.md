@@ -15,8 +15,7 @@ $ git clone git@github.com:skuttleman/letshang.git
 
 ```bash
 $ echo \
-'{"BASE_URL" "http://localhost:3000"
- "JWT_SECRET" "keyboard-cat"
+'{"JWT_SECRET" "keyboard-cat"
  "USER_AGENT" "LetsHang/1.0"
  "DB_USER" "user"
  "DB_PASSWORD" "password"

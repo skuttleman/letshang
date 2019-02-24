@@ -84,12 +84,14 @@
             (with-attrs form [:mobile-number]))]])))
 
 (defn ^:private sign-up-form [new-user]
-  [:div.sign-up-content.gutters.layout--xl.layout--xxl
+  [:div.sign-up-content.gutters.layout--xl.layout--xxl.layout--inset
    [:div.layout--space-above
     {:style {:display :flex :justify-content :flex-end}}
     [auth/logout {:text "logout"}]]
-   [:h1.title.has-text-centered "Thanks for coming to hang out!"]
-   [:h2.subtitle.has-text-centered "Fill out your profile information to get started"]
+   [:p.has-text-centered
+    {:style {:font-weight :bold}}
+    "Thanks for coming to hang out."]
+   [:p.has-text-centered "Fill out your profile information to get started."]
    [:div.gutters.layout--xxl
     [:div.layout--space-below
      [sign-up* new-user]]]])
