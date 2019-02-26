@@ -7,8 +7,12 @@
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.utils.encoders.jwt :as jwt]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.views.resources.sign-up :as sign-up.res]
     [compojure.core :refer [defroutes]]
     [ring.util.response :as resp]))
+
+(def ^:private sign-up-spec
+  {:data sign-up.res/validator})
 
 (defn ^:private token->cookie [resp cookie value]
   (->> value
@@ -44,20 +48,22 @@
     (-> {:message "Unable to create user"}
         (cond->
           (= (:handle conflict) (:handle user))
-          (assoc-in [:errors :handle] ["Screen name in use"])
+          (assoc-in [:errors :data :handle] ["Screen name in use"])
 
           (= (:email conflict) (:email user))
-          (assoc-in [:errors :email] ["Email in use"])
+          (assoc-in [:errors :data :email] ["Email in use"])
 
           (= (:mobile-number conflict) (:mobile-number user))
-          (assoc-in [:errors :mobile-number] ["Phone number in use"]))
+          (assoc-in [:errors :data :mobile-number] ["Phone number in use"]))
         (->> (conj [:http.status/bad-request]))
         (respond/abort!))
     user))
 
 (defroutes routes
   (context "/auth" []
-    (POST "/register" {{:keys [data]} :body :keys [db]}
+    (POST "/register"
+          ^{:request-spec sign-up-spec}
+          {{:keys [data]} :body :keys [db]}
       (->> data
            (check-conflicts! db)
            (models.users/create db)

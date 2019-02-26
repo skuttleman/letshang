@@ -31,7 +31,7 @@
                      (nav/go-to! (nav/path-for :auth/login {:query-params (select-keys model #{:email})})))
                    (res/toast-error "Something went wrong."))))))
 
-(def ^:private validator
+(def validator
   (f/validator
     {:email         [(f/required "Email is required")
                      (f/pred validators/email? "Not a valid email")]

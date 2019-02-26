@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.api.routes.invitations
   (:require
+    [com.ben-allred.formation.core :as f]
     [com.ben-allred.letshang.api.services.db.models.invitations :as models.invitations]
     [com.ben-allred.letshang.api.services.handlers :refer [PATCH context]]
     [com.ben-allred.letshang.common.utils.uuids :as uuids]
@@ -9,7 +10,7 @@
   {:invitation-id uuids/->uuid})
 
 (def ^:private save-spec
-  {:data (constantly nil)})
+  {:data {:response (f/pred #{:positive :negative :neutral} "Must specify a response")}})
 
 (defroutes routes
   (context "/invitations" []

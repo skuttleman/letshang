@@ -74,4 +74,4 @@
 (defn request* [request state validator]
   (-> request
       (ch/peek (comp (partial reset! state) (partial init validator))
-               (comp (partial swap! state add-api-errors) :errors))))
+               (comp (partial swap! state add-api-errors) :data :errors))))
