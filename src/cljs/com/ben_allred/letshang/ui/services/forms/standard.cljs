@@ -47,27 +47,27 @@
           (not= current initial)))
 
       forms/ITrack
-      (touch! [_ path]
-        (swap! state assoc-in [:working path :touched?] true)
+      (visit! [_ path]
+        (swap! state assoc-in [:working path :visited?] true)
         nil)
-      (touched? [_]
-        (forms.shared/check-for (:working @state) :touched?))
-      (touched? [_ path]
-        (get-in @state [:working path :touched?]))
+      (visited? [_ path]
+        (get-in @state [:working path :visited?]))
 
       forms/IValidate
       (errors [this]
-        (let [{:keys [errors api-error]} @state]
-          (cond
-            api-error api-error
-            (forms/ready? this) errors)))
+        (when (forms/ready? this)
+          (let [{:keys [errors api-errors model]} @state]
+            (->> (for [[path m] api-errors
+                       [value errors'] m
+                       :when (= value (get-in model path))]
+                   [path errors'])
+                 (reduce (fn [m [path e]] (update-in m path concat e)) errors)))))
       (valid? [this]
         (empty? (forms/errors this)))
 
       IDeref
       (-deref [_]
-        (when-let [working-model (:working @state)]
-          (forms.shared/trackable->model working-model)))
+        (:model @state))
 
       IReset
       (-reset! [_ model]

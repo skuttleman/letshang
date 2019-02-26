@@ -36,7 +36,7 @@
 (defn tooltip [attrs & body]
   (-> (:text attrs)
       (if [:span.tooltip (-> attrs
-                             (dissoc :position :touched?)
+                             (dissoc :position :visited?)
                              (update :class conj (str "is-tooltip-" (name (:position attrs :top))))
                              (set/rename-keys {:text :data-tooltip}))]
           [:span])

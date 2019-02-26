@@ -40,3 +40,17 @@
         }
     }
 }
+
+.form-field.errors {
+    .button-group, .input, .select, .textarea {
+        border-color: $red;
+
+        &:focus {
+            box-shadow: 0 0 0 0.125rem rgba($red, 0.25);
+        }
+    }
+
+    .error-list {
+        color: $red;
+    }
+}

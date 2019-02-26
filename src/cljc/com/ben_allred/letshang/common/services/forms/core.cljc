@@ -36,8 +36,8 @@
   (changed? [this] [this path]))
 
 (defprotocol ITrack
-  (touch! [this path])
-  (touched? [this] [this path]))
+  (visit! [this path])
+  (visited? [this path]))
 
 (defprotocol IValidate
   (errors [this])
@@ -47,8 +47,8 @@
 (defn with-attrs [attrs form path model->view view->model]
   (let [attempted? (when (satisfies? IPersist form)
                      (attempted? form))
-        touched? (when (satisfies? ITrack form)
-                   (touched? form path))
+        visited? (when (satisfies? ITrack form)
+                   (visited? form path))
         just-errors? (and (not (satisfies? IPersist form))
                           (not (satisfies? ITrack form)))
         errors (when (satisfies? IValidate form)
@@ -56,7 +56,7 @@
         to-view (get-in model->view path)
         to-model (get-in view->model path)]
     (-> attrs
-        (assoc :attempted? attempted? :touched? touched?)
+        (assoc :attempted? attempted? :visited? visited?)
         (cond->
           (derefable? form)
           (assoc :value (get-in @form path))
@@ -64,7 +64,7 @@
           (swapable? form)
           (assoc :on-change (partial swap! form assoc-in path))
 
-          (and (or attempted? touched? just-errors?) errors)
+          (and (or attempted? visited? just-errors?) errors)
           (assoc :errors errors)
 
           to-view (update :value to-view)
@@ -72,6 +72,6 @@
         (update :disabled #(or % (not (ready? form))))
         (update :on-blur (fn [on-blur]
                            (fn [e]
-                             (touch! form path)
+                             (visit! form path)
                              (when on-blur
                                (on-blur e))))))))

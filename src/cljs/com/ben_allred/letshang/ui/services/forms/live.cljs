@@ -36,13 +36,11 @@
           (not= current initial)))
 
       forms/ITrack
-      (touch! [_ path]
-        (swap! state assoc-in [:working path :touched?] true)
+      (visit! [_ path]
+        (swap! state assoc-in [:working path :visited?] true)
         nil)
-      (touched? [_]
-        (forms.shared/check-for (:working @state) :touched?))
-      (touched? [_ path]
-        (get-in @state [:working path :touched?]))
+      (visited? [_ path]
+        (get-in @state [:working path :visited?]))
 
       forms/IValidate
       (errors [this]

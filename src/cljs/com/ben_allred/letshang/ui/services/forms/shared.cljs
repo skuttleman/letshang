@@ -1,7 +1,7 @@
 (ns com.ben-allred.letshang.ui.services.forms.shared
   (:require
     [com.ben-allred.letshang.common.utils.chans :as ch]
-    [com.ben-allred.letshang.common.utils.fns :as fns]
+    [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]))
 
 (defn ^:private diff-paths [paths path old-model new-model]
@@ -29,7 +29,15 @@
        (maps/map-vals (fn [value]
                         {:current  value
                          :initial  value
-                         :touched? false}))))
+                         :visited? false}))))
+
+(defn ^:private add-api-errors [{:keys [model] :as state} errors]
+  (->> errors
+       (nest {} [])
+       (reduce (fn [m [path errors]]
+                 (update m path assoc (get-in model path) errors))
+               {})
+       (assoc state :status :ready :api-errors)))
 
 (defn trackable->model [trackable]
   (reduce-kv (fn [model path {:keys [current]}]
@@ -49,19 +57,21 @@
     (->> next
          (diff-paths #{} [] current)
          (reduce (fn [working path]
-                   (update working path assoc
-                           :current (get-in next path)
-                           :touched? true))
+                   (update working path assoc :current (get-in next path)))
                  working)
-         (assoc state :api-error nil :errors (validator next) :working))))
+         (assoc state
+                :model next
+                :errors (validator next)
+                :working))))
 
 (defn init [validator model]
-  {:working            (model->trackable model)
-   :errors             (validator model)
+  {:errors             (validator model)
+   :model              model
+   :persist-attempted? false
    :status             :ready
-   :persist-attempted? false})
+   :working            (model->trackable model)})
 
 (defn request* [request state validator]
   (-> request
       (ch/peek (comp (partial reset! state) (partial init validator))
-               (comp (partial swap! state assoc :status :ready :api-error) :errors))))
+               (comp (partial swap! state add-api-errors) :errors))))

@@ -10,7 +10,6 @@
     [compojure.core :refer [defroutes]]
     [ring.util.response :as resp]))
 
-
 (defn ^:private token->cookie [resp cookie value]
   (->> value
        (assoc {:path "/" :http-only true} :value)
@@ -40,13 +39,30 @@
     :else
     (logout)))
 
+(defn ^:private check-conflicts! [db user]
+  (if-let [conflict (models.users/select-conflicts db user)]
+    (-> {:message "Unable to create user"}
+        (cond->
+          (= (:handle conflict) (:handle user))
+          (assoc-in [:errors :handle] ["Screen name in use"])
+
+          (= (:email conflict) (:email user))
+          (assoc-in [:errors :email] ["Email in use"])
+
+          (= (:mobile-number conflict) (:mobile-number user))
+          (assoc-in [:errors :mobile-number] ["Phone number in use"]))
+        (->> (conj [:http.status/bad-request]))
+        (respond/abort!))
+    user))
+
 (defroutes routes
   (context "/auth" []
     (POST "/register" {{:keys [data]} :body :keys [db]}
-      (respond/with
-        (if-let [user (models.users/create db data)]
-          [:http.status/created {:data user}]
-          [:http.status/bad-request {:message "Could not create user"}])))
+      (->> data
+           (check-conflicts! db)
+           (models.users/create db)
+           (hash-map :data)
+           (conj [:http.status/created])))
     (GET "/login" {:keys [params]}
       (-> (env/get :base-url)
           (str (nav/path-for :auth/callback {:query-params (select-keys params #{:email})}))

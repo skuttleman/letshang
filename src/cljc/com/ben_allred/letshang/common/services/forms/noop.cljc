@@ -21,9 +21,8 @@
     (changed? [_ _] false)
 
     forms/ITrack
-    (touch! [_ _])
-    (touched? [_] false)
-    (touched? [_ _] false)
+    (visit! [_ _])
+    (visited? [_ _] false)
 
 
     forms/IValidate

@@ -4,7 +4,6 @@
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.strings :as strings]
     [com.ben-allred.letshang.common.views.components.core :as components]))
 
 (defn ^:private modify-coll [xform coll]
@@ -20,24 +19,20 @@
 (defn ^:private remove-by-idx [idx coll]
   (modify-coll (comp (remove (comp #{idx} first)) (map second)) coll))
 
-(defn form-field [{:keys [attempted? errors label touched?]} & body]
+(defn form-field [{:keys [attempted? errors label visited?]} & body]
   (let [errors (seq (remove nil? errors))
-        tooltip? (and errors touched? (not attempted?))
-        inline? (and errors attempted?)]
+        show-errors? (and errors (or visited? attempted?))]
     [:div.form-field
-     {:class [(when (or tooltip? inline?) "errors")]}
-     [:div.field-info
+     {:class [(when show-errors? "errors")]}
+     [:div
       (when label [:label.label label])
-      (when inline?
+      (into [:div.form-field-control] body)
+      (when show-errors?
         [:ul.error-list
          (for [error errors]
            [:li.error
             {:key error}
-            error])])]
-     [:div
-      (into [components/tooltip {:text  (when tooltip? (strings/commanate errors))
-                                 :class ["is-tooltip-danger" "is-tooltip-multiline"]}]
-            body)]]))
+            error])])]]))
 
 (defn ^:private with-auto-focus [component]
   (fn [{:keys [auto-focus?]} & _]
