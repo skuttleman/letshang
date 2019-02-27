@@ -63,8 +63,8 @@
   (context "/auth" []
     (POST "/register"
           ^{:request-spec sign-up-spec}
-          {{:keys [data]} :body :keys [db]}
-      (->> data
+          {{:keys [data]} :body :keys [db auth/sign-up]}
+      (->> (merge sign-up (select-keys data #{:handle :first-name :last-name :mobile-number}))
            (check-conflicts! db)
            (models.users/create db)
            (hash-map :data)

@@ -14,6 +14,10 @@
       [form-view/form
        {:form form}
        [fields/input
+        (-> {:label "Email"
+             :disabled true}
+            (sign-up.res/with-attrs form [:email]))]
+       [fields/input
         (-> {:label "Screen name"
              :auto-focus? true}
             (sign-up.res/with-attrs form [:handle]))]
@@ -23,9 +27,6 @@
        [fields/input
         (-> {:label "Last name"}
             (sign-up.res/with-attrs form [:last-name]))]
-       [fields/input
-        (-> {:label "Email"}
-            (sign-up.res/with-attrs form [:email]))]
        [fields/phone-number
         (-> {:label "Mobile phone number"}
             (sign-up.res/with-attrs form [:mobile-number]))]])))

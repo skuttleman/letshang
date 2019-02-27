@@ -40,6 +40,7 @@
 (defn auth [handler]
   (fn [{:keys [uri headers] :as request}]
     (let [{:keys [user sign-up]} (when (or (string/starts-with? uri "/api")
+                                           (string/starts-with? uri "/auth")
                                            (re-find #"text/html" (str (get headers "accept"))))
                                    (some-> request
                                            (get-in [:cookies "auth-token" :value])
