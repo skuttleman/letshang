@@ -2,7 +2,7 @@
   (:gen-class)
   (:require
     [clojure.string :as string]
-    [clojure.tools.nrepl.server :as nrepl]
+    [nrepl.server :as nrepl]
     [com.ben-allred.letshang.api.routes.core :as routes]
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.env :as env]

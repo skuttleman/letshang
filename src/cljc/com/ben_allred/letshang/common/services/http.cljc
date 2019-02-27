@@ -1,17 +1,16 @@
 (ns com.ben-allred.letshang.common.services.http
   (:refer-clojure :exclude [get])
   (:require
+    [#?(:clj clj-http.client :cljs cljs-http.client) :as client]
     [#?(:clj clojure.core.async :cljs cljs.core.async) :as async]
     [clojure.set :as set]
     [com.ben-allred.letshang.common.services.content :as content]
     [com.ben-allred.letshang.common.services.env :as env]
+    [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log #?@(:cljs [:include-macros true])]
-    [kvlt.chan :as kvlt]))
+    [com.ben-allred.letshang.common.utils.maps :as maps]))
 
 (def ^:private header-keys #{:content-type :accept})
-
-(defn ^:private content-type-header [{:keys [headers]}]
-  (clojure.core/get headers "content-type" (:content-type headers)))
 
 (def status->kw
   {200 :http.status/ok
@@ -63,30 +62,35 @@
                       (:status response))]
     (<= lower status upper)))
 
-(def success?
+(def ^{:arglists '([response])} success?
   (partial check-status 200 299))
 
-(def client-error?
+(def ^{:arglists '([response])} client-error?
   (partial check-status 400 499))
 
-(def server-error?
+(def ^{:arglists '([response])} server-error?
   (partial check-status 500 599))
 
-(defn request* [chan]
+(defn ^:private client [request]
+  (-> request
+      (merge #?(:clj (let [f (partial async/put! (async/chan))]
+                       {:async? true :respond f :raise f})))
+      (update :headers (partial maps/map-keys keywords/safe-name))
+      (client/request)))
+
+(defn ^:private request* [chan]
   (async/go
     (let [ch-response (async/<! chan)
-          {:keys [status] :as response} (if-let [data (ex-data ch-response)]
-                                          data
-                                          ch-response)
-          body (-> response
-                   (content/parse (content-type-header response))
-                   (:body))
+          {:keys [status body] :as response} (-> (if-let [data (ex-data ch-response)]
+                                                   data
+                                                   ch-response)
+                                                 (update :headers (partial maps/map-keys keyword)))
           status (status->kw status status)]
       (if (success? response)
         [:success body status response]
         [:error body status response]))))
 
-(defn go [method url request]
+(defn ^:private go [method url request]
   (let [content-type (if (env/get :dev?) "application/edn" "application/transit")
         headers (merge {:content-type content-type :accept content-type}
                        (:headers request))]
@@ -94,11 +98,14 @@
         (assoc :method method :url url)
         (content/prepare header-keys (:content-type headers))
         (update :headers merge headers)
-        (kvlt/request!)
+        (client)
         (request*))))
 
-(defn get [url & [request]]
-  (go :get url request))
+(defn get
+  ([url]
+   (get url nil))
+  ([url & [request]]
+   (go :get url request)))
 
 (defn post [url request]
   (go :post url request))
@@ -109,5 +116,8 @@
 (defn put [url request]
   (go :put url request))
 
-(defn delete [url & [request]]
-  (go :delete url request))
+(defn delete
+  ([url]
+   (delete url nil))
+  ([url request]
+   (go :delete url request)))

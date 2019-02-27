@@ -3,7 +3,6 @@
     [clojure.pprint :as pp]
     [clojure.string :as string]
     [com.ben-allred.letshang.common.utils.colors :as colors]
-    [kvlt.core :refer [quiet!]]
     [taoensso.timbre :as logger #?@(:cljs [:include-macros true])]))
 
 (defmacro debug [& args]
@@ -63,8 +62,6 @@
                                  :cljs (seq (map no-color vargs)))
                               (level-color level)
                               (ns-color (or ?ns-str "ns?"))))))
-
-(quiet!)
 
 (logger/merge-config!
   {:level      :debug
