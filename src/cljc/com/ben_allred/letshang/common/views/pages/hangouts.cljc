@@ -4,8 +4,6 @@
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.store.actions :as actions]
-    [com.ben-allred.letshang.common.utils.chans :as ch]
-    [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.users :as users]
     [com.ben-allred.letshang.common.views.components.core :as components]
@@ -21,7 +19,8 @@
     :on-saved on-saved
     :form     form}
    [fields/input
-    (-> {:label "Name"}
+    (-> {:label       "Name"
+         :auto-focus? true}
         (hangouts.res/with-attrs form [:name]))]
    (when (seq associates)
      [dropdown/dropdown
@@ -46,7 +45,7 @@
 (def ^:private response->level
   {:positive "is-success"
    :negative "is-warning"
-   :neutral "is-info"})
+   :neutral  "is-info"})
 
 (defn ^:private response-component [response]
   (let [icon (response->icon response)]
@@ -86,6 +85,7 @@
      {:on-click #(change-state :edit)}
      "Edit"]]
    [:h1.label name]
+   [:h2.label "Who's coming?"]
    [:ul.layout--stack-between
     (for [invitation invitations]
       ^{:key (:id invitation)}
@@ -102,7 +102,7 @@
         (hangouts.res/on-modify change-state)
         [:button.button.is-info
          {:on-click #(change-state :normal)
-          :type :button}
+          :type     :button}
          "Cancel"]]])))
 
 (defn ^:private creator's-hangout [attrs resources]

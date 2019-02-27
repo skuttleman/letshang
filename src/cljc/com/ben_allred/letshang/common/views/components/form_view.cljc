@@ -5,7 +5,7 @@
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.views.components.loading :as loading]))
 
-(defn form [{:keys [buttons on-saved on-failed form]}& body]
+(defn form [{:keys [buttons on-saved on-failed form]} & body]
   (-> [:form.form.layout--stack-between
        {:on-submit (fn [e]
                      (dom/prevent-default e)

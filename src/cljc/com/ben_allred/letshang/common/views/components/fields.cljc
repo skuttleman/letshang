@@ -39,10 +39,11 @@
     (let [node-atom (atom nil)
           ref (fn [node] (some->> node (reset! node-atom)))]
       (r/create-class
-        {:component-did-mount
-         (fn [_this]
+        {:component-did-update
+         (fn [this _]
            (when-let [node @node-atom]
-             (when (and node auto-focus?)
+             (when (and auto-focus? (not (:disabled (second (r/argv this)))))
+               (reset! node-atom nil)
                (dom/focus node))))
          :reagent-render
          (fn [attrs & args]
@@ -143,7 +144,7 @@
   (let [state (r/atom initial-state)
         change-state (partial reset! state)]
     (fn [_initial-state component]
-      (let [attrs {:state @state
+      (let [attrs {:state        @state
                    :change-state change-state}]
         (components/render-with-attrs component attrs)))))
 

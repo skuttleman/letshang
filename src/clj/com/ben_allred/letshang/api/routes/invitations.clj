@@ -10,7 +10,8 @@
   {:invitation-id uuids/->uuid})
 
 (def ^:private save-spec
-  {:data {:response (f/pred #{:positive :negative :neutral} "Must specify a response")}})
+  {:data {:response [(f/required "Must specify a response")
+                     (f/pred #{:positive :negative :neutral} "Invalid response value")]}})
 
 (defroutes routes
   (context "/invitations" []

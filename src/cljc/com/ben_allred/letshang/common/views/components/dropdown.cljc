@@ -50,7 +50,9 @@
        button-control
        (-> attrs
            (set/rename-keys {:on-toggle :on-click})
-           (cond-> selected (assoc :selected selected)))]]
+           (cond->
+             selected (assoc :selected selected)
+             open? (update :class conj "is-focused")))]]
      (when open?
        [:div.dropdown-menu
         [:div.dropdown-content
