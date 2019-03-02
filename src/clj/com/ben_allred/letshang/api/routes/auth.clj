@@ -37,7 +37,11 @@
     (seq user)
     (redirect nil (jwt/encode {:user user}))
 
-    (seq sign-up-user)
+    (and (seq sign-up-user)
+         (-> sign-up-user
+             (sign-up.res/validator)
+             (select-keys (keys sign-up-user))
+             (empty?)))
     (redirect nil (jwt/encode {:sign-up sign-up-user}))
 
     :else
