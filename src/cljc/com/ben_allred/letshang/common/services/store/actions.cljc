@@ -72,6 +72,13 @@
                  (http/patch {:body body})
                  (request* dispatch :invitations)))))
 
+(defn suggest-when [hangout-id suggestion]
+  (fn [[dispatch]]
+    #?(:clj  (ch/resolve)
+       :cljs (-> (nav/path-for :api/suggestion.when {:route-params {:hangout-id hangout-id}})
+                 (http/post {:body suggestion})
+                 (request* dispatch :suggestions.when)))))
+
 (defn toast [level body]
   (fn [[dispatch]]
     #?(:cljs (let [toast-id (dates/inst->ms (dates/now))]

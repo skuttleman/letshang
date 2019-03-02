@@ -11,6 +11,7 @@
     [com.ben-allred.letshang.common.views.components.fields :as fields]
     [com.ben-allred.letshang.common.views.components.form-view :as form-view]
     [com.ben-allred.letshang.common.views.components.loading :as loading]
+    [com.ben-allred.letshang.common.views.pages.hangouts.suggestions :as suggestions]
     [com.ben-allred.letshang.common.views.resources.hangouts :as hangouts.res]))
 
 (defn ^:private hangout-form [form associates on-saved & buttons]
@@ -28,35 +29,16 @@
            :options (map (juxt :id users/full-name) associates)}
           (hangouts.res/with-attrs form [:invitation-ids]))])])
 
-(def ^:private response-options
-  [[:neutral "Undecided"]
-   [:negative "Not attending"]
-   [:positive "Attending"]])
-
-(def ^:private response->text
-  (into {:none "No response yet" :creator "Creator"} response-options))
-
-(def ^:private response->icon
-  {:none     :ban
-   :positive :thumbs-up
-   :negative :thumbs-down
-   :neutral  :question})
-
-(def ^:private response->level
-  {:positive "is-success"
-   :negative "is-warning"
-   :neutral  "is-info"})
-
 (defn ^:private response-component [response]
-  (let [icon (response->icon response)]
+  (let [icon (hangouts.res/response->icon response)]
     (cond->> [:span.tag.is-rounded
-              {:class [(response->level response)]
+              {:class [(hangouts.res/response->level response)]
                :style {:text-transform :lowercase}}
               (if icon
                 [components/icon {:class ["is-small"]} icon]
-                (response->text response))]
+                (hangouts.res/response->text response))]
       icon (conj [components/tooltip
-                  {:text     (response->text response)
+                  {:text     (hangouts.res/response->text response)
                    :position :right}]))))
 
 (defn ^:private responses [{:keys [invitation-id response]}]
@@ -66,7 +48,7 @@
        [fields/button-group
         (-> {:class ["is-small"]}
             (hangouts.res/with-attrs form [:response]))
-        response-options]
+        hangouts.res/response-options]
        (when-not (forms/ready? form)
          [loading/spinner])])))
 
@@ -78,7 +60,7 @@
       [responses invitation]
       [response-component response])]])
 
-(defn ^:private creator's-hangout-view [{:keys [change-state]} {{:keys [name invitations]} :hangout}]
+(defn ^:private creator's-hangout-view [{:keys [change-state]} {{hangout-id :id :keys [name invitations]} :hangout}]
   [:div
    [:div.buttons
     [:button.button.is-info
@@ -86,10 +68,14 @@
      "Edit"]]
    [:h1.label name]
    [:h2.label "Who's coming?"]
-   [:ul.layout--stack-between
-    (for [invitation invitations]
-      ^{:key (:id invitation)}
-      [invitation-item invitation false])]])
+   [:div.layout--inset
+    [:ul.layout--stack-between
+     (for [invitation invitations]
+       ^{:key (:id invitation)}
+       [invitation-item invitation false])]]
+   [:h2.label "When?"]
+   [suggestions/moment hangout-id]
+   [:h2.label "Where?"]])
 
 (defn ^:private creator's-hangout-edit [_attrs {:keys [hangout]}]
   (let [form (hangouts.res/form hangout)

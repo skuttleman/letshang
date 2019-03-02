@@ -2,7 +2,7 @@
   (:require
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(defn digits [s]
+(defn ^:private digits [s]
   (->> s
        (map str)
        (filter (partial re-matches #"\d"))

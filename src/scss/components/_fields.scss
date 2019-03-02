@@ -42,7 +42,7 @@
 }
 
 .form-field.errors {
-    .button-group, .input, .select, .textarea {
+    .button-group, .input, .select, .textarea, .dropdown-trigger > .button {
         border-color: $red;
 
         &:focus {

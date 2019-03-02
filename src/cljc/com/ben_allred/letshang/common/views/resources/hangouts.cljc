@@ -35,7 +35,8 @@
           (actions/create-hangout)
           (store/dispatch)
           (ch/then source->model)
-          (ch/peek (res/toast-success "Your hangout has been created.") (res/toast-error "Something went wrong."))))))
+          (ch/peek (res/toast-success "Your hangout has been created.")
+                   (res/toast-error "Something went wrong."))))))
 
 (defn ^:private edit-api [hangout]
   (reify
@@ -49,7 +50,8 @@
           (->> (actions/update-hangout (:id hangout)))
           (store/dispatch)
           (ch/then source->model)
-          (ch/peek (res/toast-success "Your hangout has been saved.") (res/toast-error "Something went wrong."))))))
+          (ch/peek (res/toast-success "Your hangout has been saved.")
+                   (res/toast-error "Something went wrong."))))))
 
 (defn ^:private response-api [model]
   (reify
@@ -61,13 +63,33 @@
       (-> {:data {:response response}}
           (->> (actions/set-response (:id model)))
           (store/dispatch)
-          (ch/peek (constantly nil) (res/toast-error "Something went wrong."))))))
+          (ch/peek (constantly nil)
+                   (res/toast-error "Something went wrong."))))))
 
 (def ^:private model->view
   {})
 
 (def ^:private view->model
   {:name not-empty})
+
+(def response-options
+  [[:neutral "Undecided"]
+   [:negative "Not attending"]
+   [:positive "Attending"]])
+
+(def response->text
+  (into {:none "No response yet" :creator "Creator"} response-options))
+
+(def response->icon
+  {:none     :ban
+   :positive :thumbs-up
+   :negative :thumbs-down
+   :neutral  :question})
+
+(def response->level
+  {:positive "is-success"
+   :negative "is-warning"
+   :neutral  "is-info"})
 
 (defn on-modify [change-state]
   (fn [response]

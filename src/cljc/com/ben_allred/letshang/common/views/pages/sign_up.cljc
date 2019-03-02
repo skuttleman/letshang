@@ -35,7 +35,7 @@
   [:div.sign-up-content.gutters.layout--xl.layout--xxl.layout--inset
    [:div.layout--space-above
     {:style {:display :flex :justify-content :flex-end}}
-    [auth/logout {:text "logout"}]]
+    [auth/logout {:text "start over"}]]
    [:p.has-text-centered
     {:style {:font-weight :bold}}
     "Thanks for coming to hang out."]

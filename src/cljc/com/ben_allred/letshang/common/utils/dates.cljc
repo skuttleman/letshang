@@ -1,40 +1,60 @@
 (ns com.ben-allred.letshang.common.utils.dates
   (:refer-clojure :exclude [format])
-  #?@(:clj
-      [(:import
-         (java.time Instant LocalDateTime ZonedDateTime ZoneId ZoneOffset)
-         (java.time.chrono ChronoLocalDateTime ChronoZonedDateTime)
-         (java.time.format DateTimeFormatter DateTimeParseException)
-         (java.util Date))]
-      :cljs
-      [(:require
-         [goog.date :as gdate])
-       (:import
-         (goog.date DateTime)
-         (goog.i18n DateTimeFormat))]))
+  (:require
+    #?(:cljs [goog.date :as gdate])
+    [com.ben-allred.letshang.common.utils.numbers :as numbers])
+  #?(:clj  (:import
+             (java.time DayOfWeek Instant LocalDate LocalDateTime LocalTime ZonedDateTime ZoneOffset)
+             (java.time.chrono ChronoLocalDate ChronoLocalDateTime ChronoZonedDateTime)
+             (java.time.format DateTimeFormatter DateTimeParseException)
+             (java.util Date))
+     :cljs (:import
+             (goog.date Date DateTime)
+             (goog.i18n DateTimeFormat))))
 
+#?(:cljs
+   (extend-protocol IEquiv
+     Date
+     (-equiv [this other]
+       (cond
+         (nil? other) false
+         (instance? Date other) (.equals this other)
+         :else (.equals this (Date. other))))
+
+     DateTime
+     (-equiv [this other]
+       (cond
+         (nil? other) false
+         (instance? DateTime other) (.equals this other)
+         :else (.equals this (DateTime. other))))))
+
+(declare ->inst)
 
 (def ^:private formats
   {:default "EEE MMM d, yyyy 'at' h:mm a"
-   :fs "yyyyMMddHHmmss"
-   :year "yyyy"})
+   :date    "yyyy-MM-dd"
+   :default-date "EEE MMM d, yyyy"
+   :fs      "yyyyMMddHHmmss"
+   :year    "yyyy"
+   :day     "d"
+   :month   "MMMM"})
 
 (defn ^:private inst->dt [inst]
   #?(:clj  (if (instance? Instant inst)
              inst
-             (.toInstant inst))
+             (.toInstant (->inst inst)))
      :cljs (if (instance? DateTime inst)
              inst
-             (DateTime. inst))))
+             (DateTime. (->inst inst)))))
 
 (defn format
   ([inst]
-   (format inst (:default formats)))
+   (format inst :default))
   ([inst fmt]
     #?(:clj  (-> fmt
                  (formats fmt)
                  (DateTimeFormatter/ofPattern)
-                 (.withZone (ZoneId/systemDefault))
+                 (.withZone ZoneOffset/UTC)
                  (.format (inst->dt inst)))
        :cljs (-> fmt
                  (formats fmt)
@@ -46,7 +66,7 @@
                 (re-matches #"\d{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9](\.\d{3})?(Z|(\+|-)\d{2}:\d{2})" s)
                 #?(:clj  (try
                            (ZonedDateTime/parse s)
-                           (catch DateTimeParseException ex
+                           (catch DateTimeParseException _
                              false))
                    :cljs (gdate/fromIsoString s)))))
 
@@ -59,8 +79,11 @@
                (->inst (.toInstant v))
 
                (instance? ChronoLocalDateTime v)
-               (->inst (.toInstant v ZoneOffset/UTC))]
-        :cljs [(instance? DateTime v)
+               (->inst (.toInstant v ZoneOffset/UTC))
+
+               (instance? ChronoLocalDate v)
+               (->inst (.atTime v (LocalTime/of 0 0 0 0)))]
+        :cljs [(or (instance? DateTime v) (instance? Date v))
                (.-date v)])
 
     (inst? v)
@@ -72,26 +95,83 @@
 
 (defn plus [inst? amt interval]
   #?(:clj  (-> inst?
-               (->inst)
-               (.toInstant)
+               (inst->dt)
                (LocalDateTime/ofInstant ZoneOffset/UTC)
                (cond->
                  (= :years interval) (.plusYears amt)
-                 (= :month interval) (.plusMonths amt)
+                 (= :months interval) (.plusMonths amt)
                  (= :weeks interval) (.plusWeeks amt)
                  (= :days interval) (.plusDays amt)
                  (= :hours interval) (.plusHours amt)
                  (= :minutes interval) (.plusMinutes amt)
                  (= :seconds interval) (.plusSeconds amt))
                (.toInstant ZoneOffset/UTC))
-     :cljs (throw (js/Error. "Not Implemented"))))
+     :cljs (doto (.clone (inst->dt inst?))
+             (.add (-> {:years 0 :months 0 :weeks 0 :days 0 :hours 0 :minutes 0 :seconds 0}
+                       (assoc interval amt)
+                       (clj->js))))))
+
+(defn minus [inst? amt interval]
+  (plus inst? (* -1 amt) interval))
+
+(defn with [inst? amt interval]
+  #?(:clj  (-> inst?
+               (inst->dt)
+               (LocalDateTime/ofInstant ZoneOffset/UTC)
+               (cond->
+                 (= :year interval) (.withYear amt)
+                 (= :month interval) (.withMonth amt)
+                 (= :day interval) (.withDayOfMonth amt)
+                 (= :hour interval) (.withHour amt)
+                 (= :minute interval) (.withMinute amt)
+                 (= :second interval) (.withSecond amt))
+               (.toInstant ZoneOffset/UTC))
+     :cljs (doto (.clone (inst->dt inst?))
+             (cond->
+               (= :year interval) (.setFullYear amt)
+               (= :month interval) (.setMonth (dec amt))
+               (= :day interval) (.setDate amt)
+               (= :hour interval) (.setHours amt)
+               (= :minute interval) (.setMinutes amt)
+               (= :second interval) (.setSeconds amt)))))
 
 (defn year [inst]
   (format inst (:year formats)))
+
+(defn month [inst]
+  (format inst (:month formats)))
+
+(defn day [inst]
+  (format inst (:day formats)))
+
+(defn day-of-week [inst?]
+  #?(:clj (-> inst?
+              (inst->dt)
+              (LocalDateTime/ofInstant ZoneOffset/UTC)
+              (.getDayOfWeek)
+              ({DayOfWeek/SUNDAY    :sunday
+                DayOfWeek/MONDAY    :monday
+                DayOfWeek/TUESDAY   :tuesday
+                DayOfWeek/WEDNESDAY :wednesday
+                DayOfWeek/THURSDAY  :thursday
+                DayOfWeek/FRIDAY    :friday
+                DayOfWeek/SATURDAY  :saturday}))
+     :cljs (-> inst?
+               (inst->dt)
+               (.getWeekday)
+               ([:sunday :monday :tuesday :wednesday :thursday :friday :saturday]))))
 
 (defn now []
   #?(:clj  (Instant/now)
      :cljs (DateTime.)))
 
+(defn today []
+  #?(:clj  (LocalDate/ofInstant (now) ZoneOffset/UTC)
+     :cljs (Date.)))
+
 (defn inst->ms [inst?]
   (.getTime (->inst inst?)))
+
+(defn date? [value]
+  (or (instance? #?(:clj LocalDate :cljs Date) value)
+      (instance? #?(:clj LocalDateTime :cljs DateTime) value)))

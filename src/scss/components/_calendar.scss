@@ -1,0 +1,21 @@
+.calendar {
+    .calendar-nav .button {
+        width: unset;
+    }
+    .calendar-table td {
+        padding: 0;
+
+        & > * {
+            height: 100%;
+            width: 100%;
+        }
+
+        &.is-different-month > * {
+            color: gray;
+        }
+
+        &.is-selected > * {
+            background-color: unset;
+        }
+    }
+}

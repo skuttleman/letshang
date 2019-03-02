@@ -6,6 +6,7 @@
     [com.ben-allred.letshang.common.utils.maps :as maps]
     [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
+    [com.ben-allred.letshang.common.utils.fns #?(:clj :refer :cljs :refer-macros) [=>>]]
     [com.ben-allred.letshang.common.views.components.loading :as loading]))
 
 (defn lazy-list [{:keys [value options]}]
@@ -71,7 +72,7 @@
             [components/alert :info "No results"])]]])]))
 
 (defn dropdown [{:keys [options] :as attrs}]
-  (let [options-by-id (or (:options-by-id attrs) (maps/select-by :id options))]
+  (let [options-by-id (or (:options-by-id attrs) (into {} options))]
     [fields/form-field
      attrs
      [fields/openable [dropdown* (assoc attrs :options-by-id options-by-id)]]]))
@@ -80,4 +81,4 @@
   (let [value (if (nil? value) #{} #{value})]
     (-> attrs
         (assoc :value value)
-        (update :on-change comp #(->> % (remove value) (first))))))
+        (update :on-change comp (=>> (remove value) (first))))))
