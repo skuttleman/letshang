@@ -35,4 +35,4 @@
         (-> {:options (map (juxt identity (comp #(strings/titlize % " ") name)) res.suggestions/windows)
              :button-control window-button}
             (res.suggestions/with-attrs form [:window])
-            (dropdown/singleable))]])))
+            (dropdown/oneable))]])))

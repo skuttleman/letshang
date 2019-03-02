@@ -82,3 +82,12 @@
     (-> attrs
         (assoc :value value)
         (update :on-change comp (=>> (remove value) (first))))))
+
+(defn oneable [{:keys [value] :as attrs}]
+  (let [value (if (nil? value) #{} #{value})]
+    (-> attrs
+        (assoc :value value)
+        (update :on-change (fn [on-change]
+                             (fn [values]
+                               (when-let [value (first (remove value values))]
+                                 (on-change value))))))))

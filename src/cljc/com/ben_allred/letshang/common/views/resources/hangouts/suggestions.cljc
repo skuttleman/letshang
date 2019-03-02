@@ -24,7 +24,7 @@
   (reify
     forms/IFetch
     (fetch [_]
-      (ch/resolve nil))
+      (ch/resolve {:window :any-time}))
     forms/ISave
     (save! [_ model]
       (-> model
@@ -35,7 +35,7 @@
                    (res/toast-error "Something went wrong."))
           (ch/then (constantly nil))))))
 
-(def windows [:morning :mid-day :afternoon :after-work :evening :night :twilight])
+(def windows [:any-time :morning :mid-day :afternoon :after-work :evening :night :twilight])
 
 (defn form [hangout-id]
   #?(:cljs (forms.std/create (suggest-api hangout-id) validator)
