@@ -17,5 +17,9 @@
         &.is-selected > * {
             background-color: unset;
         }
+
+        &.is-today:not(.is-selected) > * {
+            border: 1px solid $blue;
+        }
     }
 }

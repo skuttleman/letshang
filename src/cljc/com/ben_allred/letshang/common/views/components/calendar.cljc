@@ -42,29 +42,34 @@
            (partition 7)))))
 
 (defn ^:private calendar [attrs]
-  (let [current (r/atom (or (:value attrs) (dates/with (dates/today) 1 :day)))]
+  (let [today (dates/today)
+        current (r/atom (or (:value attrs) (dates/with today 1 :day)))]
     (fn [{:keys [on-change value]}]
       (let [month (dates/month @current)]
         [:div.calendar.layout--stack-between
          [:div.calendar-nav.layout--space-between
           [:button.button.is-small.is-white
            {:on-click #(swap! current dates/minus 1 :years)
-            :type     :button}
+            :type     :button
+            :tab-index -1}
            [components/icon :angle-double-left]]
           [:button.button.is-small.is-white
            {:on-click #(swap! current dates/minus 1 :months)
-            :type     :button}
+            :type     :button
+            :tab-index -1}
            [components/icon :angle-left]]
           [:span.calendar-display
            {:style {:display :flex :flex-grow 1 :justify-content :center :align-self :center}}
            (dates/month @current) ", " (dates/year @current)]
           [:button.button.is-small.is-white
            {:on-click #(swap! current dates/plus 1 :months)
-            :type     :button}
+            :type     :button
+            :tab-index -1}
            [components/icon :angle-right]]
           [:button.button.is-small.is-white
            {:on-click #(swap! current dates/plus 1 :years)
-            :type     :button}
+            :type     :button
+            :tab-index -1}
            [components/icon :angle-double-right]]]
          [:table.table.calendar-table.is-bordered
           [:thead
@@ -80,14 +85,12 @@
                     :let [selected? (= day value)]]
                 ^{:key day}
                 [:td
-                 {:class [(when (or selected?
-                                    (and (not value)
-                                         (= day (dates/today))))
-                            "is-selected")
-                          (when (not= (dates/month day) month)
-                            "is-different-month")]}
+                 {:class [(when selected? "is-selected")
+                          (when (= day today) "is-today")
+                          (when (not= (dates/month day) month) "is-different-month")]}
                  [:button.button.is-white
                   {:type     :button
+                   :tab-index -1
                    :on-click (fn [_]
                                (when (not selected?)
                                  (reset! current day)
@@ -112,7 +115,9 @@
                           :as   attrs}]
   [:div.dropdown
    {:class    [(when open? "is-active")]
-    :on-click dom/stop-propagation}
+    :on-click (fn [e]
+                (when open?
+                  (dom/stop-propagation e)))}
    [:div.dropdown-trigger
     [components/render
      button-control

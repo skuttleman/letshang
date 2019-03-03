@@ -23,7 +23,6 @@
 (defn moment [hangout-id]
   (let [form (res.suggestions/form hangout-id)]
     (fn [_hangout-id]
-      (log/spy @form)
       [form-view/form
        {:inline? true
         :form form

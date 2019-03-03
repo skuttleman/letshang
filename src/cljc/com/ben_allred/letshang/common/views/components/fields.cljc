@@ -3,6 +3,7 @@
     [com.ben-allred.letshang.common.services.transformers :as transformers]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.dom :as dom]
+    [com.ben-allred.letshang.common.utils.fns #?(:clj :refer :cljs :refer-macros) [=>]]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.views.components.core :as components]))
 
@@ -125,20 +126,45 @@
 
 (defn openable [_component]
   (let [open? (r/atom false)
-        listeners [(dom/add-listener dom/window "click" #(reset! open? false))
-                   (dom/add-listener dom/window "keypress" #(when (= :esc (dom/event->key %))
-                                                              (reset! open? false)))]]
+        ref (atom nil)
+        listeners [(dom/add-listener dom/window :click (fn [e]
+                                                         (if (->> (.-target e)
+                                                                  (iterate #(some-> % .-parentNode))
+                                                                  (take-while some?)
+                                                                  (filter (partial = @ref))
+                                                                  (empty?))
+                                                           (do (reset! open? false)
+                                                               (some-> @ref dom/blur))
+                                                           (some-> @ref dom/focus))))
+                   (dom/add-listener dom/window
+                                     :keydown
+                                     #(when (#{:key-codes/tab :key-codes/esc} (dom/event->key %))
+                                        (reset! open? false))
+                                     true)]]
     (r/create-class
       {:component-will-unmount
        (fn [_]
          (run! dom/remove-listener listeners))
        :reagent-render
        (fn [component]
-         (let [attrs {:on-toggle (fn [e]
-                                   (dom/stop-propagation e)
+         (let [attrs {:on-toggle (fn [_]
                                    (swap! open? not))
                       :open?     @open?}]
-           (components/render-with-attrs component attrs)))})))
+           (-> component
+               (components/render-with-attrs attrs)
+               (update 1 (=> (update :ref (fn [ref-fn]
+                                            (fn [node]
+                                              (when node
+                                                (reset! ref node))
+                                              (when ref-fn
+                                                (ref-fn node)))))
+                             (update :on-blur (fn [on-blur]
+                                                (fn [e]
+                                                  (when-let [node @ref]
+                                                    (if @open?
+                                                      (some-> node dom/focus)
+                                                      (when on-blur
+                                                        (on-blur e))))))))))))})))
 
 (defn stateful [initial-state _component]
   (let [state (r/atom initial-state)

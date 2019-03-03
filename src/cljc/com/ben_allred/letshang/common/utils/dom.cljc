@@ -5,7 +5,8 @@
 (def ^:private listeners (atom {}))
 
 (def ^:private key->code
-  {:key-codes/esc   27
+  {:key-codes/tab   9
+   :key-codes/esc   27
    :key-codes/enter 13})
 
 (def ^:private code->key
@@ -39,29 +40,33 @@
   #?(:cljs
      (.click node)))
 
+(defn blur [node]
+  #?(:cljs
+     (.blur node)))
+
 (defn focus [node]
   #?@(:cljs
       [(.focus node)
        (when (.-setSelectionRange node)
-         (let [length (-> node (.-value) (.-length))]
+         (let [length (-> node .-value .-length)]
            (.setSelectionRange node length length)))]))
 
 (defn event->key [e]
   #?(:cljs
-     (-> e
-         (.-keyCode)
-         (code->key))))
+     (-> e .-keyCode code->key)))
 
-(defn add-listener [node event cb]
-  #?(:cljs
-     (let [key (gensym)
-           listener [node event (.addEventListener node event cb)]]
-       (swap! listeners assoc key listener)
-       key)))
+(defn add-listener
+  ([node event cb]
+   (add-listener node event cb nil))
+  ([node event cb options]
+    #?(:cljs
+       (let [key (gensym)
+             listener [node event (.addEventListener node (name event) cb (clj->js options))]]
+         (swap! listeners assoc key listener)
+         key))))
 
 (defn remove-listener [key]
   #?(:cljs
      (when-let [[node event id] (get @listeners key)]
        (swap! listeners dissoc key)
-       (.removeEventListener node event id))))
-
+       (.removeEventListener node (name event) id))))
