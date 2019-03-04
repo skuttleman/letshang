@@ -2,6 +2,7 @@
   (:require
     [com.ben-allred.letshang.api.services.db.entities :as entities]
     [com.ben-allred.letshang.api.services.db.models.invitations :as models.invitations]
+    [com.ben-allred.letshang.api.services.db.models.moments :as models.moments]
     [com.ben-allred.letshang.api.services.db.models.shared :as models]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.hangouts :as repo.hangouts]
@@ -43,12 +44,14 @@
         (has-hangout user-id)]
        (select* db)
        (models.invitations/with-invitations db)
+       (models.moments/with-moments db)
        (colls/only!)))
 
 (defn create [db hangout created-by]
   (let [hangout-id (-> hangout
                        (assoc :created-by created-by)
                        (repo.hangouts/insert)
+                       (models/insert-many entities/hangouts ::model)
                        (repos/exec! db)
                        (colls/only!)
                        (:id))]

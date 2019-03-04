@@ -10,7 +10,11 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]
     [honeysql.core :as sql]
-    [jdbc.pool.c3p0 :as c3p0]))
+    [jdbc.pool.c3p0 :as c3p0]
+    honeysql-postgres.format
+    honeysql-postgres.helpers)
+  (:import
+    (java.util Date)))
 
 (defn ^:private sql-value* [table column _]
   [table column])
@@ -19,6 +23,11 @@
 (defmethod ->sql-value :default
   [_ _ value]
   value)
+
+(extend-protocol jdbc/ISQLValue
+  Date
+  (sql-value [val]
+    (java.sql.Date. (.getTime val))))
 
 (def db-cfg
   {:vendor      "postgres"
@@ -56,15 +65,11 @@
     (sql-log query)
     (cond
       (:select query) (jdbc/query db (sql-format query))
-      update-table (->> (keywords/kebab->snake update-table)
-                        (prep/prepare ->sql-value)
-                        (update query :set)
-                        (sql-format)
-                        (jdbc/execute! db))
-      insert-table (->> (:values query)
-                        (colls/force-sequential)
-                        (map (prep/prepare ->sql-value (keywords/kebab->snake insert-table)))
-                        (jdbc/insert-multi! db (keywords/kebab->snake insert-table)))
+      update-table (jdbc/execute! db (sql-format query))
+      insert-table (->> (when-let [returning (:returning query)]
+                          {:return-keys (map name returning)})
+                        (jdbc/execute! db (sql-format (dissoc query :returning)))
+                        (colls/force-sequential))
       :else query)))
 
 (defn ^:private remove-namespaces [val]

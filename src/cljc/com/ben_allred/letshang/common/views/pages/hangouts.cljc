@@ -4,7 +4,10 @@
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.store.actions :as actions]
+    [com.ben-allred.letshang.common.utils.dates :as dates]
+    [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.strings :as strings]
     [com.ben-allred.letshang.common.utils.users :as users]
     [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.dropdown :as dropdown]
@@ -12,7 +15,7 @@
     [com.ben-allred.letshang.common.views.components.form-view :as form-view]
     [com.ben-allred.letshang.common.views.components.loading :as loading]
     [com.ben-allred.letshang.common.views.pages.hangouts.suggestions :as suggestions]
-    [com.ben-allred.letshang.common.views.resources.hangouts :as hangouts.res]))
+    [com.ben-allred.letshang.common.views.resources.hangouts :as res.hangouts]))
 
 (defn ^:private hangout-form [form associates on-saved & buttons]
   [form-view/form
@@ -22,33 +25,33 @@
    [fields/input
     (-> {:label       "Name"
          :auto-focus? true}
-        (hangouts.res/with-attrs form [:name]))]
+        (res.hangouts/with-attrs form [:name]))]
    (when (seq associates)
      [dropdown/dropdown
       (-> {:label   "Invitees"
            :options (map (juxt :id users/full-name) associates)}
-          (hangouts.res/with-attrs form [:invitation-ids]))])])
+          (res.hangouts/with-attrs form [:invitation-ids]))])])
 
 (defn ^:private response-component [response]
-  (let [icon (hangouts.res/response->icon response)]
+  (let [icon (res.hangouts/response->icon response)]
     (cond->> [:span.tag.is-rounded
-              {:class [(hangouts.res/response->level response)]
+              {:class [(res.hangouts/response->level response)]
                :style {:text-transform :lowercase}}
               (if icon
                 [components/icon {:class ["is-small"]} icon]
-                (hangouts.res/response->text response))]
+                (res.hangouts/response->text response))]
       icon (conj [components/tooltip
-                  {:text     (hangouts.res/response->text response)
+                  {:text     (res.hangouts/response->text response)
                    :position :right}]))))
 
 (defn ^:private responses [{:keys [invitation-id response]}]
-  (let [form (hangouts.res/response-form {:id invitation-id :response response})]
+  (let [form (res.hangouts/response-form {:id invitation-id :response response})]
     (fn [_response]
       [:div.layout--space-between.layout--align-center
        [fields/button-group
         (-> {:class ["is-small"]}
-            (hangouts.res/with-attrs form [:response]))
-        hangouts.res/response-options]
+            (res.hangouts/with-attrs form [:response]))
+        res.hangouts/response-options]
        (when-not (forms/ready? form)
          [loading/spinner])])))
 
@@ -60,7 +63,7 @@
       [responses invitation]
       [response-component response])]])
 
-(defn ^:private creator's-hangout-view [{:keys [change-state]} {{hangout-id :id :keys [name invitations]} :hangout}]
+(defn ^:private creator's-hangout-view [{:keys [change-state]} {{hangout-id :id :keys [invitations moments name]} :hangout}]
   [:div
    [:div.buttons
     [:button.button.is-info
@@ -74,18 +77,26 @@
        ^{:key (:id invitation)}
        [invitation-item invitation false])]]
    [:h2.label "When?"]
+   [:div.layout--inset
+    [:ul.layout--stack-between
+     (for [moment moments]
+       ^{:key (:id moment)}
+       [:li
+        (dates/format (:date moment) :date/view)
+        ": "
+        (strings/titlize (keywords/safe-name (:window moment)))])]]
    [suggestions/moment hangout-id]
    [:h2.label "Where?"]])
 
 (defn ^:private creator's-hangout-edit [_attrs {:keys [hangout]}]
-  (let [form (hangouts.res/form hangout)
+  (let [form (res.hangouts/form hangout)
         already-invited? (comp (set (map :id (:invitations hangout))) :id)]
     (fn [{:keys [change-state]} {:keys [associates]}]
       [:div
        [hangout-form
         form
         (remove already-invited? associates)
-        (hangouts.res/on-modify change-state)
+        (res.hangouts/on-modify change-state)
         [:button.button.is-info
          {:on-click #(change-state :normal)
           :type     :button}
@@ -127,13 +138,13 @@
      [:div "You don't have any hangouts, yet. What are you waiting for?"])])
 
 (defn ^:private create* [_resources]
-  (let [form (hangouts.res/form)]
+  (let [form (res.hangouts/form)]
     (fn [{:keys [associates]}]
       [:div
        [hangout-form
         form
         associates
-        hangouts.res/create->modify
+        res.hangouts/create->modify
         (if (not (forms/ready? form))
           [:button.button.is-warning
            {:disabled true :type :button}

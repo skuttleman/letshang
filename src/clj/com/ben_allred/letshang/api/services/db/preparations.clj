@@ -10,7 +10,7 @@
     (fn [value]
       (doto (PGobject.)
         (.setType type)
-        (.setValue (name value))))))
+        (.setValue (keywords/safe-name value))))))
 
 (defn prepare [->sql-value table]
   (partial into

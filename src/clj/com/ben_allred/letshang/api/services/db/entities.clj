@@ -22,8 +22,13 @@
 
 (defn insert-into [entity rows]
   {:insert-into (:table entity)
-   :values      (map #(select-keys % (:fields entity)) rows)})
+   :values      rows
+   :returning   [:*]})
 
+(defn upsert [entity rows conflict keys]
+  (-> entity
+      (insert-into rows)
+      (assoc :on-conflict conflict :do-update-set keys)))
 
 (defn modify [entity m]
   {:update (:table entity)
@@ -57,6 +62,14 @@
 (def invitations
   {:fields #{:id :hangout-id :user-id :match-type :response :created-by :created-at}
    :table  :invitations})
+
+(def moments
+  {:fields #{:id :hangout-id :date :moment-window :created-by :created-at}
+   :table  :moments})
+
+(def moment-responses
+  {:fields #{:moment-id :user-id :response :created-at}
+   :table  :moment-responses})
 
 (def users
   {:fields #{:id :first-name :last-name :handle :email :mobile-number :created-at}

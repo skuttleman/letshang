@@ -11,7 +11,7 @@
 
 (defn ^:private date-str []
   (-> (dates/now)
-      (dates/format :fs)))
+      (dates/format :datetime/fs)))
 
 (defn load-config []
   {:datastore  (rag-db/sql-database repos/db-cfg)

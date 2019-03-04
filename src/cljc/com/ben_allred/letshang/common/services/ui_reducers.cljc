@@ -18,8 +18,15 @@
          state)))))
 
 (def ^:private associates (resource :associates))
-(def ^:private hangout (resource :hangout))
 (def ^:private hangouts (resource :hangouts))
+(def ^:private hangout (collaj.reducers/comp
+                         (fn
+                           ([] [:init])
+                           ([state [type response]]
+                            (case type
+                              :suggestions.when/success (update-in state [1 :moments] conj (:data response))
+                              state)))
+                         (resource :hangout)))
 
 (defn ^:private page
   ([] nil)

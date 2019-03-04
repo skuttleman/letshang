@@ -1,5 +1,7 @@
 (ns com.ben-allred.letshang.api.services.db.models.shared
   (:require
+    [com.ben-allred.letshang.api.services.db.preparations :as prep]
+    [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
@@ -26,8 +28,11 @@
     (map (partial ->api model))]))
 
 (defn insert-many [query entity model]
-  (update query :values (comp (partial map #(->db model (select-keys % (:fields entity))))
+  (update query :values (comp (partial map (comp
+                                             (prep/prepare repos/->sql-value (:table entity))
+                                             #(select-keys (->db model %) (:fields entity))))
                               colls/force-sequential)))
 
 (defn modify [query entity model]
-  (update query :set #(->db model (select-keys % (:fields entity)))))
+  (update query :set (comp (prep/prepare repos/->sql-value (:table entity))
+                           #(select-keys (->db model %) (:fields entity)))))

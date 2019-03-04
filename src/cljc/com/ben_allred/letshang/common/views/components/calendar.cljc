@@ -104,7 +104,7 @@
        (select-keys #{:class :disabled :on-blur :on-click :ref})
        (assoc :type :button))
    (if-let [value (:value attrs)]
-     [:p (dates/format value :default-date)]
+     [:p (dates/format value :date/human)]
      (:button-text attrs "Select…"))
    [:span
     {:style {:margin-left "10px"}}

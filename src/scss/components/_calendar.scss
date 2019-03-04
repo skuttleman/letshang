@@ -2,11 +2,13 @@
     .calendar-nav .button {
         width: unset;
     }
+
     .calendar-table td {
         padding: 0;
 
         & > * {
             height: 100%;
+            padding: unset;
             width: 100%;
         }
 

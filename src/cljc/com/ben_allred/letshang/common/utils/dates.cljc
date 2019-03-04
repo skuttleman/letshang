@@ -31,13 +31,13 @@
 (declare ->inst)
 
 (def ^:private formats
-  {:default "EEE MMM d, yyyy 'at' h:mm a"
-   :date    "yyyy-MM-dd"
-   :default-date "EEE MMM d, yyyy"
-   :fs      "yyyyMMddHHmmss"
-   :year    "yyyy"
-   :day     "d"
-   :month   "MMMM"})
+  {:datetime/view "EEE MMM d, yyyy 'at' h:mm a"
+   :date/system    "yyyy-MM-dd"
+   :date/view     "EEE MMM d, yyyy"
+   :datetime/fs    "yyyyMMddHHmmss"
+   :date/year      "yyyy"
+   :date/day       "d"
+   :date/month     "MMMM"})
 
 (defn ^:private inst->dt [inst]
   #?(:clj  (if (instance? Instant inst)
@@ -49,7 +49,7 @@
 
 (defn format
   ([inst]
-   (format inst :default))
+   (format inst :datetime/view))
   ([inst fmt]
     #?(:clj  (-> fmt
                  (formats fmt)
@@ -136,13 +136,13 @@
                (= :second interval) (.setSeconds amt)))))
 
 (defn year [inst]
-  (format inst (:year formats)))
+  (format inst :date/year))
 
 (defn month [inst]
-  (format inst (:month formats)))
+  (format inst :date/month))
 
 (defn day [inst]
-  (format inst (:day formats)))
+  (format inst :date/day))
 
 (defn day-of-week [inst?]
   #?(:clj (-> inst?
@@ -160,6 +160,26 @@
                (inst->dt)
                (.getWeekday)
                ([:sunday :monday :tuesday :wednesday :thursday :friday :saturday]))))
+
+(defn after? [date-1 date-2]
+  #?(:clj  (-> date-1
+               (inst->dt)
+               (LocalDateTime/ofInstant ZoneOffset/UTC)
+               (.isAfter (LocalDateTime/ofInstant (inst->dt date-2) ZoneOffset/UTC)))
+     :cljs (-> date-1
+               (inst->dt)
+               (as-> $ (.compare Date $ (inst->dt date-2)))
+               (pos?))))
+
+(defn before? [date-1 date-2]
+  #?(:clj  (-> date-1
+               (inst->dt)
+               (LocalDateTime/ofInstant ZoneOffset/UTC)
+               (.isBefore (LocalDateTime/ofInstant (inst->dt date-2) ZoneOffset/UTC)))
+     :cljs (-> date-1
+               (inst->dt)
+               (as-> $ (.compare Date $ (inst->dt date-2)))
+               (neg?))))
 
 (defn now []
   #?(:clj  (Instant/now)

@@ -44,14 +44,13 @@
       (repos/exec! db)))
 
 (defn with-invitations [db hangouts]
-  (if (seq hangouts)
+  (when (seq hangouts)
     (let [hangout-id->invitations (->> [:in :hangout-id (map :id hangouts)]
                                     (select* db)
                                     (group-by :hangout-id))]
       (map (fn [{:keys [id] :as hangout}]
              (assoc hangout :invitations (hangout-id->invitations id)))
-           hangouts))
-    hangouts))
+           hangouts))))
 
 (defn insert-many! [db hangout-ids user-ids created-by]
   (let [hangout-invitations (for [hangout-id hangout-ids

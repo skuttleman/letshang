@@ -11,14 +11,16 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.views.resources.core :as res]))
 
-(def ^:private validator
+(def validator
   (f/validator
-    {:date (f/required "You must select a date")
+    {:date   [(f/required "You must select a date")
+              (f/pred #(not (dates/before? % (dates/today))) "Cannot be in the past")]
      :window (f/required "You must select a window")}))
 
 (def ^:private model->source
-  (f/transformer
-    {:date dates/->inst}))
+  (comp (partial hash-map :data)
+        (f/transformer
+          {:date dates/->inst})))
 
 (defn ^:private suggest-api [hangout-id]
   (reify
@@ -33,7 +35,7 @@
           (store/dispatch)
           (ch/peek (constantly nil)
                    (res/toast-error "Something went wrong."))
-          (ch/then (constantly nil))))))
+          (ch/then (constantly {:window :any-time}))))))
 
 (def windows [:any-time :morning :mid-day :afternoon :after-work :evening :night :twilight])
 
