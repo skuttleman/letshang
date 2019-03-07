@@ -39,7 +39,7 @@
         port (server-port env :port 3000)
         nrepl-port (server-port env :nrepl-port 7000)
         base-url (format "http://%s:%d" (:canonicalHostName (bean (InetAddress/getLocalHost))) port)]
-    (alter-var-root #'env/get assoc :dev? true :base-url base-url)
+    (alter-var-root #'env/get assoc :dev? true :base-url base-url :port port)
     (run port #'routes/app-dev)
     (println "Server is running with #'wrap-reload")
     (nrepl/start-server :port nrepl-port)

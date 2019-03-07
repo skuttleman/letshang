@@ -3,7 +3,7 @@
     [com.ben-allred.collaj.core :as collaj]
     [com.ben-allred.collaj.enhancers :as collaj.enhancers]
     [com.ben-allred.letshang.common.services.env :as env]
-    [com.ben-allred.letshang.common.services.ui-reducers :as reducers]
+    [com.ben-allred.letshang.common.services.store.ui-reducers :as reducers]
     [com.ben-allred.letshang.common.stubs.reagent :as r]))
 
 (defonce ^:private store

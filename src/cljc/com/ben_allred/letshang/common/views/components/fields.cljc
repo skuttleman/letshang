@@ -20,13 +20,18 @@
 (defn ^:private remove-by-idx [idx coll]
   (modify-coll (comp (remove (comp #{idx} first)) (map second)) coll))
 
-(defn form-field [{:keys [attempted? errors label visited?]} & body]
+(defn form-field [{:keys [attempted? errors label label-small? visited?]} & body]
   (let [errors (seq (remove nil? errors))
         show-errors? (and errors (or visited? attempted?))]
     [:div.form-field
      {:class [(when show-errors? "errors")]}
      [:div
-      (when label [:label.label label])
+      (when label
+        [:label.label
+         (when label-small?
+           {:style {:font-weight :normal
+                    :font-size "0.8em"}})
+         label])
       (into [:div.form-field-control] body)
       (when show-errors?
         [:ul.error-list
@@ -116,12 +121,8 @@
           :let [active? (= value option)]]
       ^{:key option}
       [:li.grouped-button
-       (-> attrs
-           (assoc :class [(when active? "is-selected")])
-           (dissoc :button-class :label :on-change :value)
-           (cond->
-             (and (not active?) (not disabled))
-             (assoc :on-click #(on-change option))))
+       (cond-> {:class [(when active? "is-selected")]}
+         (and (not active?) (not disabled)) (assoc :on-click #(on-change option)))
        display])]])
 
 (defn openable [_component]

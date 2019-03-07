@@ -39,6 +39,13 @@
 
 (def windows [:any-time :morning :mid-day :afternoon :after-work :evening :night :twilight])
 
+(defn moment-sorter [response-counts-1 response-counts-2]
+  (let [score (compare (- (:positive response-counts-2 0) (:negative response-counts-2 0))
+                       (- (:positive response-counts-1 0) (:negative response-counts-1 0)))]
+    (if (zero? score)
+      (compare (reduce + 0 (vals response-counts-2)) (reduce + 0 (vals response-counts-1)))
+      score)))
+
 (defn form [hangout-id]
   #?(:cljs (forms.std/create (suggest-api hangout-id) validator)
      :default (forms.noop/create nil)))

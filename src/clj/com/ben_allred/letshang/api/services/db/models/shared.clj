@@ -27,6 +27,11 @@
     x-form
     (map (partial ->api model))]))
 
+(defn xform [query {:keys [before after]}]
+  (cond-> query
+    before (update 1 comp before)
+    after (update 2 comp after)))
+
 (defn insert-many [query entity model]
   (update query :values (comp (partial map (comp
                                              (prep/prepare repos/->sql-value (:table entity))

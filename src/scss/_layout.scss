@@ -47,6 +47,7 @@
 .layout--space-between {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
 
     & > *:not(:first-child) {
         margin-left: 12px;

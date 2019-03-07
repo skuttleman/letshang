@@ -3,9 +3,9 @@
     [clojure.core.async :as async]
     [clojure.java.jdbc :as jdbc]
     [clojure.string :as string]
-    [com.ben-allred.letshang.api.services.db.preparations :as prep]
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.utils.colls :as colls]
+    [com.ben-allred.letshang.common.utils.encoders.json :as json]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]
@@ -81,9 +81,9 @@
 (defn exec-raw! [db sql]
   (jdbc/execute! db [sql]))
 
-(defn exec! [queries db]
-  (let [[query xform-before xform-after] (colls/force-sequential queries)]
-    (-> (exec* db query)
+(defn exec! [query db]
+  (let [[query' xform-before xform-after] (colls/force-sequential query)]
+    (-> (exec* db query')
         (cond->> xform-before (sequence xform-before))
         (remove-namespaces)
         (cond->> xform-after (sequence xform-after)))))

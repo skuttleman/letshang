@@ -1,6 +1,5 @@
 (ns com.ben-allred.letshang.common.views.core
   (:require
-    [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.utils.logging :as log :include-macros true]
     [com.ben-allred.letshang.common.views.components.loading :as loading]
     [com.ben-allred.letshang.common.views.components.toast :as toast]
@@ -26,12 +25,9 @@
    [dashboard/footer]
    [toast/toasts (:toasts state)]])
 
-(defn app [state]
+(defn app [{:keys [auth/sign-up] :as state}]
   (let [handler (get-in state [:page :handler])
-        component (handler->component handler main/not-found)
-        {:keys [auth/sign-up] :as state} (-> state
-                                             (update :auth/user (partial env/get :auth/user))
-                                             (update :auth/sign-up (partial env/get :auth/sign-up)))]
+        component (handler->component handler main/not-found)]
     (cond
       (not handler) [loading/spinner {:size :large}]
       (:auth/user state) [with-layout component state]

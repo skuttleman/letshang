@@ -1,7 +1,6 @@
 (ns com.ben-allred.letshang.common.views.pages.hangouts.suggestions
   (:require
     #?(:cljs [com.ben-allred.letshang.ui.services.forms.standard :as forms.std])
-    [clojure.core.async :as async]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.views.components.calendar :as calendar]
     [com.ben-allred.letshang.common.views.resources.hangouts.suggestions :as res.suggestions]

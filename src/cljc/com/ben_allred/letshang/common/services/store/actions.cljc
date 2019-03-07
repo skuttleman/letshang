@@ -65,17 +65,20 @@
            (dispatch [:toast/remove {:id toast-id}]))])
     nil))
 
-(defn set-response [invitation-id body]
+(defn set-response [response-type invitation-id body]
   (fn [[dispatch]]
     #?(:clj  (ch/resolve)
-       :cljs (-> (nav/path-for :api/invitation {:route-params {:invitation-id invitation-id}})
-                 (http/patch {:body body})
-                 (request* dispatch :invitations)))))
+       :cljs (let [[route param kwd-ns] (case response-type
+                                          :invitation [:api/invitation :invitation-id :invitations]
+                                          :moment [:api/moment :moment-id :moment])]
+               (-> (nav/path-for route {:route-params {param invitation-id}})
+                   (http/patch {:body body})
+                   (request* dispatch kwd-ns))))))
 
 (defn suggest-when [hangout-id suggestion]
   (fn [[dispatch]]
     #?(:clj  (ch/resolve)
-       :cljs (-> (nav/path-for :api/suggestion.when {:route-params {:hangout-id hangout-id}})
+       :cljs (-> (nav/path-for :api/suggestions.when {:route-params {:hangout-id hangout-id}})
                  (http/post {:body suggestion})
                  (request* dispatch :suggestions.when)))))
 

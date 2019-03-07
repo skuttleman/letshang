@@ -1,4 +1,9 @@
-(ns com.ben-allred.letshang.common.utils.colls)
+(ns com.ben-allred.letshang.common.utils.colls
+  (:refer-clojure :exclude [find]))
+
+(defn cons? [coll]
+  (and (sequential? coll)
+       (not (vector? coll))))
 
 (defn force-sequential [v]
   (if (or (nil? v) (sequential? v))
@@ -10,11 +15,19 @@
     v
     [v]))
 
-(defn replace-by [compare-fn value coll]
-  (let [comparator (compare-fn value)]
-    (cond->> coll
-      :always (map #(if (= comparator (compare-fn %)) value %))
-      (not (list? coll)) (into (empty coll)))))
+(defn assoc-by [compare-fn value coll]
+  (let [comparator (compare-fn value)
+        replaced? (volatile! false)]
+    (-> coll
+        (->>
+          (map (fn [old-value]
+                 (if (= comparator (compare-fn old-value))
+                   (do (vreset! replaced? true)
+                       value)
+                   old-value)))
+          (doall))
+        (cond->
+          (not @replaced?) (concat [value])))))
 
 (defn only! [[item & more]]
   (assert (empty? more) "Should only be one item")
@@ -58,3 +71,6 @@
 
 (defn supdate [coll seq-fn f & f-args]
   (seq-fn #(apply f % f-args) coll))
+
+(defn find [pred coll]
+  (first (filter pred coll)))

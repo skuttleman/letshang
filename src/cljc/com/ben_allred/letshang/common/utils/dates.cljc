@@ -32,12 +32,12 @@
 
 (def ^:private formats
   {:datetime/view "EEE MMM d, yyyy 'at' h:mm a"
-   :date/system    "yyyy-MM-dd"
+   :date/system   "yyyy-MM-dd"
    :date/view     "EEE MMM d, yyyy"
-   :datetime/fs    "yyyyMMddHHmmss"
-   :date/year      "yyyy"
-   :date/day       "d"
-   :date/month     "MMMM"})
+   :datetime/fs   "yyyyMMddHHmmss"
+   :date/year     "yyyy"
+   :date/day      "d"
+   :date/month    "MMMM"})
 
 (defn ^:private inst->dt [inst]
   #?(:clj  (if (instance? Instant inst)

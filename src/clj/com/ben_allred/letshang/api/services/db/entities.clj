@@ -68,7 +68,7 @@
    :table  :moments})
 
 (def moment-responses
-  {:fields #{:moment-id :user-id :response :created-at}
+  {:fields #{:moment-id :user-id :response}
    :table  :moment-responses})
 
 (def users

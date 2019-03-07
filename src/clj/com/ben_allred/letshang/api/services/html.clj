@@ -3,7 +3,7 @@
     [com.ben-allred.collaj.core :as collaj]
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.services.navigation :as nav*]
-    [com.ben-allred.letshang.common.services.ui-reducers :as ui-reducers]
+    [com.ben-allred.letshang.common.services.store.ui-reducers :as ui-reducers]
     [com.ben-allred.letshang.common.templates.core :as templates]
     [com.ben-allred.letshang.common.utils.encoders.transit :as transit]
     [com.ben-allred.letshang.common.utils.logging :as log]

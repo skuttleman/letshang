@@ -1,9 +1,8 @@
 (ns com.ben-allred.letshang.common.templates.core
   (:require
-    [clojure.set :as set]
     [clojure.string :as string]
-    [com.ben-allred.letshang.common.utils.maps :as maps]
-    [com.ben-allred.letshang.common.utils.strings :as strings]))
+    [com.ben-allred.letshang.common.utils.colls :as colls]
+    [com.ben-allred.letshang.common.utils.maps :as maps]))
 
 (declare render)
 
@@ -29,7 +28,7 @@
 (defn ^:private render* [arg]
   (cond
     (vector? arg) (render arg)
-    (or (seq? arg) (list? arg)) (map render arg)
+    (colls/cons? arg) (map render arg)
     (map? arg) (clean-attrs arg)
     :else arg))
 

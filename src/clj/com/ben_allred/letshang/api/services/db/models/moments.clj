@@ -37,13 +37,17 @@
       (repos/exec! db)))
 
 (defn with-moments [db hangouts]
-  (when (seq hangouts)
-    (let [hangout-id->moments (->> [:in :hangout-id (map :id hangouts)]
-                                   (select* db)
-                                   (group-by :hangout-id))]
-      (map (fn [{:keys [id] :as hangout}]
-             (assoc hangout :moments (hangout-id->moments id)))
-           hangouts))))
+  (let [hangout-id->moments (-> hangouts
+                                (some->>
+                                  (seq)
+                                  (map :id)
+                                  (conj [:in :hangout-id])
+                                  (select* db))
+                                (->> (group-by :hangout-id)))]
+    (->> hangouts
+         (map (fn [{:keys [id] :as hangout}]
+                (assoc hangout :moments (hangout-id->moments id []))))
+         (models.moment-responses/with-moment-responses db))))
 
 (defn suggest-moment [db hangout-id moment created-by]
   (when (-> [:and
@@ -66,3 +70,18 @@
            (models.moment-responses/respond db)
            (vector)
            (assoc new-moment :responses)))))
+
+(defn set-response [db moment-id response user-id]
+  (when (-> [:and
+             [:= :moments.id moment-id]
+             [:or
+              [:= :invitations.user-id user-id]
+              [:= :hangouts.created-by user-id]]]
+            (repo.invitations/select-by)
+            (entities/inner-join entities/hangouts [:= :hangouts.id :invitations.hangout-id])
+            (entities/inner-join entities/moments [:= :moments.hangout-id :hangouts.id])
+            (repos/exec! db)
+            (seq))
+    (models.moment-responses/respond db {:moment-id moment-id
+                                         :user-id   user-id
+                                         :response  response})))
