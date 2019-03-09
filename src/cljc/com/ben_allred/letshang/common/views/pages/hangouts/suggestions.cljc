@@ -1,13 +1,13 @@
 (ns com.ben-allred.letshang.common.views.pages.hangouts.suggestions
   (:require
     #?(:cljs [com.ben-allred.letshang.ui.services.forms.standard :as forms.std])
+    [com.ben-allred.letshang.common.resources.hangouts.suggestions :as res.suggestions]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.strings :as strings]
     [com.ben-allred.letshang.common.views.components.calendar :as calendar]
-    [com.ben-allred.letshang.common.views.resources.hangouts.suggestions :as res.suggestions]
-    [com.ben-allred.letshang.common.views.components.form-view :as form-view]
     [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.dropdown :as dropdown]
-    [com.ben-allred.letshang.common.utils.strings :as strings]))
+    [com.ben-allred.letshang.common.views.components.form-view :as form-view]))
 
 (defn window-button [attrs]
   [:button.button

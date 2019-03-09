@@ -1,17 +1,17 @@
-(ns com.ben-allred.letshang.common.views.resources.sign-up
+(ns com.ben-allred.letshang.common.resources.sign-up
   (:require
     #?(:cljs [com.ben-allred.letshang.ui.services.forms.standard :as forms.std])
     [#?(:clj  com.ben-allred.letshang.api.services.navigation
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [clojure.string :as string]
     [com.ben-allred.formation.core :as f]
+    [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.services.store.actions :as actions]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.services.validators :as validators]
-    [com.ben-allred.letshang.common.utils.chans :as ch]
-    [com.ben-allred.letshang.common.views.resources.core :as res]))
+    [com.ben-allred.letshang.common.utils.chans :as ch]))
 
 (def ^:private model->source
   (partial hash-map :data))

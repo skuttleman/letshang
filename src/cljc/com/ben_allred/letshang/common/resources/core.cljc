@@ -1,4 +1,4 @@
-(ns com.ben-allred.letshang.common.views.resources.core
+(ns com.ben-allred.letshang.common.resources.core
   (:require
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.services.store.core :as store]

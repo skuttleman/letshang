@@ -3,6 +3,8 @@
     [#?(:clj  com.ben-allred.letshang.api.services.navigation
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [clojure.set :as set]
+    [com.ben-allred.letshang.common.resources.hangouts :as res.hangouts]
+    [com.ben-allred.letshang.common.resources.hangouts.suggestions :as res.suggestions]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.store.actions :as actions]
     [com.ben-allred.letshang.common.services.store.core :as store]
@@ -18,9 +20,7 @@
     [com.ben-allred.letshang.common.views.components.form-view :as form-view]
     [com.ben-allred.letshang.common.views.components.loading :as loading]
     [com.ben-allred.letshang.common.views.pages.hangouts.responses :as responses]
-    [com.ben-allred.letshang.common.views.pages.hangouts.suggestions :as suggestions]
-    [com.ben-allred.letshang.common.views.resources.hangouts :as res.hangouts]
-    [com.ben-allred.letshang.common.views.resources.hangouts.suggestions :as res.suggestions]))
+    [com.ben-allred.letshang.common.views.pages.hangouts.suggestions :as suggestions]))
 
 (defn ^:private hangout-form [form associates on-saved & buttons]
   [form-view/form
@@ -81,7 +81,7 @@
    [:div.layout--stack-between
     [:div.layout--inset
      [:ul.layout--stack-between
-      (for [moment (sort-by :response-counts res.suggestions/moment-sorter moments)]
+      (for [moment (sort res.suggestions/moment-sorter moments)]
         ^{:key (:id moment)}
         [moment-suggestion moment (:id @store/user)])]]
     [suggestions/moment hangout-id]]
@@ -119,7 +119,7 @@
    [:div.layout--stack-between
     [:div.layout--inset
      [:ul.layout--stack-between
-      (for [moment (sort-by :response-counts res.suggestions/moment-sorter moments)]
+      (for [moment (sort res.suggestions/moment-sorter moments)]
         ^{:key (:id moment)}
         [moment-suggestion moment (:id @store/user)])]]
     [suggestions/moment hangout-id]]])

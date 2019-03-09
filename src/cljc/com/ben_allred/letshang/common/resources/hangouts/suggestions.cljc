@@ -1,15 +1,15 @@
-(ns com.ben-allred.letshang.common.views.resources.hangouts.suggestions
+(ns com.ben-allred.letshang.common.resources.hangouts.suggestions
   (:require
     #?(:cljs [com.ben-allred.letshang.ui.services.forms.standard :as forms.std])
     [com.ben-allred.formation.core :as f]
+    [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.services.store.actions :as actions]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.dates :as dates]
-    [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.views.resources.core :as res]))
+    [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (def validator
   (f/validator
@@ -39,11 +39,14 @@
 
 (def windows [:any-time :morning :mid-day :afternoon :after-work :evening :night :twilight])
 
-(defn moment-sorter [response-counts-1 response-counts-2]
+(defn moment-sorter [{response-counts-1 :response-counts date-1 :date} {response-counts-2 :response-counts date-2 :date}]
   (let [score (compare (- (:positive response-counts-2 0) (:negative response-counts-2 0))
                        (- (:positive response-counts-1 0) (:negative response-counts-1 0)))]
     (if (zero? score)
-      (compare (reduce + 0 (vals response-counts-2)) (reduce + 0 (vals response-counts-1)))
+      (let [score-2 (compare (reduce + 0 (vals response-counts-2)) (reduce + 0 (vals response-counts-1)))]
+        (if (zero? score-2)
+          (compare date-2 date-1)
+          score-2))
       score)))
 
 (defn form [hangout-id]

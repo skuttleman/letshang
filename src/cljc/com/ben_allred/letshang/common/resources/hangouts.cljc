@@ -1,4 +1,4 @@
-(ns com.ben-allred.letshang.common.views.resources.hangouts
+(ns com.ben-allred.letshang.common.resources.hangouts
   (:require
     #?@(:cljs [[com.ben-allred.letshang.ui.services.forms.standard :as forms.std]
                [com.ben-allred.letshang.ui.services.forms.live :as forms.live]])
@@ -6,14 +6,14 @@
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [clojure.string :as string]
     [com.ben-allred.formation.core :as f]
+    [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.services.store.actions :as actions]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.strings :as strings]
-    [com.ben-allred.letshang.common.views.resources.core :as res]))
+    [com.ben-allred.letshang.common.utils.strings :as strings]))
 
 (def ^:private source->model :data)
 

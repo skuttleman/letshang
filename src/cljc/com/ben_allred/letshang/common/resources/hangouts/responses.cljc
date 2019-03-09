@@ -1,14 +1,14 @@
-(ns com.ben-allred.letshang.common.views.resources.hangouts.responses
+(ns com.ben-allred.letshang.common.resources.hangouts.responses
   (:require
     #?(:cljs [com.ben-allred.letshang.ui.services.forms.live :as forms.live])
+    [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.services.store.actions :as actions]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.colls :as colls]
-    [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.views.resources.core :as res]))
+    [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (defn ^:private response-api [response-type model]
   (reify

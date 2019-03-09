@@ -1,12 +1,12 @@
 (ns com.ben-allred.letshang.common.views.pages.sign-up
   (:require
+    [com.ben-allred.letshang.common.resources.sign-up :as sign-up.res]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.views.auth :as auth]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
     [com.ben-allred.letshang.common.views.components.form-view :as form-view]
     [com.ben-allred.letshang.common.views.components.toast :as toast]
-    [com.ben-allred.letshang.common.views.pages.dashboard :as dashboard]
-    [com.ben-allred.letshang.common.views.resources.sign-up :as sign-up.res]))
+    [com.ben-allred.letshang.common.views.pages.dashboard :as dashboard]))
 
 (defn ^:private sign-up* [new-user]
   (let [form (sign-up.res/form new-user)]

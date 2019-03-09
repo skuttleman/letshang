@@ -3,10 +3,10 @@
     [com.ben-allred.letshang.api.services.db.models.hangouts :as models.hangouts]
     [com.ben-allred.letshang.api.services.db.models.moments :as models.moments]
     [com.ben-allred.letshang.api.services.handlers :refer [GET PATCH POST context]]
+    [com.ben-allred.letshang.common.resources.hangouts :as res.hangouts]
+    [com.ben-allred.letshang.common.resources.hangouts.suggestions :as res.suggestions]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.uuids :as uuids]
-    [com.ben-allred.letshang.common.views.resources.hangouts :as res.hangouts]
-    [com.ben-allred.letshang.common.views.resources.hangouts.suggestions :as res.suggestions]
     [compojure.core :refer [defroutes]]))
 
 (def ^:private transform-spec

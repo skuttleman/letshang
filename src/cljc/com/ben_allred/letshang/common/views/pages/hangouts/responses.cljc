@@ -1,13 +1,13 @@
 (ns com.ben-allred.letshang.common.views.pages.hangouts.responses
   (:require
+    [com.ben-allred.letshang.common.resources.hangouts.responses :as res.responses]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
-    [com.ben-allred.letshang.common.views.components.loading :as loading]
-    [com.ben-allred.letshang.common.views.resources.hangouts.responses :as res.responses]))
+    [com.ben-allred.letshang.common.views.components.loading :as loading]))
 
 (defn icon
   ([response]

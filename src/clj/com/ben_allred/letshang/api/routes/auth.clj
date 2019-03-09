@@ -4,10 +4,10 @@
     [com.ben-allred.letshang.api.services.handlers :refer [GET POST context]]
     [com.ben-allred.letshang.api.services.navigation :as nav]
     [com.ben-allred.letshang.api.utils.respond :as respond]
+    [com.ben-allred.letshang.common.resources.sign-up :as sign-up.res]
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.utils.encoders.jwt :as jwt]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.views.resources.sign-up :as sign-up.res]
     [compojure.core :refer [defroutes]]
     [ring.util.response :as resp]))
 
