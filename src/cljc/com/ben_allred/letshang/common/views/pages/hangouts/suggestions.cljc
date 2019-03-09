@@ -7,6 +7,7 @@
     [com.ben-allred.letshang.common.views.components.calendar :as calendar]
     [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.dropdown :as dropdown]
+    [com.ben-allred.letshang.common.views.components.fields :as fields]
     [com.ben-allred.letshang.common.views.components.form-view :as form-view]))
 
 (defn window-button [attrs]
@@ -20,7 +21,7 @@
     [components/icon (if (:open? attrs) :chevron-up :chevron-down)]]])
 
 (defn moment [hangout-id]
-  (let [form (res.suggestions/form hangout-id)]
+  (let [form (res.suggestions/when-form hangout-id)]
     (fn [_hangout-id]
       [form-view/form
        {:inline?   true
@@ -34,3 +35,14 @@
              :button-control window-button}
             (res.suggestions/with-attrs form [:window])
             (dropdown/oneable))]])))
+
+(defn location [hangout-id]
+  (let [form (res.suggestions/where-form hangout-id)]
+    (fn [_hangout-id]
+      [form-view/form
+       {:inline?   true
+        :form      form
+        :save-text "Suggest"}
+       [fields/input
+        (-> {:label "Location name"}
+            (res.suggestions/with-attrs form [:name]))]])))

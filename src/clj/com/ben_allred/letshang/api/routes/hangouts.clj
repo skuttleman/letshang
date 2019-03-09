@@ -1,6 +1,7 @@
 (ns com.ben-allred.letshang.api.routes.hangouts
   (:require
     [com.ben-allred.letshang.api.services.db.models.hangouts :as models.hangouts]
+    [com.ben-allred.letshang.api.services.db.models.locations :as models.locations]
     [com.ben-allred.letshang.api.services.db.models.moments :as models.moments]
     [com.ben-allred.letshang.api.services.handlers :refer [GET PATCH POST context]]
     [com.ben-allred.letshang.common.resources.hangouts :as res.hangouts]
@@ -16,7 +17,10 @@
   {:data res.hangouts/validator})
 
 (def ^:private when-spec
-  {:data res.suggestions/validator})
+  {:data res.suggestions/when-validator})
+
+(def ^:private where-spec
+  {:data res.suggestions/where-validator})
 
 (defroutes routes
   (context "/hangouts" []
@@ -48,4 +52,7 @@
       (context "/suggestions" _
         (POST "/when" ^{:request-spec when-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
           (when-let [suggestion (models.moments/suggest-moment db hangout-id (:data body) (:id user))]
+            [:http.status/created {:data suggestion}]))
+        (POST "/where" ^{:request-spec where-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
+          (when-let [suggestion (models.locations/suggest-location db hangout-id (:data body) (:id user))]
             [:http.status/created {:data suggestion}]))))))

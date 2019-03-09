@@ -70,7 +70,8 @@
     #?(:clj  (ch/resolve)
        :cljs (let [[route param kwd-ns] (case response-type
                                           :invitation [:api/invitation :invitation-id :invitations]
-                                          :moment [:api/moment :moment-id :moment])]
+                                          :moment [:api/moment :moment-id :moment]
+                                          :location [:api/location :location-id :location])]
                (-> (nav/path-for route {:route-params {param invitation-id}})
                    (http/patch {:body body})
                    (request* dispatch kwd-ns))))))
@@ -81,6 +82,13 @@
        :cljs (-> (nav/path-for :api/suggestions.when {:route-params {:hangout-id hangout-id}})
                  (http/post {:body suggestion})
                  (request* dispatch :suggestions.when)))))
+
+(defn suggest-where [hangout-id suggestion]
+  (fn [[dispatch]]
+    #?(:clj  (ch/resolve)
+       :cljs (-> (nav/path-for :api/suggestions.where {:route-params {:hangout-id hangout-id}})
+                 (http/post {:body suggestion})
+                 (request* dispatch :suggestions.where)))))
 
 (defn toast [level body]
   (fn [[dispatch]]

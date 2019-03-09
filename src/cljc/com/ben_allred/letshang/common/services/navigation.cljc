@@ -24,6 +24,8 @@
         [["/" [uuids/regex :hangout-id] "/suggestions"]
          [["/when" :api/suggestions.when]
           ["/where" :api/suggestions.where]]]]]
+      ["/locations"
+       [[["/" [uuids/regex :location-id]] :api/location]]]
       ["/moments"
        [[["/" [uuids/regex :moment-id]] :api/moment]]]
       ["/invitations"

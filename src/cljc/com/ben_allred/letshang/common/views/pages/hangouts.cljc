@@ -46,14 +46,12 @@
      [responses/icon response])])
 
 (defn ^:private moment-suggestion [{moment-id :id {:keys [positive negative neutral]} :response-counts
-                                    :keys [date responses] :as moment} user-id]
+                                    :keys [date responses window]} user-id]
   [:<>
    [:div
     {:style {:width "100%"}}
     [components/tooltip
-     {:text (str (dates/format date :date/view)
-                 ": "
-                 (strings/titlize (keywords/safe-name (:window moment)) " "))}
+     {:text (str (dates/format date :date/view) ": " (strings/titlize (keywords/safe-name window) " "))}
      (dates/relative date)]]
    [:div.layout--space-between
     (when positive [responses/icon :positive positive])
@@ -65,31 +63,58 @@
         (assoc {:id moment-id :user-id user-id} :response)
         (conj [responses/form :moment]))])
 
-(defn ^:private creator's-hangout-view [{:keys [change-state]} {{hangout-id :id :keys [invitations moments name]} :hangout}]
-  [:div.layout--space-below
-   [:div.buttons
-    [:button.button.is-info
-     {:on-click #(change-state :edit)}
-     "Edit"]]
-   [:h1.label name]
-   [:h2.label "Who's coming?"]
-   [:div.layout--inset
-    [:ul.layout--stack-between
-     (for [invitation invitations]
-       ^{:key (:id invitation)}
-       [invitation-item invitation false])]]
-   [:h2.label "When?"]
-   [:div.layout--stack-between
-    [:div.layout--inset
-     [:ul.layout--stack-between
-      [flip-move/flip-move
-       {}
-       (for [moment (sort res.suggestions/moment-sorter moments)]
-         ^{:key (:id moment)}
-         [:li.layout--space-between
-          [moment-suggestion moment (:id @store/user)]])]]]
-    [suggestions/moment hangout-id]]
-   [:h2.label "Where?"]])
+(defn ^:private location-suggestion [{location-id :id {:keys [positive negative neutral]} :response-counts
+                                    :keys [name responses]} user-id]
+  [:<>
+   [:div
+    {:style {:width "100%"}}
+    name]
+   [:div.layout--space-between
+    (when positive [responses/icon :positive positive])
+    (when negative [responses/icon :negative negative])
+    (when neutral [responses/icon :neutral neutral])]
+   (->> responses
+        (colls/find (comp #{user-id} :user-id))
+        (:response)
+        (assoc {:id location-id :user-id user-id} :response)
+        (conj [responses/form :location]))])
+
+(defn ^:private creator's-hangout-view [{:keys [change-state]} {:keys [hangout]}]
+  (let [{hangout-id :id :keys [invitations locations moments name]} hangout]
+    [:div.layout--space-below
+     [:div.buttons
+      [:button.button.is-info
+       {:on-click #(change-state :edit)}
+       "Edit"]]
+     [:h1.label name]
+     [:h2.label "Who's coming?"]
+     [:div.layout--inset
+      [:ul.layout--stack-between
+       (for [invitation invitations]
+         ^{:key (:id invitation)}
+         [invitation-item invitation false])]]
+     [:h2.label "When?"]
+     [:div.layout--stack-between
+      [:div.layout--inset
+       [:ul.layout--stack-between
+        [flip-move/flip-move
+         {}
+         (for [moment (sort res.suggestions/moment-sorter moments)]
+           ^{:key (:id moment)}
+           [:li.layout--space-between
+            [moment-suggestion moment (:id @store/user)]])]]]
+      [suggestions/moment hangout-id]]
+     [:h2.label "Where?"]
+     [:div.layout--stack-between
+      [:div.layout--inset
+       [:ul.layout--stack-between
+        [flip-move/flip-move
+         {}
+         (for [location (sort res.suggestions/location-sorter locations)]
+           ^{:key (:id location)}
+           [:li.layout--space-between
+            [location-suggestion location (:id @store/user)]])]]]
+      [suggestions/location hangout-id]]]))
 
 (defn ^:private creator's-hangout-edit [_attrs {:keys [hangout]}]
   (let [form (res.hangouts/form hangout)

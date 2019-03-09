@@ -3,6 +3,7 @@
     [com.ben-allred.letshang.api.routes.auth :as auth]
     [com.ben-allred.letshang.api.routes.hangouts :as hangouts]
     [com.ben-allred.letshang.api.routes.invitations :as invitations]
+    [com.ben-allred.letshang.api.routes.locations :as locations]
     [com.ben-allred.letshang.api.routes.moments :as moments]
     [com.ben-allred.letshang.api.routes.users :as users]
     [com.ben-allred.letshang.api.services.handlers :refer [GET ANY context]]
@@ -21,6 +22,7 @@
 (defroutes api*
   #'hangouts/routes
   #'invitations/routes
+  #'locations/routes
   #'moments/routes
   #'users/routes)
 

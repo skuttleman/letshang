@@ -11,31 +11,35 @@
     [com.ben-allred.letshang.common.utils.dates :as dates]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(def validator
+(def when-validator
   (f/validator
     {:date   [(f/required "You must select a date")
               (f/pred #(not (dates/before? % (dates/today))) "Cannot be in the past")]
      :window (f/required "You must select a window")}))
+
+(def where-validator
+  (f/validator
+    {:name (f/required "You must select a place")}))
 
 (def ^:private model->source
   (comp (partial hash-map :data)
         (f/transformer
           {:date dates/->inst})))
 
-(defn ^:private suggest-api [hangout-id]
+(defn ^:private suggest-api [initial action-fn]
   (reify
     forms/IFetch
     (fetch [_]
-      (ch/resolve {:window :any-time}))
+      (ch/resolve initial))
     forms/ISave
     (save! [_ model]
       (-> model
           (model->source)
-          (->> (actions/suggest-when hangout-id))
+          (action-fn)
           (store/dispatch)
           (ch/peek (constantly nil)
                    (res/toast-error "Something went wrong."))
-          (ch/then (constantly {:window :any-time}))))))
+          (ch/then (constantly initial))))))
 
 (def windows [:any-time :morning :mid-day :afternoon :after-work :evening :night :twilight])
 
@@ -45,12 +49,26 @@
     (if (zero? score)
       (let [score-2 (compare (reduce + 0 (vals response-counts-2)) (reduce + 0 (vals response-counts-1)))]
         (if (zero? score-2)
-          (compare date-2 date-1)
+          (compare date-1 date-2)
           score-2))
       score)))
 
-(defn form [hangout-id]
-  #?(:cljs (forms.std/create (suggest-api hangout-id) validator)
+(defn location-sorter [{response-counts-1 :response-counts name-1 :name} {response-counts-2 :response-counts name-2 :name}]
+  (let [score (compare (- (:positive response-counts-2 0) (:negative response-counts-2 0))
+                       (- (:positive response-counts-1 0) (:negative response-counts-1 0)))]
+    (if (zero? score)
+      (let [score-2 (compare (reduce + 0 (vals response-counts-2)) (reduce + 0 (vals response-counts-1)))]
+        (if (zero? score-2)
+          (compare name-1 name-2)
+          score-2))
+      score)))
+
+(defn when-form [hangout-id]
+  #?(:cljs (forms.std/create (suggest-api {:window :any-time} (partial actions/suggest-when hangout-id)) when-validator)
+     :default (forms.noop/create nil)))
+
+(defn where-form [hangout-id]
+  #?(:cljs (forms.std/create (suggest-api nil (partial actions/suggest-where hangout-id)) where-validator)
      :default (forms.noop/create nil)))
 
 (defn with-attrs

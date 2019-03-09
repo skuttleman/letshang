@@ -63,6 +63,14 @@
   {:fields #{:id :hangout-id :user-id :match-type :response :created-by :created-at}
    :table  :invitations})
 
+(def locations
+  {:fields #{:id :hangout-id :name :created-by :created-at}
+   :table  :locations})
+
+(def location-responses
+  {:fields #{:location-id :user-id :response}
+   :table  :location-responses})
+
 (def moments
   {:fields #{:id :hangout-id :date :moment-window :created-by :created-at}
    :table  :moments})

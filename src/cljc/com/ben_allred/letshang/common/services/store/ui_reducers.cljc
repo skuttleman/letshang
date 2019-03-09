@@ -7,23 +7,23 @@
     [com.ben-allred.letshang.common.utils.logging :as log #?@(:cljs [:include-macros true])]
     [com.ben-allred.letshang.common.utils.maps :as maps #?@(:cljs [:include-macros true])]))
 
-(defn ^:private moment->respond [{:keys [responses] :as moment}]
-  (assoc moment :response-counts (frequencies (map :response responses))))
+(defn ^:private count-respondable [{:keys [responses] :as respondable}]
+  (assoc respondable :response-counts (frequencies (map :response responses))))
 
-(defn ^:private add-or-replace-response [moment response]
-  (-> moment
+(defn ^:private add-or-replace-response [respondable id-fn response]
+  (-> respondable
       (cond->
-        (= (:moment-id response) (:id moment))
-        (update :responses (partial colls/assoc-by (juxt :moment-id :user-id) response)))
-      (moment->respond)))
+        (= (id-fn response) (:id respondable))
+        (update :responses (partial colls/assoc-by (juxt id-fn :user-id) response)))
+      (count-respondable)))
 
-(defn ^:private add-or-replace-moment [moment response]
-  (cond-> moment
-    (= (:id moment) (:id response)) (-> (assoc :responses (:responses response))
-                                        (moment->respond))))
+(defn ^:private add-or-replace-respondable [respondable response]
+  (cond-> respondable
+          (= (:id respondable) (:id response)) (-> (assoc :responses (:responses response))
+                                              (count-respondable))))
 
-(defn ^:private add-or-replace-moments [moments response]
-  (colls/assoc-by :id (moment->respond response) (map #(add-or-replace-moment % response) moments)))
+(defn ^:private add-or-replace-respondables [respondables response]
+  (colls/assoc-by :id (count-respondable response) (map #(add-or-replace-respondable % response) respondables)))
 
 (defn ^:private resource [namespace]
   (let [[request success error] (->> [:request :success :error]
@@ -41,11 +41,14 @@
   ([] [:init])
   ([state [type response]]
    (case type
-     :hangout/success [:success (update (:data response)
-                                        :moments
-                                        (partial map moment->respond))]
-     :moment/success (update-in state [1 :moments] colls/supdate map add-or-replace-response (:data response))
-     :suggestions.when/success (update-in state [1 :moments] add-or-replace-moments (:data response))
+     :hangout/success [:success (-> response
+                                    (:data)
+                                    (update :moments (partial map count-respondable))
+                                    (update :locations (partial map count-respondable)))]
+     :moment/success (update-in state [1 :moments] colls/supdate map add-or-replace-response :moment-id (:data response))
+     :location/success (update-in state [1 :locations] colls/supdate map add-or-replace-response :location-id (:data response))
+     :suggestions.when/success (update-in state [1 :moments] add-or-replace-respondables (:data response))
+     :suggestions.where/success (update-in state [1 :locations] add-or-replace-respondables (:data response))
      state)))
 
 (def ^:private associates (resource :associates))

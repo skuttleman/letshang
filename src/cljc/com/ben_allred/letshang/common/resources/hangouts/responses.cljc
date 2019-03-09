@@ -33,7 +33,10 @@
                 [:positive "I'm in"]]
    :moment     [[:neutral "Maybe"]
                 [:negative "No can do"]
-                [:positive "Works for me"]]})
+                [:positive "Works for me"]]
+   :location   [[:neutral "We'll see"]
+                [:negative "Not so good idea"]
+                [:positive "Good idea"]]})
 
 (def response->text
   (into {:none "No response yet" :creator "Creator"} (response-options :invitation)))
