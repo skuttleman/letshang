@@ -9,3 +9,5 @@
 (def create-class #?(:clj :reagent-render :cljs reagent/create-class))
 
 (def argv #?(:clj (constantly nil) :cljs reagent/argv))
+
+(def adapt-react-class #?(:clj (constantly nil) :cljs reagent/adapt-react-class))

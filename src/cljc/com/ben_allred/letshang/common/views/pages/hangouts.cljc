@@ -14,6 +14,7 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.strings :as strings]
     [com.ben-allred.letshang.common.utils.users :as users]
+    [com.ben-allred.letshang.common.views.components.flip-move :as flip-move]
     [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.dropdown :as dropdown]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
@@ -46,7 +47,7 @@
 
 (defn ^:private moment-suggestion [{moment-id :id {:keys [positive negative neutral]} :response-counts
                                     :keys [date responses] :as moment} user-id]
-  [:li.layout--space-between
+  [:<>
    [:div
     {:style {:width "100%"}}
     [components/tooltip
@@ -81,9 +82,12 @@
    [:div.layout--stack-between
     [:div.layout--inset
      [:ul.layout--stack-between
-      (for [moment (sort res.suggestions/moment-sorter moments)]
-        ^{:key (:id moment)}
-        [moment-suggestion moment (:id @store/user)])]]
+      [flip-move/flip-move
+       {}
+       (for [moment (sort res.suggestions/moment-sorter moments)]
+         ^{:key (:id moment)}
+         [:li.layout--space-between
+          [moment-suggestion moment (:id @store/user)]])]]]
     [suggestions/moment hangout-id]]
    [:h2.label "Where?"]])
 
@@ -119,9 +123,12 @@
    [:div.layout--stack-between
     [:div.layout--inset
      [:ul.layout--stack-between
-      (for [moment (sort res.suggestions/moment-sorter moments)]
-        ^{:key (:id moment)}
-        [moment-suggestion moment (:id @store/user)])]]
+      [flip-move/flip-move
+       {}
+       (for [moment (sort res.suggestions/moment-sorter moments)]
+         ^{:key (:id moment)}
+         [:li.layout--space-between
+          [moment-suggestion moment (:id @store/user)]])]]]
     [suggestions/moment hangout-id]]])
 
 (defn ^:private hangout* [resources]

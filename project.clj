@@ -12,6 +12,7 @@
                  [clj-http "3.9.1"]
                  [clj-jwt "0.1.1"]
                  [cljs-http "0.1.46"]
+                 [cljsjs/react-flip-move "3.0.1-1"]
                  [clojure.jdbc/clojure.jdbc-c3p0 "0.3.3" :exclusions [[org.clojure/java.jdbc]]]
                  [com.ben-allred/collaj "0.8.0"]
                  [com.ben-allred/formation "0.5.0"]
