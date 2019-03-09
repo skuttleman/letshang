@@ -36,15 +36,13 @@
   ([payload days-to-expire]
     #?(:clj  (let [now (dates/now)]
                (-> {:iat  (-> now
-                              (Date/from)
-                              (.getTime)
+                              (dates/inst->ms)
                               (DateTime.))
                     :data (-> payload
                               (transit/encode))
                     :exp  (-> now
                               (dates/plus days-to-expire :days)
-                              (Date/from)
-                              (.getTime)
+                              (dates/inst->ms)
                               (DateTime.))}
                    (clj-jwt/jwt)
                    (clj-jwt/sign :HS256 jwt-secret)
