@@ -6,6 +6,9 @@
     [clojure.set :as set]
     [com.ben-allred.letshang.common.services.content :as content]
     [com.ben-allred.letshang.common.services.env :as env]
+    [com.ben-allred.letshang.common.utils.encoders.edn :as edn]
+    [com.ben-allred.letshang.common.utils.encoders.json :as json]
+    [com.ben-allred.letshang.common.utils.encoders.transit :as transit]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log #?@(:cljs [:include-macros true])]
     [com.ben-allred.letshang.common.utils.maps :as maps]))
@@ -81,11 +84,16 @@
 (defn ^:private request* [chan]
   (async/go
     (let [ch-response (async/<! chan)
-          {:keys [status body] :as response} (-> (if-let [data (ex-data ch-response)]
+          {:keys [body headers status] :as response} (-> (if-let [data (ex-data ch-response)]
                                                    data
                                                    ch-response)
                                                  (update :headers (partial maps/map-keys keyword)))
-          status (status->kw status status)]
+          status (status->kw status status)
+          body (case (when (string? body) (:content-type headers))
+                 "application/transit" (transit/decode body)
+                 "application/edn" (edn/decode body)
+                 "application/json" (json/decode body)
+                 body)]
       (if (success? response)
         [:success body status response]
         [:error body status response]))))
