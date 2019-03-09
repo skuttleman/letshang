@@ -26,7 +26,7 @@
       (pos? offset) (dates/minus offset :days))))
 
 (defn ^:private end-of-month [date]
-  (let [last-of-month (dates/plus (dates/with date 1 :day) 1 :months)
+  (let [last-of-month (dates/minus (dates/plus (dates/with date 1 :day) 1 :months) 1 :days)
         day-of-week (dates/day-of-week last-of-month)
         offset (- 7 (day->offset day-of-week) 1)]
     (cond-> last-of-month
