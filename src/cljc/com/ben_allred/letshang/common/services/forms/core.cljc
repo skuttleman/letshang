@@ -43,7 +43,6 @@
   (errors [this])
   (valid? [this]))
 
-
 (defn with-attrs [attrs form path model->view view->model]
   (let [attempted? (when (satisfies? IPersist form)
                      (attempted? form))

@@ -5,17 +5,18 @@
     [clojure.set :as set]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.store.actions :as actions]
+    [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.dates :as dates]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.strings :as strings]
     [com.ben-allred.letshang.common.utils.users :as users]
-    [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.dropdown :as dropdown]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
     [com.ben-allred.letshang.common.views.components.form-view :as form-view]
     [com.ben-allred.letshang.common.views.components.loading :as loading]
+    [com.ben-allred.letshang.common.views.pages.hangouts.responses :as responses]
     [com.ben-allred.letshang.common.views.pages.hangouts.suggestions :as suggestions]
     [com.ben-allred.letshang.common.views.resources.hangouts :as res.hangouts]
     [com.ben-allred.letshang.common.views.resources.hangouts.suggestions :as res.suggestions]))
@@ -35,57 +36,33 @@
            :options (map (juxt :id users/full-name) associates)}
           (res.hangouts/with-attrs form [:invitation-ids]))])])
 
-(defn ^:private response-component
-  ([response]
-   (response-component response nil))
-  ([response amount]
-   (let [icon (res.hangouts/response->icon response)]
-     (cond->> [:span.tag.is-rounded.layout--space-between
-               {:class [(res.hangouts/response->level response)]
-                :style {:text-transform :lowercase}}
-               (if icon
-                 [components/icon {:class ["is-small"]} icon]
-                 (res.hangouts/response->text response))
-               (when amount
-                 [:span amount])]
-              icon (conj [components/tooltip
-                          {:text     (res.hangouts/response->text response)
-                           :position :right}])))))
-
-(defn ^:private response-form [response-type {:keys [id response]}]
-  (let [form (res.hangouts/response-form response-type {:id id :response response})]
-    (fn [_response-type _response]
-      [:div.layout--space-between.layout--align-center
-       [fields/button-group
-        (-> {:class        ["is-small"]
-             :label        (res.hangouts/response-label response-type)
-             :label-small? true}
-            (res.hangouts/with-attrs form [:response]))
-        (res.hangouts/response-options response-type)]
-       (when-not (forms/ready? form)
-         [loading/spinner])])))
-
 (defn ^:private invitation-item [{:keys [handle response] :as invitation} current-user?]
   [:li.layout--space-between.layout--align-center
    [:em handle]
    (if current-user?
-     [response-form :invitation (set/rename-keys invitation {:invitation-id :id})]
-     [response-component response])])
+     [responses/form :invitation (set/rename-keys invitation {:invitation-id :id})]
+     [responses/icon response])])
 
-(defn ^:private moment-suggestion [{moment-id :id {:keys [positive negative neutral]} :response-counts :keys [responses] :as moment} user-id]
+(defn ^:private moment-suggestion [{moment-id :id {:keys [positive negative neutral]} :response-counts
+                                    :keys [responses] :as moment} user-id]
   [:li.layout--space-between
    [:div
+    {:style {:width "100%"}}
     (dates/format (:date moment) :date/view)
     ": "
     (strings/titlize (keywords/safe-name (:window moment)) " ")]
    [:div.layout--space-between
-    (when positive [response-component :positive positive])
-    (when negative [response-component :negative negative])
-    (when neutral [response-component :neutral neutral])]
-   [response-form :moment {:id moment-id :user-id user-id :response (:response (colls/find (comp #{user-id} :user-id) responses))}]])
+    (when positive [responses/icon :positive positive])
+    (when negative [responses/icon :negative negative])
+    (when neutral [responses/icon :neutral neutral])]
+   (->> responses
+        (colls/find (comp #{user-id} :user-id))
+        (:response)
+        (assoc {:id moment-id :user-id user-id} :response)
+        (conj [responses/form :moment]))])
 
-(defn ^:private creator's-hangout-view [{:keys [change-state user]} {{hangout-id :id :keys [invitations moments name]} :hangout}]
-  [:div
+(defn ^:private creator's-hangout-view [{:keys [change-state]} {{hangout-id :id :keys [invitations moments name]} :hangout}]
+  [:div.layout--space-below
    [:div.buttons
     [:button.button.is-info
      {:on-click #(change-state :edit)}
@@ -98,19 +75,20 @@
        ^{:key (:id invitation)}
        [invitation-item invitation false])]]
    [:h2.label "When?"]
-   [:div.layout--inset
-    [:ul.layout--stack-between
-     (for [moment (sort-by :response-counts res.suggestions/moment-sorter moments)]
-       ^{:key (:id moment)}
-       [moment-suggestion moment (:id user)])]]
-   [suggestions/moment hangout-id]
+   [:div.layout--stack-between
+    [:div.layout--inset
+     [:ul.layout--stack-between
+      (for [moment (sort-by :response-counts res.suggestions/moment-sorter moments)]
+        ^{:key (:id moment)}
+        [moment-suggestion moment (:id @store/user)])]]
+    [suggestions/moment hangout-id]]
    [:h2.label "Where?"]])
 
 (defn ^:private creator's-hangout-edit [_attrs {:keys [hangout]}]
   (let [form (res.hangouts/form hangout)
         already-invited? (comp (set (map :id (:invitations hangout))) :id)]
     (fn [{:keys [change-state]} {:keys [associates]}]
-      [:div
+      [:div.layout--space-below
        [hangout-form
         form
         (remove already-invited? associates)
@@ -125,20 +103,28 @@
     :normal [creator's-hangout-view attrs resources]
     :edit [creator's-hangout-edit attrs resources]))
 
-(defn ^:private invitee's-hangout [{user-id :id} {{:keys [creator name invitations]} :hangout}]
-  [:div
+(defn ^:private invitee's-hangout [{{hangout-id :id :keys [creator name moments invitations]} :hangout}]
+  [:div.layout--space-below
    [:h1.is-size-3 name]
    [:label.label "Invitees"]
    [:ul.layout--stack-between
     [invitation-item (assoc creator :response :creator) false]
     (for [{invitation-id :id :as invitation} invitations]
       ^{:key invitation-id}
-      [invitation-item invitation (= invitation-id user-id)])]])
+      [invitation-item invitation (= invitation-id (:id @store/user))])]
+   [:h2.label "When?"]
+   [:div.layout--stack-between
+    [:div.layout--inset
+     [:ul.layout--stack-between
+      (for [moment (sort-by :response-counts res.suggestions/moment-sorter moments)]
+        ^{:key (:id moment)}
+        [moment-suggestion moment (:id @store/user)])]]
+    [suggestions/moment hangout-id]]])
 
-(defn ^:private hangout* [user resources]
-  (if (= (:id user) (get-in resources [:hangout :created-by]))
-    [fields/stateful :normal [creator's-hangout {:user user} resources]]
-    [invitee's-hangout user resources]))
+(defn ^:private hangout* [resources]
+  (if (= (:id @store/user) (get-in resources [:hangout :created-by]))
+    [fields/stateful :normal [creator's-hangout {} resources]]
+    [invitee's-hangout resources]))
 
 (defn ^:private hangouts* [{:keys [hangouts]}]
   [:div
@@ -184,7 +170,7 @@
                              actions/fetch-associates)
     :keys   #{:hangout :associates}
     :state  state}
-   [hangout* (:auth/user state)]])
+   hangout*])
 
 (defn create [state]
   [loading/with-status

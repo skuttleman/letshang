@@ -25,11 +25,11 @@
    [dashboard/footer]
    [toast/toasts (:toasts state)]])
 
-(defn app [{:keys [auth/sign-up] :as state}]
+(defn app [{:keys [auth/user auth/sign-up] :as state}]
   (let [handler (get-in state [:page :handler])
         component (handler->component handler main/not-found)]
     (cond
       (not handler) [loading/spinner {:size :large}]
-      (:auth/user state) [with-layout component state]
+      user [with-layout component state]
       sign-up [sign-up/root state sign-up]
       :else [dashboard/root state])))

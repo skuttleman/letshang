@@ -23,8 +23,8 @@
   (let [form (res.suggestions/form hangout-id)]
     (fn [_hangout-id]
       [form-view/form
-       {:inline? true
-        :form form
+       {:inline?   true
+        :form      form
         :save-text "Suggest"}
        [calendar/picker
         (-> {:button-text "Pick a day…"}

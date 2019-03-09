@@ -59,17 +59,28 @@
             (entities/inner-join entities/hangouts [:= :hangouts.id :invitations.hangout-id])
             (repos/exec! db)
             (seq))
-    (let [new-moment (-> moment
-                         (assoc :created-by created-by :hangout-id hangout-id)
-                         (repo.moments/insert)
-                         (models/insert-many entities/moments ::model)
-                         (repos/exec! db)
+    (-> moment
+        (assoc :created-by created-by :hangout-id hangout-id)
+        (repo.moments/insert)
+        (models/insert-many entities/moments ::model)
+        (assoc :on-conflict [:hangout-id :date :moment-window] :do-nothing [])
+        (repos/exec! db)
+        (colls/only!))
+    (let [moment-id (->> [:and
+                          [:= :moments.hangout-id hangout-id]
+                          [:= :moments.date (:date moment)]
+                          [:= :moments.moment-window (prepare-window (:window moment))]]
+                         (select* db)
                          (colls/only!)
-                         (->> (models/->api ::model)))]
-      (->> {:moment-id (:id new-moment) :user-id created-by :response :positive}
-           (models.moment-responses/respond db)
-           (vector)
-           (assoc new-moment :responses)))))
+                         (:id))]
+      (models.moment-responses/respond db {:moment-id moment-id
+                                           :user-id   created-by
+                                           :response  :positive})
+      (->> [{:id hangout-id}]
+           (with-moments db)
+           (first)
+           (:moments)
+           (colls/find (comp #{moment-id} :id))))))
 
 (defn set-response [db moment-id response user-id]
   (when (-> [:and

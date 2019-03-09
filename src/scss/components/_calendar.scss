@@ -1,27 +1,35 @@
 .calendar {
     .calendar-nav .button {
         width: unset;
+        padding-left: 0.25em;
+        padding-right: 0.25em;
     }
 
-    .calendar-table td {
-        padding: 0;
-
-        & > * {
-            height: 100%;
-            padding: unset;
-            width: 100%;
+    .calendar-table {
+        th {
+            padding: 0.3em;
         }
 
-        &.is-different-month > * {
-            color: gray;
-        }
+        td {
+            padding: 0;
 
-        &.is-selected > * {
-            background-color: unset;
-        }
+            & > * {
+                height: 100%;
+                padding: unset;
+                width: 100%;
+            }
 
-        &.is-today:not(.is-selected) > * {
-            border: 1px solid $blue;
+            &.is-different-month > * {
+                color: gray;
+            }
+
+            &.is-selected > * {
+                background-color: unset;
+            }
+
+            &.is-today:not(.is-selected) > * {
+                border: 1px solid $blue;
+            }
         }
     }
 }

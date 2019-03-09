@@ -10,12 +10,20 @@
 (defn ^:private moment->respond [{:keys [responses] :as moment}]
   (assoc moment :response-counts (frequencies (map :response responses))))
 
-(defn ^:private add-or-replace-moment [moment response]
+(defn ^:private add-or-replace-response [moment response]
   (-> moment
       (cond->
         (= (:moment-id response) (:id moment))
         (update :responses (partial colls/assoc-by (juxt :moment-id :user-id) response)))
       (moment->respond)))
+
+(defn ^:private add-or-replace-moment [moment response]
+  (cond-> moment
+    (= (:id moment) (:id response)) (-> (assoc :responses (:responses response))
+                                        (moment->respond))))
+
+(defn ^:private add-or-replace-moments [moments response]
+  (colls/assoc-by :id (moment->respond response) (map #(add-or-replace-moment % response) moments)))
 
 (defn ^:private resource [namespace]
   (let [[request success error] (->> [:request :success :error]
@@ -36,14 +44,8 @@
      :hangout/success [:success (update (:data response)
                                         :moments
                                         (partial map moment->respond))]
-     :moment/success (update-in state
-                                [1 :moments]
-                                colls/supdate map add-or-replace-moment
-                                (:data response))
-     :suggestions.when/success (update-in state
-                                          [1 :moments]
-                                          conj
-                                          (moment->respond (:data response)))
+     :moment/success (update-in state [1 :moments] colls/supdate map add-or-replace-response (:data response))
+     :suggestions.when/success (update-in state [1 :moments] add-or-replace-moments (:data response))
      state)))
 
 (def ^:private associates (resource :associates))
