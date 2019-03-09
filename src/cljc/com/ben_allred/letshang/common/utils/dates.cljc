@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [format])
   (:require
     #?(:cljs [goog.date :as gdate])
-    [com.ben-allred.letshang.common.utils.numbers :as numbers])
+    [clojure.string :as string]
+    [com.ben-allred.letshang.common.utils.logging :as log])
   #?(:clj  (:import
              (java.time DayOfWeek Instant LocalDate LocalDateTime LocalTime ZonedDateTime ZoneOffset)
              (java.time.chrono ChronoLocalDate ChronoLocalDateTime ChronoZonedDateTime)
@@ -31,13 +32,14 @@
 (declare ->inst)
 
 (def ^:private formats
-  {:datetime/view "EEE MMM d, yyyy 'at' h:mm a"
-   :date/system   "yyyy-MM-dd"
-   :date/view     "EEE MMM d, yyyy"
-   :datetime/fs   "yyyyMMddHHmmss"
-   :date/year     "yyyy"
-   :date/day      "d"
-   :date/month    "MMMM"})
+  {:datetime/view     "EEE, MMM d, yyyy 'at' h:mm a"
+   :date/system       "yyyy-MM-dd"
+   :date/view         "EEE, MMM d, yyyy"
+   :date.no-year/view "EEE, MMM d"
+   :datetime/fs       "yyyyMMddHHmmss"
+   :date/year         "yyyy"
+   :date/day          "d"
+   :date/month        "MMMM"})
 
 (defn ^:private inst->dt [inst]
   #?(:clj  (if (instance? Instant inst)
@@ -107,8 +109,10 @@
                  (= :seconds interval) (.plusSeconds amt))
                (.toInstant ZoneOffset/UTC))
      :cljs (doto (.clone (inst->dt inst?))
-             (.add (-> {:years 0 :months 0 :weeks 0 :days 0 :hours 0 :minutes 0 :seconds 0}
-                       (assoc interval amt)
+             (.add (-> {:years 0 :months 0 :days 0 :hours 0 :minutes 0 :seconds 0}
+                       (cond->
+                         (= :weeks interval) (assoc :days (* 7 amt))
+                         (not= :weeks interval) (assoc interval amt))
                        (clj->js))))))
 
 (defn minus [inst? amt interval]
@@ -195,3 +199,16 @@
 (defn date? [value]
   (or (instance? #?(:clj LocalDate :cljs Date) value)
       (instance? #?(:clj LocalDateTime :cljs DateTime) value)))
+
+(defn relative [inst]
+  (let [now (->inst (now))
+        inst' (->inst inst)]
+    (cond
+      (not= (year now) (year inst'))
+      (format inst' :date/view)
+
+      (and (after? inst' now) (before? (minus inst' 1 :weeks) now))
+      (str "This " (string/capitalize (name (day-of-week inst'))))
+
+      :else
+      (format inst' :date.no-year/view))))

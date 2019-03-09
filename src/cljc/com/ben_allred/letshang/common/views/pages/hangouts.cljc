@@ -12,6 +12,7 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.strings :as strings]
     [com.ben-allred.letshang.common.utils.users :as users]
+    [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.dropdown :as dropdown]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
     [com.ben-allred.letshang.common.views.components.form-view :as form-view]
@@ -44,13 +45,15 @@
      [responses/icon response])])
 
 (defn ^:private moment-suggestion [{moment-id :id {:keys [positive negative neutral]} :response-counts
-                                    :keys [responses] :as moment} user-id]
+                                    :keys [date responses] :as moment} user-id]
   [:li.layout--space-between
    [:div
     {:style {:width "100%"}}
-    (dates/format (:date moment) :date/view)
-    ": "
-    (strings/titlize (keywords/safe-name (:window moment)) " ")]
+    [components/tooltip
+     {:text (str (dates/format date :date/view)
+                 ": "
+                 (strings/titlize (keywords/safe-name (:window moment)) " "))}
+     (dates/relative date)]]
    [:div.layout--space-between
     (when positive [responses/icon :positive positive])
     (when negative [responses/icon :negative negative])
