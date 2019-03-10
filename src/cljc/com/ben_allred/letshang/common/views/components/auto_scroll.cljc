@@ -5,7 +5,7 @@
 
 (defn scroller [component ideas size ms]
   (let [idea-items (r/atom [0 (cycle ideas)])
-        mounted? (atom true)]
+        mounted? (volatile! true)]
     #?(:cljs
        (async/go-loop []
          (swap! idea-items (fn [[length items]]
@@ -18,7 +18,7 @@
     (r/create-class
       {:component-will-unmount
        (fn [_]
-         (reset! mounted? false))
+         (vreset! mounted? false))
        :reagent-render
        (fn [_component _ideas _size _ms]
          (let [[length items] @idea-items]

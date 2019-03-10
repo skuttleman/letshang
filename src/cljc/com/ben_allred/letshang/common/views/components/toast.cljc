@@ -6,7 +6,7 @@
 
 
 (defn ^:private toast-message [_toast-id _toast]
-  (let [height (atom nil)]
+  (let [height (volatile! nil)]
     (fn [toast-id {:keys [body level state]}]
       (let [adding? (= state :init)
             removing? (= state :removing)]
@@ -15,7 +15,7 @@
                            (some->> node
                                     (.getBoundingClientRect)
                                     (.-height)
-                                    (reset! height)))
+                                    (vreset! height)))
                   :class [({:success "is-success"
                             :error   "is-danger"
                             :warning "is-warning"

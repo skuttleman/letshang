@@ -25,7 +25,8 @@
 
 (def response-label
   {:invitation "Are you coming?"
-   :moment     "Are you available?"})
+   :moment     "Are you available?"
+   :location   "How does this place sound?"})
 
 (def response-options
   {:invitation [[:neutral "Not sure"]
@@ -35,7 +36,7 @@
                 [:negative "No can do"]
                 [:positive "Works for me"]]
    :location   [[:neutral "We'll see"]
-                [:negative "Not so good idea"]
+                [:negative "Bad idea"]
                 [:positive "Good idea"]]})
 
 (def response->text

@@ -44,5 +44,5 @@
         :form      form
         :save-text "Suggest"}
        [fields/input
-        (-> {:label "Location name"}
+        (-> {:label "Name of the place"}
             (res.suggestions/with-attrs form [:name]))]])))

@@ -23,20 +23,43 @@
     [com.ben-allred.letshang.common.views.pages.hangouts.responses :as responses]
     [com.ben-allred.letshang.common.views.pages.hangouts.suggestions :as suggestions]))
 
-(defn ^:private hangout-form [form associates on-saved & buttons]
+(defn ^:private hangout-form [form {:keys [associates invitees-only? on-saved]} & buttons]
   [form-view/form
    {:buttons  buttons
     :on-saved on-saved
     :form     form}
-   [fields/input
-    (-> {:label       "Name"
-         :auto-focus? true}
-        (res.hangouts/with-attrs form [:name]))]
+   (when-not invitees-only?
+     [fields/input
+      (-> {:label       "Name"
+           :auto-focus? true}
+          (res.hangouts/with-attrs form [:name]))])
    (when (seq associates)
      [dropdown/dropdown
       (-> {:label   "Invitees"
            :options (map (juxt :id users/full-name) associates)}
           (res.hangouts/with-attrs form [:invitation-ids]))])])
+
+(defn ^:private edit-form [hangout _change-state]
+  (let [form (res.hangouts/form hangout)]
+    (fn [_hangout change-state]
+      [:div.layout--space-below
+       [hangout-form
+        form
+        {}
+        [:button.button.is-info
+         {:type :button :on-click #(change-state nil)}
+         "Cancel"]]])))
+
+(defn ^:private invitation-form [{:keys [hangout]}]
+  (let [form (res.hangouts/form hangout)
+        already-invited? (comp (set (map :id (:invitations hangout))) :id)]
+    (fn [{:keys [associates]}]
+      (when-let [associates (seq (remove already-invited? associates))]
+        [:div.layout--space-below
+         [hangout-form
+          form
+          {:associates associates
+           :invitees-only? true}]]))))
 
 (defn ^:private invitation-item [{:keys [handle response] :as invitation} current-user?]
   [:li.layout--space-between.layout--align-center
@@ -79,87 +102,74 @@
         (assoc {:id location-id :user-id user-id} :response)
         (conj [responses/form :location]))])
 
-(defn ^:private creator's-hangout-view [{:keys [change-state]} {:keys [hangout]}]
-  (let [{hangout-id :id :keys [invitations locations moments name]} hangout]
-    [:div.layout--space-below
-     [:div.buttons
-      [:button.button.is-info
-       {:on-click #(change-state :edit)}
-       "Edit"]]
-     [:h1.label name]
-     [:h2.label "Who's coming?"]
-     [:div.layout--inset
-      [:ul.layout--stack-between
-       (for [invitation invitations]
-         ^{:key (:id invitation)}
-         [invitation-item invitation false])]]
-     [:h2.label "When?"]
-     [:div.layout--stack-between
-      [:div.layout--inset
-       [:ul.layout--stack-between
-        [flip-move/flip-move
-         {}
-         (for [moment (sort res.suggestions/moment-sorter moments)]
-           ^{:key (:id moment)}
-           [:li.layout--space-between
-            [moment-suggestion moment (:id @store/user)]])]]]
-      [suggestions/moment hangout-id]]
-     [:h2.label "Where?"]
-     [:div.layout--stack-between
-      [:div.layout--inset
-       [:ul.layout--stack-between
-        [flip-move/flip-move
-         {}
-         (for [location (sort res.suggestions/location-sorter locations)]
-           ^{:key (:id location)}
-           [:li.layout--space-between
-            [location-suggestion location (:id @store/user)]])]]]
-      [suggestions/location hangout-id]]]))
-
-(defn ^:private creator's-hangout-edit [_attrs {:keys [hangout]}]
-  (let [form (res.hangouts/form hangout)
-        already-invited? (comp (set (map :id (:invitations hangout))) :id)]
-    (fn [{:keys [change-state]} {:keys [associates]}]
-      [:div.layout--space-below
-       [hangout-form
-        form
-        (remove already-invited? associates)
-        (res.hangouts/on-modify change-state)
-        [:button.button.is-info
-         {:on-click #(change-state :normal)
-          :type     :button}
-         "Cancel"]]])))
-
-(defn ^:private creator's-hangout [attrs resources]
-  (case (:state attrs)
-    :normal [creator's-hangout-view attrs resources]
-    :edit [creator's-hangout-edit attrs resources]))
-
-(defn ^:private invitee's-hangout [{{hangout-id :id :keys [creator name moments invitations]} :hangout}]
-  [:div.layout--space-below
-   [:h1.is-size-3 name]
-   [:label.label "Invitees"]
-   [:ul.layout--stack-between
-    [invitation-item (assoc creator :response :creator) false]
-    (for [{invitation-id :id :as invitation} invitations]
-      ^{:key invitation-id}
-      [invitation-item invitation (= invitation-id (:id @store/user))])]
-   [:h2.label "When?"]
-   [:div.layout--stack-between
-    [:div.layout--inset
-     [:ul.layout--stack-between
-      [flip-move/flip-move
-       {}
-       (for [moment (sort res.suggestions/moment-sorter moments)]
-         ^{:key (:id moment)}
-         [:li.layout--space-between
-          [moment-suggestion moment (:id @store/user)]])]]]
-    [suggestions/moment hangout-id]]])
+(defn ^:private hangout-view [{:keys [creator? change-state state]} {:keys [hangout] :as resources}]
+  (let [{hangout-id :id :keys [creator invitations locations moments name]} hangout]
+    [:div.layout--space-below.layout--stack-between
+     (when (not= state :edit)
+       [:div.layout--space-between
+        [:h1.title.is-5 {:style {:margin-bottom 0}} "Name: "]
+        [:span name]
+        (when creator?
+          [:a
+           {:href "#" :on-click #(change-state (when (not= state :edit) :edit))}
+           [components/icon :edit]])])
+     (when (= state :edit)
+       [edit-form hangout change-state])
+     [:h2.title.is-6 {:style {:margin-bottom 0}}
+      [:a
+       {:href "#" :on-click #(change-state (when (not= state :who) :who))}
+       [components/icon (if (= state :who) :minus-circle :plus-circle)]
+       " Who's coming?"]]
+     (when (= state :who)
+       [:div.layout--stack-between
+        [:div.layout--inset
+         [:ul.layout--stack-between
+          (when-not creator?
+            [invitation-item (assoc creator :response :creator) false])
+          (for [invitation invitations]
+            ^{:key (:id invitation)}
+            [invitation-item invitation false])]]
+        (when creator?
+          [invitation-form resources])])
+     [:h2.title.is-6 {:style {:margin-bottom 0}}
+      [:a
+       {:href "#" :on-click #(change-state (when (not= state :when) :when))}
+       [components/icon (if (= state :when) :minus-circle :plus-circle)]
+       " When?"]]
+     (when (= state :when)
+       [:div.layout--stack-between
+        [:div.layout--inset
+         [:ul.layout--stack-between
+          [flip-move/flip-move
+           {}
+           (for [moment (sort res.suggestions/moment-sorter moments)]
+             ^{:key (:id moment)}
+             [:li.layout--space-between
+              {:style {:background-color :white}}
+              [moment-suggestion moment (:id @store/user)]])]]]
+        [suggestions/moment hangout-id]])
+     [:h2.title.is-6 {:style {:margin-bottom 0}}
+      [:a
+       {:href "#" :on-click #(change-state (when (not= state :where) :where))}
+       [components/icon (if (= state :where) :minus-circle :plus-circle)]
+       " Where?"]]
+     (when (= state :where)
+       [:div.layout--stack-between
+        [:div.layout--inset
+         [:ul.layout--stack-between
+          [flip-move/flip-move
+           {}
+           (for [location (sort res.suggestions/location-sorter locations)]
+             ^{:key (:id location)}
+             [:li.layout--space-between
+              {:style {:background-color :white}}
+              [location-suggestion location (:id @store/user)]])]]]
+        [suggestions/location hangout-id]])]))
 
 (defn ^:private hangout* [resources]
-  (if (= (:id @store/user) (get-in resources [:hangout :created-by]))
-    [fields/stateful :normal [creator's-hangout {} resources]]
-    [invitee's-hangout resources]))
+  [fields/stateful nil [hangout-view
+                        {:creator? (= (:id @store/user) (get-in resources [:hangout :created-by]))}
+                        resources]])
 
 (defn ^:private hangouts* [{:keys [hangouts]}]
   [:div
@@ -182,8 +192,8 @@
       [:div
        [hangout-form
         form
-        associates
-        res.hangouts/create->modify
+        {:associates associates
+         :on-saved res.hangouts/create->modify}
         (if (not (forms/ready? form))
           [:button.button.is-warning
            {:disabled true :type :button}

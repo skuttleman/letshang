@@ -42,14 +42,14 @@
 
 (defn ^:private with-auto-focus [component]
   (fn [{:keys [auto-focus?]} & _]
-    (let [node-atom (atom nil)
-          ref (fn [node] (some->> node (reset! node-atom)))]
+    (let [vnode (volatile! nil)
+          ref (fn [node] (some->> node (vreset! vnode)))]
       (r/create-class
         {:component-did-update
          (fn [this _]
-           (when-let [node @node-atom]
+           (when-let [node @vnode]
              (when (and auto-focus? (not (:disabled (second (r/argv this)))))
-               (reset! node-atom nil)
+               (vreset! vnode nil)
                (dom/focus node))))
          :reagent-render
          (fn [attrs & args]
@@ -127,7 +127,7 @@
 
 (defn openable [_component]
   (let [open? (r/atom false)
-        ref (atom nil)
+        ref (volatile! nil)
         listeners [(dom/add-listener dom/window :click (fn [e]
                                                          (if (->> (.-target e)
                                                                   (iterate #(some-> % .-parentNode))
@@ -156,7 +156,7 @@
                (update 1 (=> (update :ref (fn [ref-fn]
                                             (fn [node]
                                               (when node
-                                                (reset! ref node))
+                                                (vreset! ref node))
                                               (when ref-fn
                                                 (ref-fn node)))))
                              (update :on-blur (fn [on-blur]

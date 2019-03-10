@@ -8,9 +8,11 @@ Requires a local install of Java and the JRE and leiningen. The app uses a postg
 database (local or otherwise).
 
 ### Clone the repo
+
 ```bash
 $ git clone git@github.com:skuttleman/letshang.git
 ```
+
 ### Setup the environment
 
 ```bash
