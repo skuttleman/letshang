@@ -1,0 +1,9 @@
+ALTER TABLE hangouts
+    DROP CONSTRAINT hangouts_moment_qualified,
+    DROP COLUMN moment_time,
+    DROP COLUMN moment_time_zone,
+    DROP COLUMN moment_id,
+    DROP COLUMN location_id,
+    DROP COLUMN others_invite,
+    DROP COLUMN when_suggestions,
+    DROP COLUMN where_suggestions;
