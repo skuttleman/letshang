@@ -11,10 +11,6 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]))
 
-(defmethod models/->db ::model
-  [_ invitation]
-  (dissoc invitation :created-at))
-
 (defmethod models/->api ::model
   [_ invitation]
   (-> invitation
@@ -52,6 +48,7 @@
             {:hangout-id hangout-id :match-type :exact :user-id user-id :created-by created-by})
           (seq)
           (->> (entities/insert-into entities/invitations))
+          (entities/on-conflict-nothing [:hangout-id :user-id])
           (models/insert-many entities/invitations ::model)
           (repos/exec! db)))
 

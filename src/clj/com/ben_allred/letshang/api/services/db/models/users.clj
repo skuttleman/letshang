@@ -7,10 +7,6 @@
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(defmethod models/->db ::model
-  [_ user]
-  (dissoc user :created-at))
-
 (defn ^:private select-by [db clause]
   (-> clause
       (repo.users/select-by)

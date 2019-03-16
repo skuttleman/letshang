@@ -13,17 +13,16 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]))
 
-(defmethod models/->db ::model
-  [_ moment]
-  (-> moment
-      (dissoc :created-at)
-      (set/rename-keys {:window :moment-window})))
-
 (defmethod models/->api ::model
   [_ moment]
   (-> moment
       (set/rename-keys {:moment-window :window})
       (maps/update-maybe :window keyword)))
+
+(defmethod models/->db ::model
+  [_ moment]
+  (-> moment
+      (set/rename-keys {:window :moment-window})))
 
 (defn ^:private prepare-all [moment]
   (-> moment

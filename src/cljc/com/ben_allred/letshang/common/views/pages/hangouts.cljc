@@ -21,7 +21,7 @@
     [com.ben-allred.letshang.common.views.pages.hangouts.responses :as responses]
     [com.ben-allred.letshang.common.views.pages.hangouts.suggestions :as suggestions]))
 
-(defn ^:private hangout-form [form {:keys [associates invitees-only? on-saved]} & buttons]
+(defn ^:private hangout-form [form {:keys [associates creator? invitees-only? on-saved]} & buttons]
   [form-view/form
    {:buttons  buttons
     :on-saved on-saved
@@ -35,7 +35,21 @@
      [dropdown/dropdown
       (-> {:label   "Invitees"
            :options (map (juxt :id users/full-name) associates)}
-          (res.hangouts/with-attrs form [:invitation-ids]))])])
+          (res.hangouts/with-attrs form [:invitation-ids]))])
+   (when creator?
+     [:<>
+      [fields/checkbox
+       (-> {:label "Attendees can invite people?"
+            :form-field-class ["inline" "reverse"]}
+           (res.hangouts/with-attrs form [:others-invite?]))]
+      [fields/checkbox
+       (-> {:label "Attendees can suggest when?"
+            :form-field-class ["inline" "reverse"]}
+           (res.hangouts/with-attrs form [:when-suggestions?]))]
+      [fields/checkbox
+       (-> {:label "Attendees can suggest where?"
+            :form-field-class ["inline" "reverse"]}
+           (res.hangouts/with-attrs form [:where-suggestions?]))]])])
 
 (defn ^:private edit-form [hangout _change-state]
   (let [form (res.hangouts/form hangout)]
@@ -43,14 +57,14 @@
       [:div.layout--space-below
        [hangout-form
         form
-        {}
+        {:creator? true}
         [:button.button.is-info
          {:type :button :on-click #(change-state nil)}
          "Cancel"]]])))
 
 (defn ^:private invitation-form [{:keys [hangout]}]
   (let [form (res.hangouts/form hangout)
-        already-invited? (comp (set (map :id (:invitations hangout))) :id)]
+        already-invited? (comp (conj (set (map :id (:invitations hangout))) (:created-by hangout)) :id)]
     (fn [{:keys [associates]}]
       (when-let [associates (seq (remove already-invited? associates))]
         [:div.layout--space-below
@@ -172,7 +186,8 @@
        [hangout-form
         form
         {:associates associates
-         :on-saved res.hangouts/create->modify}
+         :on-saved   res.hangouts/create->modify
+         :creator?   true}
         (if (not (forms/ready? form))
           [:button.button.is-warning
            {:disabled true :type :button}

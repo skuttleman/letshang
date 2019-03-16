@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.api.services.db.models.hangouts
   (:require
+    [clojure.set :as set]
     [com.ben-allred.letshang.api.services.db.entities :as entities]
     [com.ben-allred.letshang.api.services.db.models.invitations :as models.invitations]
     [com.ben-allred.letshang.api.services.db.models.locations :as models.locations]
@@ -12,11 +13,17 @@
 
 (defmethod models/->api ::model
   [_ hangout]
-  hangout)
+  (-> hangout
+      (set/rename-keys {:others-invite     :others-invite?
+                        :when-suggestions  :when-suggestions?
+                        :where-suggestions :where-suggestions?})))
 
 (defmethod models/->db ::model
   [_ hangout]
-  (dissoc hangout :created-at :id))
+  (-> hangout
+      (set/rename-keys {:others-invite?     :others-invite
+                        :when-suggestions?  :when-suggestions
+                        :where-suggestions? :where-suggestions})))
 
 (defn ^:private select* [db clause]
   (-> clause
@@ -60,9 +67,9 @@
             (repos/exec! db)
             (colls/only!))
     (-> hangout
-        (repo.hangouts/modify (repo.hangouts/creator-clause hangout-id))
+        (repo.hangouts/modify (repo.hangouts/id-clause hangout-id))
         (models/modify entities/hangouts ::model)
-        (update :set select-keys #{:name})
+        (update :set dissoc :invitation-ids)
         (repos/exec! db))
     (models.invitations/insert-many! db [hangout-id] (:invitation-ids hangout) created-by)
     (find-for-user db hangout-id created-by)))

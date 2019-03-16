@@ -41,7 +41,7 @@
 
 (defn modify [entity m]
   {:update (:table entity)
-   :set    (select-keys m (:fields entity))})
+   :set    m})
 
 (defn select [entity]
   (-> entity
@@ -65,33 +65,33 @@
    (join* query :join entity alias on overrides)))
 
 (def hangouts
-  {:fields #{:id :name :created-by :created-at}
-   :table  :hangouts})
+  {:fields #{:created-at :created-by :id :name :others-invite :when-suggestions :where-suggestions}
+   :table :hangouts})
 
 (def known-associates
-  {:fields #{:id :user-id :associate-id :created-by :created-at}
+  {:fields #{:associate-id :created-at :created-by :id :user-id}
    :table  :known-associates})
 
 (def invitations
-  {:fields #{:id :hangout-id :user-id :match-type :response :created-by :created-at}
+  {:fields #{:created-at :created-by :hangout-id :id :match-type :response :user-id}
    :table  :invitations})
 
 (def locations
-  {:fields #{:id :hangout-id :name :created-by :created-at}
+  {:fields #{:created-at :created-by :hangout-id :id :name}
    :table  :locations})
 
 (def location-responses
-  {:fields #{:location-id :user-id :response}
-   :table  :location-responses})
+  {:fields #{:location-id :response :user-id}
+   :table :location-responses})
 
 (def moments
-  {:fields #{:id :hangout-id :date :moment-window :created-by :created-at}
+  {:fields #{:created-at :created-by :date :hangout-id :id :moment-window}
    :table  :moments})
 
 (def moment-responses
-  {:fields #{:moment-id :user-id :response}
-   :table  :moment-responses})
+  {:fields #{:moment-id :response :user-id}
+   :table :moment-responses})
 
 (def users
-  {:fields #{:id :first-name :last-name :handle :email :mobile-number :created-at}
+  {:fields #{:created-at :email :first-name :handle :id :last-name :mobile-number}
    :table  :users})

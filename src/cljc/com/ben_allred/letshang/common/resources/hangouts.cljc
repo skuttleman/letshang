@@ -21,7 +21,7 @@
   (comp (partial hash-map :data)
         (f/transformer
           {:name strings/trim-to-nil})
-        #(select-keys % #{:name :invitation-ids})))
+        #(select-keys % #{:name :invitation-ids :others-invite? :when-suggestions? :where-suggestions?})))
 
 (def ^:private create-api
   (reify

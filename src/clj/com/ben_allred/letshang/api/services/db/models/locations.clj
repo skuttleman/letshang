@@ -9,15 +9,6 @@
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.fns :refer [=>>]]))
 
-(defmethod models/->db ::model
-  [_ location]
-  (-> location
-      (dissoc :created-at)))
-
-(defmethod models/->api ::model
-  [_ location]
-  location)
-
 (defn ^:private select* [db clause]
   (-> clause
       (repo.locations/select-by)
