@@ -10,9 +10,3 @@
 
 (defn upsert [moment-response]
   (entities/upsert entities/moment-responses [moment-response] [:moment-id :user-id] [:response]))
-
-(defn hangout-ids-clause
-  ([clause hangout-ids]
-   [:and clause (hangout-ids-clause hangout-ids)])
-  ([hangout-ids]
-   [:in :moment-responses.hangout-id hangout-ids]))

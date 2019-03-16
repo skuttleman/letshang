@@ -79,8 +79,8 @@
              (string? v) (Date/from (.toInstant (ZonedDateTime/parse v)))
              (inst? v) v)
      :cljs (cond
-             (time/date? v) (time.coerce/to-date-time v)
-             (string? v) (time.coerce/to-date-time (time.format/parse v))
+             (time/date? v) (.-date (time.coerce/to-date-time v))
+             (string? v) (.-date (time.coerce/to-date-time (time.format/parse v)))
              (inst? v) v)))
 
 (defn plus [inst? amt interval]
@@ -93,12 +93,10 @@
                  (= :days interval) (.plusDays amt)
                  (= :hours interval) (.plusHours amt)
                  (= :minutes interval) (.plusMinutes amt)
-                 (= :seconds interval) (.plusSeconds amt))
-               (->inst))
+                 (= :seconds interval) (.plusSeconds amt)))
      :cljs (-> inst?
                (->internal)
-               (time/plus (time/period interval amt))
-               (->inst))))
+               (time/plus (time/period interval amt)))))
 
 (defn minus [inst? amt interval]
   (plus inst? (* -1 amt) interval))
@@ -169,7 +167,7 @@
 
 (defn today []
   #?(:clj  (.toLocalDate (now))
-     :cljs (time/today)))
+     :cljs (time/today-at-midnight)))
 
 (defn inst->ms [inst?]
   (.getTime (->inst inst?)))

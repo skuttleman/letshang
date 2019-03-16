@@ -21,4 +21,4 @@
   ([clause hangout-ids]
    [:and clause (hangout-ids-clause hangout-ids)])
   ([hangout-ids]
-   [:in :location-responses.hangout-id hangout-ids]))
+   [:in :locations.hangout-id hangout-ids]))

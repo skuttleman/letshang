@@ -9,7 +9,7 @@
     [com.ben-allred.letshang.api.services.db.repositories.invitations :as repo.invitations]
     [com.ben-allred.letshang.api.services.db.repositories.moments :as repo.moments]
     [com.ben-allred.letshang.common.utils.colls :as colls]
-    [com.ben-allred.letshang.common.utils.fns :refer [=>>]]
+    [com.ben-allred.letshang.common.utils.fns :refer [=> =>>]]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]))
 
@@ -25,11 +25,19 @@
       (set/rename-keys {:moment-window :window})
       (maps/update-maybe :window keyword)))
 
-(def ^:private prepare-window (prep/for-type :moments-window))
+(defn ^:private prepare-all [moment]
+  (-> moment
+      (->> (models/->db ::model))
+      (maps/update-maybe :moment-window prep/moments-window)
+      (maps/update-maybe :date prep/date)))
 
 (defmethod repos/->sql-value [:moments :moment-window]
   [_ _ value]
-  (prepare-window value))
+  (prep/moments-window value))
+
+(defmethod repos/->sql-value [:moments :date]
+  [_ _ value]
+  (prep/date value))
 
 (defn ^:private select* [db clause]
   (-> clause
@@ -64,14 +72,13 @@
         (entities/on-conflict-nothing [:hangout-id :date :moment-window])
         (repos/exec! db)
         (colls/only!))
-    (when-let [moment-id (-> moment
-                             (assoc :hangout-id hangout-id)
-                             (set/rename-keys {:window :moment-window})
-                             (update :moment-window prepare-window)
-                             (repo.moments/moment-window-clause)
-                             (->> (select* db))
-                             (colls/only!)
-                             (:id))]
+    (let [moment-id (-> moment
+                        (assoc :hangout-id hangout-id)
+                        (prepare-all)
+                        (repo.moments/moment-window-clause)
+                        (->> (select* db))
+                        (colls/only!)
+                        (:id))]
       (models.moment-responses/respond db {:moment-id moment-id
                                            :user-id   created-by
                                            :response  :positive})

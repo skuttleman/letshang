@@ -10,9 +10,3 @@
 
 (defn upsert [location-response]
   (entities/upsert entities/location-responses [location-response] [:location-id :user-id] [:response]))
-
-(defn hangout-ids-clause
-  ([clause hangout-ids]
-   [:and clause (hangout-ids-clause hangout-ids)])
-  ([hangout-ids]
-   [:in :location-responses.hangout-id hangout-ids]))

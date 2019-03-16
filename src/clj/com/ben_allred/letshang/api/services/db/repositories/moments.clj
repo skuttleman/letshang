@@ -26,8 +26,8 @@
 (defn moment-window-clause
   ([clause moment]
    [:and clause (moment-window-clause moment)])
-  ([{:keys [hangout-id date window]}]
+  ([{:keys [hangout-id date moment-window]}]
     [:and
      [:= :moments.hangout-id hangout-id]
      [:= :moments.date date]
-     [:= :moments.moment-window window]]))
+     [:= :moments.moment-window moment-window]]))

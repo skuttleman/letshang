@@ -21,16 +21,13 @@
       (maps/update-maybe :response keyword)
       (maps/update-maybe :match-type keyword)))
 
-(def ^:private prepare-match-type (prep/for-type :invitations-match-type))
-(def ^:private prepare-response (prep/for-type :user-response))
-
 (defmethod repos/->sql-value [:invitations :match-type]
   [_ _ value]
-  (prepare-match-type value))
+  (prep/invitations-match-type value))
 
 (defmethod repos/->sql-value [:invitations :response]
   [_ _ value]
-  (prepare-response value))
+  (prep/user-response value))
 
 (defn ^:private select* [db clause]
   (-> clause
