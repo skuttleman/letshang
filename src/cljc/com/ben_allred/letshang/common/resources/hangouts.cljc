@@ -9,7 +9,7 @@
     [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
-    [com.ben-allred.letshang.common.services.store.actions :as actions]
+    [com.ben-allred.letshang.common.services.store.actions.hangouts :as act.hangouts]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.logging :as log]
@@ -32,7 +32,7 @@
     (save! [_ model]
       (-> model
           (model->source)
-          (actions/create-hangout)
+          (act.hangouts/create-hangout)
           (store/dispatch)
           (ch/then source->model)
           (ch/peek (res/toast-success "Your hangout has been created.")
@@ -47,22 +47,14 @@
     (save! [_ model]
       (-> model
           (model->source)
-          (->> (actions/update-hangout (:id hangout)))
+          (->> (act.hangouts/update-hangout (:id hangout)))
           (store/dispatch)
           (ch/then source->model)
           (ch/peek (res/toast-success "Your hangout has been saved.")
                    (res/toast-error "Something went wrong."))))))
 
-(def ^:private model->view
-  {})
-
 (def ^:private view->model
   {:name not-empty})
-
-(defn on-modify [change-state]
-  (fn [response]
-    (store/dispatch [:hangout/success {:data response}])
-    (change-state :normal)))
 
 (def validator
   (f/validator {:name [(f/pred (complement string/blank?) "Your hangout must have a name")
@@ -83,4 +75,4 @@
   ([form path]
    (with-attrs nil form path))
   ([attrs form path]
-   (forms/with-attrs attrs form path model->view view->model)))
+   (forms/with-attrs attrs form path nil view->model)))

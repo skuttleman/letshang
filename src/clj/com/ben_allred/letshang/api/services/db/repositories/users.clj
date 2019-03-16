@@ -23,3 +23,18 @@
 
 (defn insert [user]
   (entities/insert-into entities/users [user]))
+
+(defn email-clause
+  ([clause email]
+   [:and clause (email-clause email)])
+  ([email]
+   [:= :users.email email]))
+
+(defn conflict-clause
+  ([clause user]
+   [:and clause (conflict-clause user)])
+  ([{:keys [email handle mobile-number]}]
+   [:or
+    [:= :handle handle]
+    [:= :email email]
+    [:= :mobile-number mobile-number]]))

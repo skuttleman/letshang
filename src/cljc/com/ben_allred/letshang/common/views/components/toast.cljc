@@ -1,6 +1,6 @@
 (ns com.ben-allred.letshang.common.views.components.toast
   (:require
-    [com.ben-allred.letshang.common.services.store.actions :as actions]
+    [com.ben-allred.letshang.common.services.store.actions.toast :as act.toast]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
@@ -25,7 +25,7 @@
                           (when removing? "removing")]}
            (and removing? @height) (update :style assoc :margin-top (str "-" @height "px")))
          [:div.message-body
-          {:on-click #(store/dispatch (actions/remove-toast toast-id))
+          {:on-click #(store/dispatch (act.toast/remove-toast! toast-id))
            :style    {:cursor :pointer}}
           [:div.body-text @body]]]))))
 

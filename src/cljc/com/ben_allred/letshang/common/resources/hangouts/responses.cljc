@@ -4,7 +4,7 @@
     [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
-    [com.ben-allred.letshang.common.services.store.actions :as actions]
+    [com.ben-allred.letshang.common.services.store.actions.hangouts :as act.hangouts]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.colls :as colls]
@@ -18,17 +18,17 @@
     forms/ISave
     (save! [_ {:keys [response]}]
       (-> {:data {:response response}}
-          (->> (actions/set-response response-type (:id model)))
+          (->> (act.hangouts/set-response response-type (:id model)))
           (store/dispatch)
           (ch/peek (constantly nil)
                    (res/toast-error "Something went wrong."))))))
 
-(def response-label
+(def response->label
   {:invitation "Are you coming?"
    :moment     "Are you available?"
    :location   "How does this place sound?"})
 
-(def response-options
+(def response->options
   {:invitation [[:neutral "Not sure"]
                 [:negative "I'm out"]
                 [:positive "I'm in"]]
@@ -40,7 +40,7 @@
                 [:positive "Good idea"]]})
 
 (def response->text
-  (into {:none "No response yet" :creator "Creator"} (response-options :invitation)))
+  (into {:none "No response yet" :creator "Creator"} (response->options :invitation)))
 
 (def response->icon
   {:none     :ban

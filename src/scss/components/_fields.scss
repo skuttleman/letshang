@@ -54,3 +54,23 @@
         color: $red;
     }
 }
+
+.form-field {
+    &.inline {
+        display: flex;
+        align-items: center;
+        .label {
+            margin-top: 0.3em;
+        }
+
+        &.reverse {
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+        }
+    }
+
+    .checkbox {
+        height: 24px;
+        width: 24px;
+    }
+}

@@ -7,6 +7,7 @@
     [com.ben-allred.letshang.api.services.db.repositories.invitations :as repo.invitations]
     [com.ben-allred.letshang.api.services.db.repositories.users :as repo.users]
     [com.ben-allred.letshang.common.utils.colls :as colls]
+    [com.ben-allred.letshang.common.utils.fns :refer [=> =>>]]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]))
 
@@ -34,45 +35,37 @@
 (defn ^:private select* [db clause]
   (-> clause
       (repo.users/select-by)
-      (update :select conj
-              :invitations.hangout-id
-              :invitations.response
-              :invitations.match-type
-              [:invitations.id :invitation-id])
-      (update :join (fnil conj []) (:table entities/invitations) [:= :invitations.user-id :users.id])
+      (entities/inner-join entities/invitations
+                           :invitations
+                           [:= :invitations.user-id :users.id]
+                           {:id :invitation-id})
       (models/select ::model)
       (repos/exec! db)))
 
 (defn with-invitations [db hangouts]
-  (let [hangout-id->invitations (-> hangouts
-                                    (some->>
-                                      (seq)
-                                      (map :id)
-                                      (conj [:in :hangout-id])
-                                      (select* db))
-                                    (->> (group-by :hangout-id)))]
-    (map (fn [{:keys [id] :as hangout}]
-           (assoc hangout :invitations (hangout-id->invitations id [])))
-         hangouts)))
+  (models/with :invitations
+               (=>> (repo.invitations/hangout-ids-clause)
+                    (select* db))
+               [:id :hangout-id]
+               hangouts))
 
 (defn insert-many! [db hangout-ids user-ids created-by]
-  (let [hangout-invitations (for [hangout-id hangout-ids
-                               user-id user-ids]
-                           {:hangout-id hangout-id :match-type :exact :user-id user-id :created-by created-by})]
-    (when (seq hangout-invitations)
-      (-> hangout-invitations
+  (some-> (for [hangout-id hangout-ids
+                user-id user-ids]
+            {:hangout-id hangout-id :match-type :exact :user-id user-id :created-by created-by})
+          (seq)
           (->> (entities/insert-into entities/invitations))
           (models/insert-many entities/invitations ::model)
-          (repos/exec! db)))))
+          (repos/exec! db)))
 
 (defn set-response [db invitation-id response user-id]
-  (when (-> [:and
-             [:= :invitations.id invitation-id]
-             [:= :invitations.user-id user-id]]
+  (when (-> user-id
+            (repo.invitations/user-clause)
+            (repo.invitations/id-clause invitation-id)
             (repo.invitations/select-by)
             (repos/exec! db)
             (colls/only!))
     (-> {:response response}
-        (repo.invitations/modify [:= :invitations.id invitation-id])
+        (repo.invitations/modify (repo.invitations/id-clause invitation-id))
         (models/modify entities/invitations ::model)
         (repos/exec! db))))

@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.api.services.db.models.users
   (:require
+    [com.ben-allred.letshang.api.services.db.entities :as entities]
     [com.ben-allred.letshang.api.services.db.models.shared :as models]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.users :as repo.users]
@@ -22,15 +23,13 @@
        (colls/only!)))
 
 (defn find-by-email [db email]
-  (find-by db [:= :email email]))
+  (find-by db (repo.users/email-clause email)))
 
-(defn select-conflicts [db {:keys [email handle mobile-number]}]
-  (-> [:or
-       [:= :handle handle]
-       [:= :email email]
-       [:= :mobile-number mobile-number]]
+(defn select-conflicts [db user]
+  (-> user
+      (repo.users/conflict-clause)
       (repo.users/select-by)
-      (assoc :limit 1)
+      (entities/limit 1)
       (models/select ::model)
       (repos/exec! db)
       (colls/only!)))

@@ -2,23 +2,26 @@
   (:require
     [clojure.set :as set]))
 
-(defn ^:private with-field-alias [fields alias]
+(defn ^:private with-field-alias [fields alias overrides]
   (let [alias' (name alias)]
     (map (fn [field]
            (let [field' (name field)]
              [(keyword (str alias' "." field'))
-              (keyword alias' field')]))
+              (get overrides field (keyword alias' field'))]))
          fields)))
 
-(defn ^:private join* [query join entity alias on]
+(defn ^:private join* [query join entity alias on overrides]
   (-> query
       (update join (fnil conj []) [(:table entity) alias] on)
-      (update :select into (with-field-alias (:fields entity) alias))))
+      (update :select into (with-field-alias (:fields entity) alias overrides))))
 
-(defn with-alias [entity alias]
-  (-> entity
-      (update :select with-field-alias alias)
-      (update :from (comp vector conj) alias)))
+(defn with-alias
+  ([entity alias]
+   (with-alias entity alias nil))
+  ([entity alias overrides]
+   (-> entity
+       (update :select with-field-alias alias overrides)
+       (update :from (comp vector conj) alias))))
 
 (defn insert-into [entity rows]
   {:insert-into (:table entity)
@@ -29,6 +32,12 @@
   (-> entity
       (insert-into rows)
       (assoc :on-conflict conflict :do-update-set keys)))
+
+(defn on-conflict-nothing [query conflict]
+  (assoc query :on-conflict conflict :do-nothing []))
+
+(defn limit [query amt]
+  (assoc query :limit amt))
 
 (defn modify [entity m]
   {:update (:table entity)
@@ -43,13 +52,17 @@
   ([query entity on]
    (left-join query entity (:table entity) on))
   ([query entity alias on]
-   (join* query :left-join entity alias on)))
+   (left-join query entity alias on nil))
+  ([query entity alias on overrides]
+   (join* query :left-join entity alias on overrides)))
 
 (defn inner-join
   ([query entity on]
    (inner-join query entity (:table entity) on))
   ([query entity alias on]
-   (join* query :join entity alias on)))
+   (inner-join query entity alias on #{}))
+  ([query entity alias on overrides]
+   (join* query :join entity alias on overrides)))
 
 (def hangouts
   {:fields #{:id :name :created-by :created-at}

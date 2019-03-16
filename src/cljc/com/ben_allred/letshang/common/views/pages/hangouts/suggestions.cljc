@@ -8,7 +8,31 @@
     [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.dropdown :as dropdown]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
-    [com.ben-allred.letshang.common.views.components.form-view :as form-view]))
+    [com.ben-allred.letshang.common.views.components.form-view :as form-view]
+    [com.ben-allred.letshang.common.views.pages.hangouts.responses :as responses]
+    [com.ben-allred.letshang.common.utils.colls :as colls]
+    [com.ben-allred.letshang.common.utils.dates :as dates]
+    [com.ben-allred.letshang.common.utils.keywords :as keywords]))
+
+(defn ^:private suggestion* [header responses form]
+  [:<>
+   [:div
+    {:style {:width "100%"}}
+    header]
+   responses
+   form])
+
+(defn ^:private suggestion-responses [{:keys [positive negative neutral]}]
+  [:div.layout--space-between
+   (when positive [responses/icon :positive positive])
+   (when negative [responses/icon :negative negative])
+   (when neutral [responses/icon :neutral neutral])])
+
+(defn ^:private response-form [response-type id user-id responses]
+  [responses/form response-type (->> responses
+                                     (colls/find (comp #{user-id} :user-id))
+                                     (:response)
+                                     (assoc {:id id :user-id user-id} :response))])
 
 (defn window-button [attrs]
   [:button.button
@@ -20,7 +44,7 @@
     {:style {:margin-left "10px"}}
     [components/icon (if (:open? attrs) :chevron-up :chevron-down)]]])
 
-(defn moment [hangout-id]
+(defn moment-form [hangout-id]
   (let [form (res.suggestions/when-form hangout-id)]
     (fn [_hangout-id]
       [form-view/form
@@ -36,7 +60,7 @@
             (res.suggestions/with-attrs form [:window])
             (dropdown/oneable))]])))
 
-(defn location [hangout-id]
+(defn location-form [hangout-id]
   (let [form (res.suggestions/where-form hangout-id)]
     (fn [_hangout-id]
       [form-view/form
@@ -46,3 +70,17 @@
        [fields/input
         (-> {:label "Name of the place"}
             (res.suggestions/with-attrs form [:name]))]])))
+
+(defn location-suggestion [{location-id :id :keys [name response-counts responses]} user-id]
+  [suggestion*
+   name
+   [suggestion-responses response-counts]
+   [response-form :location location-id user-id responses]])
+
+(defn moment-suggestion [{moment-id :id :keys [date response-counts responses window]} user-id]
+  [suggestion*
+   [components/tooltip
+    {:text (str (dates/format date :date/view) ": " (strings/titlize (keywords/safe-name window) " "))}
+    (dates/relative date)]
+   [suggestion-responses response-counts]
+   [response-form :moment moment-id user-id responses]])

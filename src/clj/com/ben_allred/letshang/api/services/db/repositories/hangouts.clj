@@ -16,3 +16,27 @@
   (-> entities/hangouts
       (entities/modify hangout)
       (assoc :where clause)))
+
+(defn id-clause
+  ([clause hangout-id]
+   [:and clause (id-clause hangout-id)])
+  ([hangout-id]
+   [:= :hangouts.id hangout-id]))
+
+(defn creator-clause
+  ([clause user-id]
+   [:and clause (creator-clause user-id)])
+  ([user-id]
+   [:= :hangouts.created-by user-id]))
+
+(defn has-hangout-clause
+  ([clause user-id]
+   [:and clause (has-hangout-clause user-id)])
+  ([user-id]
+   [:or
+    [:= :hangouts.created-by user-id]
+    [:exists {:select [:id]
+              :from   [:invitations]
+              :where  [:and
+                       [:= :invitations.hangout-id :hangouts.id]
+                       [:= :invitations.user-id user-id]]}]]))

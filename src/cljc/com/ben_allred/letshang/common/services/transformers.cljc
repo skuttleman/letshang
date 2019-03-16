@@ -3,11 +3,11 @@
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (defn ^:private digits [s]
-  (->> s
-       (map str)
-       (filter (partial re-matches #"\d"))
-       (take 10)
-       (apply str)))
+  (transduce (comp (map str)
+                     (filter (partial re-matches #"\d"))
+                     (take 10))
+               str
+               s))
 
 (defn phone->view [s]
   (let [[_ open? close? space? hyphen?] (re-matches #"(\()?[^\)]*(\))?( )?[^-]*(-)?.*" (str s))

@@ -10,6 +10,16 @@
 (defmethod ->api :default [_ value] value)
 (defmethod ->db :default [_ value] value)
 
+(defn ^:private with* [k f [pk fk] values]
+  (let [pk->results (-> values
+                        (seq)
+                        (some->>
+                          (map #(get % pk))
+                          (f))
+                        (->> (group-by fk)))]
+    (fn [value]
+      (assoc value k (pk->results (get value pk) [])))))
+
 (defn under [root-key]
   (let [root-key' (name root-key)]
     (map (fn [item]
@@ -41,3 +51,9 @@
 (defn modify [query entity model]
   (update query :set (comp (prep/prepare repos/->sql-value (:table entity))
                            #(select-keys (->db model %) (:fields entity)))))
+
+(defn with [k f [pk fk] values]
+  (map (with* k f [pk fk] values) values))
+
+(defn with-inner [outer-k k f [pk fk] values]
+  (colls/supdate values map update outer-k colls/supdate map (with* k f [pk fk] values)))

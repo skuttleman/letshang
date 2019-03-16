@@ -54,7 +54,7 @@
         (templates/render)
         (template user sign-up)
         (hiccup/html)
-        (str "<!DOCTYPE html>"))))
+        (->> (str "<!DOCTYPE html>")))))
 
 (defn render [{:keys [auth/sign-up auth/user query-string uri]}]
   (-> uri

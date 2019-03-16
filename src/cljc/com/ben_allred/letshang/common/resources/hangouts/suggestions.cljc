@@ -5,7 +5,7 @@
     [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
-    [com.ben-allred.letshang.common.services.store.actions :as actions]
+    [com.ben-allred.letshang.common.services.store.actions.hangouts :as act.hangouts]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.dates :as dates]
@@ -41,34 +41,29 @@
                    (res/toast-error "Something went wrong."))
           (ch/then (constantly initial))))))
 
+(defn ^:private sorter* [k]
+  (fn [{response-counts-1 :response-counts value-1 k} {response-counts-2 :response-counts value-2 k}]
+    (let [score (compare (- (:positive response-counts-2 0) (:negative response-counts-2 0))
+                         (- (:positive response-counts-1 0) (:negative response-counts-1 0)))]
+      (if (zero? score)
+        (let [score-2 (compare (reduce + 0 (vals response-counts-2)) (reduce + 0 (vals response-counts-1)))]
+          (if (zero? score-2)
+            (compare value-1 value-2)
+            score-2))
+        score))))
+
+(def moment-sorter (sorter* :date))
+
+(def location-sorter (sorter* :name))
+
 (def windows [:any-time :morning :mid-day :afternoon :after-work :evening :night :twilight])
 
-(defn moment-sorter [{response-counts-1 :response-counts date-1 :date} {response-counts-2 :response-counts date-2 :date}]
-  (let [score (compare (- (:positive response-counts-2 0) (:negative response-counts-2 0))
-                       (- (:positive response-counts-1 0) (:negative response-counts-1 0)))]
-    (if (zero? score)
-      (let [score-2 (compare (reduce + 0 (vals response-counts-2)) (reduce + 0 (vals response-counts-1)))]
-        (if (zero? score-2)
-          (compare date-1 date-2)
-          score-2))
-      score)))
-
-(defn location-sorter [{response-counts-1 :response-counts name-1 :name} {response-counts-2 :response-counts name-2 :name}]
-  (let [score (compare (- (:positive response-counts-2 0) (:negative response-counts-2 0))
-                       (- (:positive response-counts-1 0) (:negative response-counts-1 0)))]
-    (if (zero? score)
-      (let [score-2 (compare (reduce + 0 (vals response-counts-2)) (reduce + 0 (vals response-counts-1)))]
-        (if (zero? score-2)
-          (compare name-1 name-2)
-          score-2))
-      score)))
-
 (defn when-form [hangout-id]
-  #?(:cljs (forms.std/create (suggest-api {:window :any-time} (partial actions/suggest-when hangout-id)) when-validator)
+  #?(:cljs (forms.std/create (suggest-api {:window :any-time} (partial act.hangouts/suggest-when hangout-id)) when-validator)
      :default (forms.noop/create nil)))
 
 (defn where-form [hangout-id]
-  #?(:cljs (forms.std/create (suggest-api nil (partial actions/suggest-where hangout-id)) where-validator)
+  #?(:cljs (forms.std/create (suggest-api nil (partial act.hangouts/suggest-where hangout-id)) where-validator)
      :default (forms.noop/create nil)))
 
 (defn with-attrs

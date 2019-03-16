@@ -3,7 +3,6 @@
     [clojure.set :as set]
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.maps :as maps]
     [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
     [com.ben-allred.letshang.common.utils.fns #?(:clj :refer :cljs :refer-macros) [=>>]]
@@ -16,15 +15,16 @@
       [:ul.dropdown-items.lazy-list
        (for [[id display] options
              :let [selected? (contains? value id)]]
-         ^{:key id} [:li.dropdown-item.pointer
-                     {:class    [(when selected? "is-active")]
-                      :on-click (fn [e]
-                                  (dom/stop-propagation e)
-                                  (-> (if (contains? value id)
-                                        (disj value id)
-                                        ((fnil conj #{}) value id))
-                                      (on-change)))}
-                     [components/render item-control display]])])))
+         ^{:key id}
+         [:li.dropdown-item.pointer
+          {:class    [(when selected? "is-active")]
+           :on-click (fn [e]
+                       (dom/stop-propagation e)
+                       (-> (if (contains? value id)
+                             (disj value id)
+                             ((fnil conj #{}) value id))
+                           (on-change)))}
+          [components/render item-control display]])])))
 
 (defn button [attrs]
   (let [selected-count (count (:selected attrs))]

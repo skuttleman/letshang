@@ -18,15 +18,6 @@
   [_ hangout]
   (dissoc hangout :created-at :id))
 
-(defn ^:private has-hangout [user-id]
-  [:or
-   [:= :hangouts.created-by user-id]
-   [:exists {:select [:id]
-             :from   [:invitations]
-             :where  [:and
-                      [:= :invitations.hangout-id :hangouts.id]
-                      [:= :invitations.user-id user-id]]}]])
-
 (defn ^:private select* [db clause]
   (-> clause
       (repo.hangouts/select-by)
@@ -36,18 +27,19 @@
 
 (defn select-for-user [db user-id]
   (-> user-id
-      (has-hangout)
+      (repo.hangouts/has-hangout-clause)
       (->> (select* db))))
 
 (defn find-for-user [db hangout-id user-id]
-  (->> [:and
-        [:= :hangouts.id hangout-id]
-        (has-hangout user-id)]
-       (select* db)
-       (models.invitations/with-invitations db)
-       (models.moments/with-moments db)
-       (models.locations/with-locations db)
-       (colls/only!)))
+  (-> hangout-id
+      (repo.hangouts/id-clause)
+      (repo.hangouts/has-hangout-clause user-id)
+      (->>
+        (select* db)
+        (models.invitations/with-invitations db)
+        (models.moments/with-moments db)
+        (models.locations/with-locations db)
+        (colls/only!))))
 
 (defn create [db hangout created-by]
   (let [hangout-id (-> hangout
@@ -61,14 +53,14 @@
     (find-for-user db hangout-id created-by)))
 
 (defn modify [db hangout-id hangout created-by]
-  (when (-> [:and
-             [:= :hangouts.id hangout-id]
-             [:= :hangouts.created-by created-by]]
+  (when (-> hangout-id
+            (repo.hangouts/id-clause)
+            (repo.hangouts/creator-clause created-by)
             (repo.hangouts/select-by)
             (repos/exec! db)
             (colls/only!))
     (-> hangout
-        (repo.hangouts/modify [:= :hangouts.id hangout-id])
+        (repo.hangouts/modify (repo.hangouts/creator-clause hangout-id))
         (models/modify entities/hangouts ::model)
         (update :set select-keys #{:name})
         (repos/exec! db))

@@ -14,9 +14,7 @@
   (into m (comp (partition-all 2) (filter (comp some? second))) kvs))
 
 (defn map-kv [key-fn val-fn m]
-  (->> m
-       (map (fn [[k v]] [(key-fn k) (val-fn v)]))
-       (into {})))
+  (into {} (map (fn [[k v]] [(key-fn k) (val-fn v)])) m))
 
 (defn map-keys [key-fn m]
   (map-kv key-fn identity m))

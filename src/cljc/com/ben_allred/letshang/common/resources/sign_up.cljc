@@ -8,7 +8,7 @@
     [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
-    [com.ben-allred.letshang.common.services.store.actions :as actions]
+    [com.ben-allred.letshang.common.services.store.actions.users :as act.users]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.services.validators :as validators]
     [com.ben-allred.letshang.common.utils.chans :as ch]))
@@ -25,7 +25,7 @@
     (save! [_ model]
       (-> model
           (model->source)
-          (actions/register-user)
+          (act.users/register-user)
           (store/dispatch)
           (ch/peek (fn [_]
                      (nav/go-to! (nav/path-for :auth/login {:query-params (select-keys model #{:email})})))

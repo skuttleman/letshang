@@ -38,9 +38,9 @@
          [:div.layout--space-between.layout--align-center
           [fields/button-group
            (-> {:class        ["is-small"]
-                :label        (res.responses/response-label response-type)
+                :label        (res.responses/response->label response-type)
                 :label-small? true}
                (res.responses/with-attrs form [:response]))
-           (res.responses/response-options response-type)]
+           (res.responses/response->options response-type)]
           (when-not (forms/ready? form)
             [loading/spinner])])})))

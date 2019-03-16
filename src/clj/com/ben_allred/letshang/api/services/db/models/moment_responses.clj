@@ -24,20 +24,17 @@
   (prepare-response value))
 
 (defn with-moment-responses [db hangouts]
-  (let [moment-id->responses (-> hangouts
-                                 (some->
-                                   (seq)
-                                   (->> (map :id)
-                                        (conj [:in :hangout-id]))
-                                   (repo.moment-responses/select-by)
-                                   (entities/inner-join entities/moments
-                                                        [:= :moment-responses.moment-id :moments.id])
-                                   (models/select ::model)
-                                   (models/xform {:after (map #(select-keys % (:fields entities/moment-responses)))})
-                                   (repos/exec! db))
-                                 (->> (group-by :moment-id)))]
-    (map (=> (update :moments (partial map #(assoc % :responses (moment-id->responses (:id %) [])))))
-         hangouts)))
+  (models/with-inner :moments
+                     :responses
+                     (=> (repo.moment-responses/hangout-ids-clause)
+                         (repo.moment-responses/select-by)
+                         (entities/inner-join entities/moments
+                                              [:= :moment-responses.moment-id :moments.id])
+                         (models/select ::model)
+                         (models/xform {:after (map #(select-keys % (:fields entities/moment-responses)))})
+                         (repos/exec! db))
+                     [:id :moment-id]
+                     hangouts))
 
 (defn respond [db moment-response]
   (-> moment-response

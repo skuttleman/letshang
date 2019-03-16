@@ -20,25 +20,25 @@
 (defn ^:private remove-by-idx [idx coll]
   (modify-coll (comp (remove (comp #{idx} first)) (map second)) coll))
 
-(defn form-field [{:keys [attempted? errors label label-small? visited?]} & body]
+(defn form-field [{:keys [attempted? errors form-field-class id label label-small? visited?]} & body]
   (let [errors (seq (remove nil? errors))
         show-errors? (and errors (or visited? attempted?))]
     [:div.form-field
-     {:class [(when show-errors? "errors")]}
-     [:div
+     {:class (into [(when show-errors? "errors")] form-field-class)}
+     [:<>
       (when label
         [:label.label
-         (when label-small?
-           {:style {:font-weight :normal
-                    :font-size "0.8em"}})
+         (cond-> {:html-for id}
+           label-small? (assoc :style {:font-weight :normal
+                                       :font-size   "0.8em"}))
          label])
-      (into [:div.form-field-control] body)
-      (when show-errors?
-        [:ul.error-list
-         (for [error errors]
-           [:li.error
-            {:key error}
-            error])])]]))
+      (into [:div.form-field-control] body)]
+     (when show-errors?
+       [:ul.error-list
+        (for [error errors]
+          [:li.error
+           {:key error}
+           error])])]))
 
 (defn ^:private with-auto-focus [component]
   (fn [{:keys [auto-focus?]} & _]
@@ -57,54 +57,75 @@
                               auto-focus? (assoc :ref ref))]
                  args))}))))
 
+(defn ^:private with-id [component]
+  (fn [_attrs & _args]
+    (let [id (gensym "form-field")]
+      (fn [attrs & args]
+        (into [component (assoc attrs :id id)] args)))))
+
 (def ^{:arglists '([attrs options])} select
   (with-auto-focus
-    (fn [{:keys [disabled on-change value] :as attrs} options]
-      (let [option-values (set (map first options))
-            value (if (contains? option-values value)
-                    value
-                    ::empty)]
-        [form-field
-         attrs
-         [:select.select
-          (-> {:value    (str value)
-               :disabled #?(:clj true :cljs disabled)
-               #?@(:cljs [:on-change (comp on-change
-                                           (into {} (map (juxt str identity) option-values))
-                                           dom/target-value)])}
-              (merge (select-keys attrs #{:class :on-blur :ref})))
-          (for [[option label attrs] (cond->> options
-                                       (= ::empty value) (cons [::empty
-                                                                (str "Choose" #?(:clj "..." :cljs "…"))
-                                                                {:disabled true}]))
-                :let [str-option (str option)]]
-            [:option
-             (assoc attrs :value str-option :key str-option #?@(:clj [:selected (= option value)]))
-             label])]]))))
+    (with-id
+      (fn [{:keys [disabled on-change value] :as attrs} options]
+        (let [option-values (set (map first options))
+              value (if (contains? option-values value)
+                      value
+                      ::empty)]
+          [form-field
+           attrs
+           [:select.select
+            (-> {:value    (str value)
+                 :disabled #?(:clj true :cljs disabled)
+                 #?@(:cljs [:on-change (comp on-change
+                                             (into {} (map (juxt str identity) option-values))
+                                             dom/target-value)])}
+                (merge (select-keys attrs #{:class :id :on-blur :ref})))
+            (for [[option label attrs] (cond->> options
+                                                (= ::empty value) (cons [::empty
+                                                                         (str "Choose" #?(:clj "..." :cljs "…"))
+                                                                         {:disabled true}]))
+                  :let [str-option (str option)]]
+              [:option
+               (assoc attrs :value str-option :key str-option #?@(:clj [:selected (= option value)]))
+               label])]])))))
 
 (def ^{:arglists '([attrs])} textarea
   (with-auto-focus
-    (fn [{:keys [disabled on-change value] :as attrs}]
-      [form-field
-       attrs
-       [:textarea.textarea
-        (-> {:value    value
-             :disabled #?(:clj true :cljs disabled)
-             #?@(:cljs [:on-change (comp on-change dom/target-value)])}
-            (merge (select-keys attrs #{:class :on-blur :ref})))
-        #?(:clj value)]])))
+    (with-id
+      (fn [{:keys [disabled on-change value] :as attrs}]
+        [form-field
+         attrs
+         [:textarea.textarea
+          (-> {:value    value
+               :disabled #?(:clj true :cljs disabled)
+               #?@(:cljs [:on-change (comp on-change dom/target-value)])}
+              (merge (select-keys attrs #{:class :id :on-blur :ref})))
+          #?(:clj value)]]))))
 
 (def ^{:arglists '([attrs])} input
   (with-auto-focus
-    (fn [{:keys [disabled on-change value type] :as attrs}]
-      [form-field
-       attrs
-       [:input.input
-        (-> {:value    value
-             :type     (or type :text)
-             :disabled #?(:clj true :cljs disabled)
-             #?@(:cljs [:on-change (comp on-change dom/target-value)])}
-            (merge (select-keys attrs #{:class :on-blur :ref})))]])))
+    (with-id
+      (fn [{:keys [disabled on-change type] :as attrs}]
+        [form-field
+         attrs
+         [:input.input
+          (-> {:type     (or type :text)
+               :disabled #?(:clj true :cljs disabled)
+               #?@(:cljs [:on-change (comp on-change dom/target-value)])}
+              (merge (select-keys attrs #{:class :id :on-blur :ref :value})))]]))))
+
+(def ^{:arglists '([attrs])} checkbox
+  (with-auto-focus
+    (with-id
+      (fn [{:keys [disabled id on-change value] :as attrs}]
+        [form-field
+         attrs
+         [:input.checkbox
+          (-> {:checked  (boolean value)
+               :type     :checkbox
+               :disabled #?(:clj true :cljs disabled)
+               #?@(:cljs [:on-change #(on-change (not value))])}
+              (merge (select-keys attrs #{:class :id :on-blur :ref})))]]))))
 
 (defn phone-number [attrs]
   [input (-> attrs

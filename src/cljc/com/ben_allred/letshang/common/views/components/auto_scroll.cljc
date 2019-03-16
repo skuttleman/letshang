@@ -1,7 +1,8 @@
 (ns com.ben-allred.letshang.common.views.components.auto-scroll
   (:require
-    [clojure.core.async :as async]
-    [com.ben-allred.letshang.common.stubs.reagent :as r]))
+    [#?(:clj clojure.core.async :cljs cljs.core.async) :as async]
+    [com.ben-allred.letshang.common.stubs.reagent :as r]
+    [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (defn scroller [component ideas size ms]
   (let [idea-items (r/atom [0 (cycle ideas)])
@@ -22,8 +23,7 @@
        :reagent-render
        (fn [_component _ideas _size _ms]
          (let [[length items] @idea-items]
-           (->> items
-                (take length)
-                (map-indexed (fn [idx item]
-                               [[(when (= idx (dec length)) "squish")] item]))
-                (conj [component]))))})))
+           [component (sequence (comp (take length)
+                                      (map-indexed (fn [idx item]
+                                                     [[(when (= idx (dec length)) "squish")] item])))
+                                items)]))})))

@@ -6,6 +6,7 @@
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.location-responses :as repo.location-responses]
     [com.ben-allred.letshang.common.utils.fns :refer [=>]]
+    [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]))
 
 (defmethod models/->db ::model
@@ -23,20 +24,17 @@
   (prepare-response value))
 
 (defn with-location-responses [db hangouts]
-  (let [location-id->responses (-> hangouts
-                                 (some->
-                                   (seq)
-                                   (->> (map :id)
-                                        (conj [:in :hangout-id]))
-                                   (repo.location-responses/select-by)
-                                   (entities/inner-join entities/locations
-                                                        [:= :location-responses.location-id :locations.id])
-                                   (models/select ::model)
-                                   (models/xform {:after (map #(select-keys % (:fields entities/location-responses)))})
-                                   (repos/exec! db))
-                                 (->> (group-by :location-id)))]
-    (map (=> (update :locations (partial map #(assoc % :responses (location-id->responses (:id %) [])))))
-         hangouts)))
+  (models/with-inner :locations
+                     :responses
+                     (=> (repo.location-responses/hangout-ids-clause)
+                         (repo.location-responses/select-by)
+                         (entities/inner-join entities/locations
+                                              [:= :location-responses.location-id :locations.id])
+                         (models/select ::model)
+                         (models/xform {:after (map #(select-keys % (:fields entities/location-responses)))})
+                         (repos/exec! db))
+                     [:id :location-id]
+                     hangouts))
 
 (defn respond [db location-response]
   (-> location-response
