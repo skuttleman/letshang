@@ -5,12 +5,13 @@
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.users :as repo.users]
     [com.ben-allred.letshang.common.utils.colls :as colls]
-    [com.ben-allred.letshang.common.utils.logging :as log]))
+    [com.ben-allred.letshang.common.utils.logging :as log]
+    [honeysql.core :as sql]))
 
 (defn ^:private select-by [db clause]
   (-> clause
       (repo.users/select-by)
-      (models/select ::model)
+      (models/select ::repo.users/model)
       (repos/exec! db)))
 
 (defn ^:private find-by [db clause]
@@ -26,14 +27,14 @@
       (repo.users/conflict-clause)
       (repo.users/select-by)
       (entities/limit 1)
-      (models/select ::model)
+      (models/select ::repo.users/model)
       (repos/exec! db)
       (colls/only!)))
 
 (defn find-known-associates [db user-id]
   (-> user-id
       (repo.users/select-known-associates)
-      (models/select ::model)
+      (models/select ::repo.users/model)
       (repos/exec! db)))
 
 (defn create [db user]
@@ -41,3 +42,12 @@
             (repo.users/insert)
             (repos/exec! db))
     (find-by-email db (:email user))))
+
+(defn insert-known-associates! [db associate-ids user-id]
+  (some-> (for [assocate-id associate-ids]
+            {:associate-id assocate-id :user-id user-id :created-by user-id})
+          (seq)
+          (->> (entities/insert-into entities/known-associates))
+          (entities/on-conflict-nothing [(sql/call :least :user-id :associate-id) (sql/call :greatest :user-id :associate-id)])
+          (models/insert-many entities/known-associates ::repo.users/model)
+          (repos/exec! db)))

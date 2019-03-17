@@ -2,28 +2,12 @@
   (:require
     [com.ben-allred.letshang.api.services.db.entities :as entities]
     [com.ben-allred.letshang.api.services.db.models.shared :as models]
-    [com.ben-allred.letshang.api.services.db.preparations :as prep]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.invitations :as repo.invitations]
     [com.ben-allred.letshang.api.services.db.repositories.users :as repo.users]
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.fns :refer [=> =>>]]
-    [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.maps :as maps]))
-
-(defmethod models/->api ::model
-  [_ invitation]
-  (-> invitation
-      (maps/update-maybe :response keyword)
-      (maps/update-maybe :match-type keyword)))
-
-(defmethod repos/->sql-value [:invitations :match-type]
-  [_ _ value]
-  (prep/invitations-match-type value))
-
-(defmethod repos/->sql-value [:invitations :response]
-  [_ _ value]
-  (prep/user-response value))
+    [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (defn ^:private select* [db clause]
   (-> clause
@@ -32,7 +16,7 @@
                            :invitations
                            [:= :invitations.user-id :users.id]
                            {:id :invitation-id})
-      (models/select ::model)
+      (models/select ::repo.invitations/model)
       (repos/exec! db)))
 
 (defn with-invitations [db hangouts]
@@ -49,7 +33,7 @@
           (seq)
           (->> (entities/insert-into entities/invitations))
           (entities/on-conflict-nothing [:hangout-id :user-id])
-          (models/insert-many entities/invitations ::model)
+          (models/insert-many entities/invitations ::repo.invitations/model)
           (repos/exec! db)))
 
 (defn set-response [db invitation-id response user-id]
@@ -61,5 +45,5 @@
             (colls/only!))
     (-> {:response response}
         (repo.invitations/modify (repo.invitations/id-clause invitation-id))
-        (models/modify entities/invitations ::model)
+        (models/modify entities/invitations ::repo.invitations/model)
         (repos/exec! db))))

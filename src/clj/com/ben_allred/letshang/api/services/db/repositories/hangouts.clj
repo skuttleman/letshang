@@ -1,7 +1,23 @@
 (ns com.ben-allred.letshang.api.services.db.repositories.hangouts
   (:require
+    [clojure.set :as set]
     [com.ben-allred.letshang.api.services.db.entities :as entities]
+    [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.common.utils.logging :as log]))
+
+(defmethod repos/->api ::model
+  [_ hangout]
+  (-> hangout
+      (set/rename-keys {:others-invite     :others-invite?
+                        :when-suggestions  :when-suggestions?
+                        :where-suggestions :where-suggestions?})))
+
+(defmethod repos/->db ::model
+  [_ hangout]
+  (-> hangout
+      (set/rename-keys {:others-invite?     :others-invite
+                        :when-suggestions?  :when-suggestions
+                        :where-suggestions? :where-suggestions})))
 
 (defn select-by [clause]
   (-> entities/hangouts

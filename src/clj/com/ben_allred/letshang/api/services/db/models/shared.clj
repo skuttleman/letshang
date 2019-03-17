@@ -5,11 +5,6 @@
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(defmulti ->api (comp first vector))
-(defmulti ->db (comp first vector))
-(defmethod ->api :default [_ value] value)
-(defmethod ->db :default [_ value] value)
-
 (defn ^:private with* [k f [pk fk] values]
   (let [pk->results (-> values
                         (seq)
@@ -35,7 +30,7 @@
   ([query model x-form]
    [query
     x-form
-    (map (partial ->api model))]))
+    (map (partial repos/->api model))]))
 
 (defn xform [query {:keys [before after]}]
   (cond-> query
@@ -45,12 +40,12 @@
 (defn insert-many [query entity model]
   (update query :values (comp (partial map (comp
                                              (prep/prepare repos/->sql-value (:table entity))
-                                             #(select-keys (->db model %) (disj (:fields entity) :created-at :id))))
+                                             #(select-keys (repos/->db model %) (disj (:fields entity) :created-at :id))))
                               colls/force-sequential)))
 
 (defn modify [query entity model]
   (update query :set (comp (prep/prepare repos/->sql-value (:table entity))
-                           #(select-keys (->db model %) (disj (:fields entity) :created-at :created-by :id)))))
+                           #(select-keys (repos/->db model %) (disj (:fields entity) :created-at :created-by :id)))))
 
 (defn with [k f [pk fk] values]
   (map (with* k f [pk fk] values) values))

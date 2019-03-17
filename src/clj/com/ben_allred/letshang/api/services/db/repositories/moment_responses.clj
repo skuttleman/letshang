@@ -1,6 +1,21 @@
 (ns com.ben-allred.letshang.api.services.db.repositories.moment-responses
   (:require
-    [com.ben-allred.letshang.api.services.db.entities :as entities]))
+    [com.ben-allred.letshang.api.services.db.entities :as entities]
+    [com.ben-allred.letshang.api.services.db.preparations :as prep]
+    [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
+    [com.ben-allred.letshang.common.utils.maps :as maps]))
+
+(defmethod repos/->db ::model
+  [_ moment]
+  (dissoc moment :created-at))
+
+(defmethod repos/->api ::model
+  [_ moment]
+  (maps/update-maybe moment :response keyword))
+
+(defmethod repos/->sql-value [:moment-responses :response]
+  [_ _ value]
+  (prep/user-response value))
 
 (defn select-by [clause]
   (-> entities/moment-responses

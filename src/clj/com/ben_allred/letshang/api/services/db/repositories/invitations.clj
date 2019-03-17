@@ -1,5 +1,23 @@
 (ns com.ben-allred.letshang.api.services.db.repositories.invitations
-  (:require [com.ben-allred.letshang.api.services.db.entities :as entities]))
+  (:require
+    [com.ben-allred.letshang.api.services.db.entities :as entities]
+    [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
+    [com.ben-allred.letshang.common.utils.maps :as maps]
+    [com.ben-allred.letshang.api.services.db.preparations :as prep]))
+
+(defmethod repos/->api ::model
+  [_ invitation]
+  (-> invitation
+      (maps/update-maybe :response keyword)
+      (maps/update-maybe :match-type keyword)))
+
+(defmethod repos/->sql-value [:invitations :match-type]
+  [_ _ value]
+  (prep/invitations-match-type value))
+
+(defmethod repos/->sql-value [:invitations :response]
+  [_ _ value]
+  (prep/user-response value))
 
 (defn select-by [clause]
   (-> entities/invitations

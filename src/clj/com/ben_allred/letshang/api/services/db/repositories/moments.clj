@@ -1,6 +1,29 @@
 (ns com.ben-allred.letshang.api.services.db.repositories.moments
   (:require
-    [com.ben-allred.letshang.api.services.db.entities :as entities]))
+    [clojure.set :as set]
+    [com.ben-allred.letshang.api.services.db.entities :as entities]
+    [com.ben-allred.letshang.api.services.db.preparations :as prep]
+    [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
+    [com.ben-allred.letshang.common.utils.maps :as maps]))
+
+(defmethod repos/->api ::model
+  [_ moment]
+  (-> moment
+      (set/rename-keys {:moment-window :window})
+      (maps/update-maybe :window keyword)))
+
+(defmethod repos/->db ::model
+  [_ moment]
+  (-> moment
+      (set/rename-keys {:window :moment-window})))
+
+(defmethod repos/->sql-value [:moments :moment-window]
+  [_ _ value]
+  (prep/moments-window value))
+
+(defmethod repos/->sql-value [:moments :date]
+  [_ _ value]
+  (prep/date value))
 
 (defn select-by [clause]
   (-> entities/moments

@@ -92,7 +92,7 @@
         [components/icon :edit]])]))
 
 (defn ^:private hangout-who [{:keys [change-state creator? state]} resources]
-  (let [{:keys [creator invitations]} (:hangout resources)]
+  (let [{:keys [creator invitations others-invite?]} (:hangout resources)]
     [:<>
      [:h2.title.is-6 {:style {:margin-bottom 0}}
       [:a
@@ -108,7 +108,7 @@
           (for [invitation invitations]
             ^{:key (:id invitation)}
             [invitation-item invitation false])]]
-        (when creator?
+        (when (or creator? others-invite?)
           [invitation-form resources])])]))
 
 (defn ^:private hangout-items* [suggestion items form]
@@ -124,8 +124,8 @@
          [suggestion item (:id @store/user)]])]]]
    form])
 
-(defn ^:private hangout-when [{:keys [change-state state]} resources]
-  (let [{hangout-id :id :keys [moments]} (:hangout resources)]
+(defn ^:private hangout-when [{:keys [change-state creator? state]} resources]
+  (let [{hangout-id :id :keys [moments when-suggestions?]} (:hangout resources)]
     [:<>
      [:h2.title.is-6 {:style {:margin-bottom 0}}
       [:a
@@ -136,10 +136,11 @@
        [hangout-items*
         suggestions/moment-suggestion
         (sort res.suggestions/moment-sorter moments)
-        [suggestions/moment-form hangout-id]])]))
+        (when (or creator? when-suggestions?)
+          [suggestions/moment-form hangout-id])])]))
 
-(defn ^:private hangout-where [{:keys [change-state state]} resources]
-  (let [{hangout-id :id :keys [locations]} (:hangout resources)]
+(defn ^:private hangout-where [{:keys [change-state creator? state]} resources]
+  (let [{hangout-id :id :keys [locations where-suggestions?]} (:hangout resources)]
     [:<>
      [:h2.title.is-6 {:style {:margin-bottom 0}}
       [:a
@@ -150,7 +151,8 @@
        [hangout-items*
         suggestions/location-suggestion
         (sort res.suggestions/location-sorter locations)
-        [suggestions/location-form hangout-id]])]))
+        (when (or creator? where-suggestions?)
+          [suggestions/location-form hangout-id])])]))
 
 (defn ^:private hangout-view [attrs resources]
   [:div.layout--space-below.layout--stack-between

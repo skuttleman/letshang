@@ -18,10 +18,13 @@
 (defn ^:private sql-value* [table column _]
   [table column])
 
+(defmulti ->api (comp first vector))
+(defmulti ->db (comp first vector))
 (defmulti ->sql-value #'sql-value*)
-(defmethod ->sql-value :default
-  [_ _ value]
-  value)
+
+(defmethod ->api :default [_ value] value)
+(defmethod ->db :default [_ value] value)
+(defmethod ->sql-value :default [_ _ value] value)
 
 (extend-protocol jdbc/ISQLValue
   Date
