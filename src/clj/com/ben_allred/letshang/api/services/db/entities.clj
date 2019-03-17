@@ -68,10 +68,6 @@
   {:fields #{:created-at :created-by :id :name :others-invite :when-suggestions :where-suggestions}
    :table :hangouts})
 
-(def known-associates
-  {:fields #{:associate-id :created-at :created-by :id :user-id}
-   :table  :known-associates})
-
 (def invitations
   {:fields #{:created-at :created-by :hangout-id :id :match-type :response :user-id}
    :table  :invitations})

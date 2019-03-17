@@ -68,5 +68,4 @@
           (repos/exec! db)))
     (when (or (= user-id created-by) (and others-invite? (= user-id invitee-id)))
       (models.invitations/insert-many! db [hangout-id] (:invitation-ids hangout) user-id)
-      (models.users/insert-known-associates! db (:invitation-ids hangout) user-id)
       (find-for-user db hangout-id user-id))))

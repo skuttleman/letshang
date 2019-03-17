@@ -9,17 +9,31 @@
       (assoc :where clause)))
 
 (defn select-known-associates [user-id]
-  (let [known-associates {:from [(:table entities/known-associates)]}]
-    (-> entities/users
-        (entities/select)
-        (entities/with-alias :associates)
-        (assoc :where [:or
-                       [:in :associates.id (assoc known-associates
-                                                  :select #{:user-id}
-                                                  :where [:= :associate-id user-id])]
-                       [:in :associates.id (assoc known-associates
-                                                  :select #{:associate-id}
-                                                  :where [:= :user-id user-id])]]))))
+  (-> entities/users
+      (entities/select)
+      (entities/with-alias :associates)
+      (assoc :where [:and
+                     [:not= :associates.id user-id]
+                     [:or
+                      [:in
+                       :associates.id
+                       {:select [:hangouts.created-by]
+                        :from   [:hangouts]
+                        :join   [:invitations [:and
+                                               [:= :invitations.hangout-id :hangouts.id]
+                                               [:= :invitations.user-id user-id]]]}]
+                      [:in
+                       :associates.id
+                       {:select    [:invitations.user-id]
+                        :from      [:hangouts]
+                        :left-join [:invitations [:= :invitations.hangout-id :hangouts.id]]
+                        :where     [:or
+                                    [:= :hangouts.created-by user-id]
+                                    [:exists {:select [:*]
+                                              :from   [[:invitations :sub]]
+                                              :where  [:and
+                                                       [:= :sub.hangout-id :hangouts.id]
+                                                       [:= :sub.user-id user-id]]}]]}]]])))
 
 (defn insert [user]
   (entities/insert-into entities/users [user]))

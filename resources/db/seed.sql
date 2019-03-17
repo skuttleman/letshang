@@ -1,3 +1,11 @@
+DELETE FROM location_responses;
+DELETE FROM moment_responses;
+DELETE FROM locations;
+DELETE FROM moments;
+DELETE FROM invitations;
+DELETE FROM hangouts;
+DELETE FROM users;
+
 INSERT INTO users
     (first_name, last_name, handle, email, mobile_number)
 VALUES
@@ -29,15 +37,3 @@ VALUES
     ((SELECT id FROM hangouts WHERE name = 'bluto'), NULL, (SELECT id FROM users where handle = 'therealbillyzabka'), (SELECT id FROM users where handle = 'skuttleman'), 'none', 'exact'),
     ((SELECT id FROM hangouts WHERE name = 'bluto'), NULL, (SELECT id FROM users where handle = 'proffessor-x'), (SELECT id FROM users where handle = 'skuttleman'), 'none', 'exact'),
     ((SELECT id FROM hangouts WHERE name = 'bluto'), '123456789', (SELECT id FROM users where handle = 'thedirk'), (SELECT id FROM users where handle = 'skuttleman'), 'none', 'mobile-number');
-
-INSERT INTO known_associates
-    (user_id, associate_id, created_by)
-VALUES
-    ((SELECT id FROM users WHERE handle = 'skuttleman'),(SELECT id FROM users WHERE handle = 'slowyzoe'),(SELECT id FROM users WHERE handle = 'slowyzoe')),
-    ((SELECT id FROM users WHERE handle = 'votesanchez'),(SELECT id FROM users WHERE handle = 'slowyzoe'),(SELECT id FROM users WHERE handle = 'votesanchez')),
-    ((SELECT id FROM users WHERE handle = 'jillybean'),(SELECT id FROM users WHERE handle = 'slowyzoe'),(SELECT id FROM users WHERE handle = 'k8_kitty')),
-    ((SELECT id FROM users WHERE handle = 'jillybean'),(SELECT id FROM users WHERE handle = 'skuttleman'),(SELECT id FROM users WHERE handle = 'jillybean')),
-    ((SELECT id FROM users WHERE handle = 'skuttleman'),(SELECT id FROM users WHERE handle = 'thedirk'),(SELECT id FROM users WHERE handle = 'thedirk')),
-    ((SELECT id FROM users WHERE handle = 'thedirk'),(SELECT id FROM users WHERE handle = 'votesanchez'),(SELECT id FROM users WHERE handle = 'votesanchez')),
-    ((SELECT id FROM users WHERE handle = 'proffessor-x'),(SELECT id FROM users WHERE handle = 'skuttleman'),(SELECT id FROM users WHERE handle = 'proffessor-x')),
-    ((SELECT id FROM users WHERE handle = 'skuttleman'),(SELECT id FROM users WHERE handle = 'zabka'),(SELECT id FROM users WHERE handle = 'skuttleman'));

@@ -1,0 +1,3 @@
+DROP INDEX known_associates_unique_user_id_and_associate_id;
+
+DROP TABLE known_associates;
