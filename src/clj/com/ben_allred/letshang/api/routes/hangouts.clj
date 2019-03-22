@@ -24,7 +24,7 @@
   {:data res.suggestions/where-validator})
 
 (def ^:private who-spec
-  {:data res.hangouts/who-validator})
+  {:data res.suggestions/who-validator})
 
 (defroutes routes
   (context "/hangouts" []
