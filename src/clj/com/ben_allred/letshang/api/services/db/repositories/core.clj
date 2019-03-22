@@ -13,6 +13,7 @@
     honeysql-postgres.format
     honeysql-postgres.helpers)
   (:import
+    (java.sql Connection)
     (java.util Date)))
 
 (defn ^:private sql-value* [table column _]
@@ -31,7 +32,7 @@
   (sql-value [val]
     (java.sql.Date. (.getTime val))))
 
-(def db-cfg
+(defn db-cfg []
   {:vendor      "postgres"
    :classname   "org.postgresql.Driver"
    :subprotocol "postgresql"
@@ -42,9 +43,8 @@
                         (env/get :db-port)
                         (env/get :db-name))})
 
-(def ^:private db-spec
-  (c3p0/make-datasource-spec
-    db-cfg))
+(def db-spec
+  (c3p0/make-datasource-spec (db-cfg)))
 
 (defn ^:private sql-format [query]
   (sql/format query :quoting :ansi))
@@ -80,8 +80,11 @@
     (coll? val) (map remove-namespaces val)
     :else val))
 
-(defn exec-raw! [db sql]
-  (jdbc/execute! db [sql]))
+(defn exec-raw!
+  ([db sql]
+   (exec-raw! db sql nil))
+  ([db sql opts]
+   (jdbc/execute! db [sql] opts)))
 
 (defn exec! [query db]
   (let [[query' xform-before xform-after] (colls/force-sequential query)]

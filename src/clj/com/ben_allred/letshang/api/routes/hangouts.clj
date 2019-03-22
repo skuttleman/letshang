@@ -1,6 +1,7 @@
 (ns com.ben-allred.letshang.api.routes.hangouts
   (:require
     [com.ben-allred.letshang.api.services.db.models.hangouts :as models.hangouts]
+    [com.ben-allred.letshang.api.services.db.models.invitations :as models.invitations]
     [com.ben-allred.letshang.api.services.db.models.locations :as models.locations]
     [com.ben-allred.letshang.api.services.db.models.moments :as models.moments]
     [com.ben-allred.letshang.api.services.handlers :refer [GET PATCH POST context]]
@@ -21,6 +22,9 @@
 
 (def ^:private where-spec
   {:data res.suggestions/where-validator})
+
+(def ^:private who-spec
+  {:data res.hangouts/who-validator})
 
 (defroutes routes
   (context "/hangouts" []
@@ -48,11 +52,17 @@
            {{:keys [hangout-id]} :params :keys [auth/user db]}
         (if-let [hangout (models.hangouts/find-for-user db hangout-id (:id user))]
           [:http.status/ok {:data hangout}]
-          [:http.status/not-found {:message "Hangout not found"}]))
+          [:http.status/not-found {:message "Hangout not found for user"}]))
       (context "/suggestions" _
         (POST "/when" ^{:request-spec when-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
-          (when-let [suggestion (models.moments/suggest-moment db hangout-id (:data body) (:id user))]
-            [:http.status/created {:data suggestion}]))
+          (if-let [suggestion (models.moments/suggest-moment db hangout-id (:data body) (:id user))]
+            [:http.status/created {:data suggestion}]
+            [:http.status/not-found {:message "Cannot suggests when for this hangout"}]))
         (POST "/where" ^{:request-spec where-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
-          (when-let [suggestion (models.locations/suggest-location db hangout-id (:data body) (:id user))]
-            [:http.status/created {:data suggestion}]))))))
+          (if-let [suggestion (models.locations/suggest-location db hangout-id (:data body) (:id user))]
+            [:http.status/created {:data suggestion}]
+            [:http.status/not-found {:message "Cannot suggests where for this hangout"}]))
+        (POST "/who" ^{:request-spec who-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
+          (if-let [suggestion (models.invitations/suggest-invitees db hangout-id (:data body) (:id user))]
+            [:http.status/created {:data suggestion}]
+            [:http.status/not-found {:message "Cannot suggests who for this hangout"}]))))))

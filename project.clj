@@ -53,7 +53,7 @@
   :jar-name "letshang.jar"
   :uberjar-name "letshang-standalone.jar"
   :source-paths ["src/clj" "src/cljs" "src/cljc"]
-  :test-paths ["test/clj" "test/cljs" "test/cljc" "test/api" "test/common"]
+  :test-paths ["test/clj" "test/cljs" "test/cljc" "test/integration" "test/common"]
   :test-selectors {:focused     :focused
                    :integration :integration
                    :unit        :unit}

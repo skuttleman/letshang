@@ -75,11 +75,19 @@
   (partial check-status 500 599))
 
 (defn ^:private client [request]
-  (-> request
-      (merge #?(:clj (let [f (partial async/put! (async/chan))]
-                       {:async? true :respond f :raise f})))
-      (update :headers (partial maps/map-keys keywords/safe-name))
-      (client/request)))
+  #?(:clj  (let [cs (clj-http.cookies/cookie-store)
+                 ch (async/chan)]
+             (-> request
+                 (update :headers (partial maps/map-keys keywords/safe-name))
+                 (merge {:async? true :cookie-store cs})
+                 (client/request (fn [response]
+                                   (async/put! ch (assoc response :cookies (clj-http.cookies/get-cookies cs))))
+                                 (fn [exception]
+                                   (async/put! ch (assoc (ex-data exception) :cookies (clj-http.cookies/get-cookies cs))))))
+             ch)
+     :cljs (-> request
+               (update :headers (partial maps/map-keys keywords/safe-name))
+               (client/request))))
 
 (defn ^:private request* [chan]
   (async/go

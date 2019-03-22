@@ -3,6 +3,7 @@
     [com.ben-allred.letshang.api.services.db.entities :as entities]
     [com.ben-allred.letshang.api.services.db.models.shared :as models]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
+    [com.ben-allred.letshang.api.services.db.repositories.hangouts :as repo.hangouts]
     [com.ben-allred.letshang.api.services.db.repositories.invitations :as repo.invitations]
     [com.ben-allred.letshang.api.services.db.repositories.users :as repo.users]
     [com.ben-allred.letshang.common.utils.colls :as colls]
@@ -47,3 +48,25 @@
         (repo.invitations/modify (repo.invitations/id-clause invitation-id))
         (models/modify entities/invitations ::repo.invitations/model)
         (repos/exec! db))))
+
+(defn suggest-invitees [db hangout-id invitation user-id]
+  (let [{:keys [created-by others-invite? invitee-id]}
+        (-> hangout-id
+            (repo.hangouts/id-clause)
+            (repo.hangouts/select-by)
+            (entities/left-join entities/invitations
+                                :invitations
+                                [:and
+                                 [:= :invitations.hangout-id :hangouts.id]
+                                 [:= :invitations.user-id user-id]]
+                                {:user-id    :invitee-id
+                                 :created-by nil})
+            (models/select ::repo.hangouts/model)
+            (repos/exec! db)
+            (colls/only!))]
+    (when (or (= user-id created-by) (and others-invite? (= user-id invitee-id)))
+      (insert-many! db [hangout-id] (:invitation-ids invitation) user-id)
+      (->> [{:id hangout-id}]
+           (with-invitations db)
+           (colls/only!)
+           (:invitations)))))

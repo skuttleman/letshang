@@ -5,7 +5,6 @@
     [com.ben-allred.letshang.api.services.db.models.locations :as models.locations]
     [com.ben-allred.letshang.api.services.db.models.moments :as models.moments]
     [com.ben-allred.letshang.api.services.db.models.shared :as models]
-    [com.ben-allred.letshang.api.services.db.models.users :as models.users]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.hangouts :as repo.hangouts]
     [com.ben-allred.letshang.common.utils.colls :as colls]
@@ -46,26 +45,13 @@
     (find-for-user db hangout-id user-id)))
 
 (defn modify [db hangout-id hangout user-id]
-  (let [{:keys [created-by invitee-id others-invite?]}
-        (-> hangout-id
+  (when (-> hangout-id
             (repo.hangouts/id-clause)
-            (repo.hangouts/select-by)
-            (entities/left-join entities/invitations
-                                :invitations
-                                [:and
-                                 [:= :invitations.hangout-id :hangouts.id]
-                                 [:= :invitations.user-id user-id]]
-                                {:user-id    :invitee-id
-                                 :created-by nil})
-            (models/select ::repo.hangouts/model)
+            (repo.hangouts/creator-clause user-id)
+            (->> (repo.hangouts/modify hangout))
+            (models/modify entities/hangouts ::repo.hangouts/model)
+            (update :set dissoc :invitation-ids)
             (repos/exec! db)
-            (colls/only!))]
-    (when (= user-id created-by)
-      (-> hangout
-          (repo.hangouts/modify (repo.hangouts/id-clause hangout-id))
-          (models/modify entities/hangouts ::repo.hangouts/model)
-          (update :set dissoc :invitation-ids)
-          (repos/exec! db)))
-    (when (or (= user-id created-by) (and others-invite? (= user-id invitee-id)))
-      (models.invitations/insert-many! db [hangout-id] (:invitation-ids hangout) user-id)
-      (find-for-user db hangout-id user-id))))
+            (first)
+            (pos?))
+    (find-for-user db hangout-id user-id)))
