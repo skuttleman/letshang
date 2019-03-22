@@ -69,4 +69,5 @@
       (->> [{:id hangout-id}]
            (with-invitations db)
            (colls/only!)
-           (:invitations)))))
+           (:invitations)
+           (filter (comp (set (:invitation-ids invitation)) :user-id))))))

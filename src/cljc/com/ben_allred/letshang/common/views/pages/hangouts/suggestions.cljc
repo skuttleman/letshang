@@ -2,17 +2,18 @@
   (:require
     #?(:cljs [com.ben-allred.letshang.ui.services.forms.standard :as forms.std])
     [com.ben-allred.letshang.common.resources.hangouts.suggestions :as res.suggestions]
+    [com.ben-allred.letshang.common.utils.colls :as colls]
+    [com.ben-allred.letshang.common.utils.dates :as dates]
+    [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.strings :as strings]
+    [com.ben-allred.letshang.common.utils.users :as users]
     [com.ben-allred.letshang.common.views.components.calendar :as calendar]
     [com.ben-allred.letshang.common.views.components.core :as components]
     [com.ben-allred.letshang.common.views.components.dropdown :as dropdown]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
     [com.ben-allred.letshang.common.views.components.form-view :as form-view]
-    [com.ben-allred.letshang.common.views.pages.hangouts.responses :as responses]
-    [com.ben-allred.letshang.common.utils.colls :as colls]
-    [com.ben-allred.letshang.common.utils.dates :as dates]
-    [com.ben-allred.letshang.common.utils.keywords :as keywords]))
+    [com.ben-allred.letshang.common.views.pages.hangouts.responses :as responses]))
 
 (defn ^:private suggestion* [header responses form]
   [:<>
@@ -43,6 +44,21 @@
    [:span
     {:style {:margin-left "10px"}}
     [components/icon (if (:open? attrs) :chevron-up :chevron-down)]]])
+
+(defn invitation-form [hangout _associates]
+  (let [form (res.suggestions/who-form (:id hangout))]
+    (fn [hangout associates]
+      (let [already-invited? (comp (conj (set (map :id (:invitations hangout))) (:created-by hangout)) :id)]
+        (when-let [associates (seq (remove already-invited? associates))]
+          [:div.layout--space-below
+           [form-view/form
+            {:inline?   true
+             :form      form
+             :save-text "Invite"}
+            [dropdown/dropdown
+             (-> {:label   "Invitees"
+                  :options (map (juxt :id users/full-name) associates)}
+                 (res.suggestions/with-attrs form [:invitation-ids]))]]])))))
 
 (defn moment-form [hangout-id]
   (let [form (res.suggestions/when-form hangout-id)]

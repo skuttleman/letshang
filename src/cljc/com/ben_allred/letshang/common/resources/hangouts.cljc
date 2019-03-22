@@ -7,6 +7,7 @@
     [clojure.string :as string]
     [com.ben-allred.formation.core :as f]
     [com.ben-allred.letshang.common.resources.core :as res]
+    [com.ben-allred.letshang.common.resources.hangouts.suggestions :as res.suggestions]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.services.store.actions.hangouts :as act.hangouts]
@@ -56,11 +57,8 @@
 (def ^:private view->model
   {:name not-empty})
 
-(def who-validator
-  (f/validator {:invitation-ids ^::f/coll-of [(f/pred uuid? "Must be a UUID")]}))
-
 (def validator
-  (f/validator [who-validator
+  (f/validator [res.suggestions/who-validator
                 {:name [(f/pred (complement string/blank?) "Your hangout must have a name")
                         (f/required "Your hangout must have a name")]}]))
 

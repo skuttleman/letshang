@@ -49,6 +49,7 @@
      :location/success (update-in state [1 :locations] colls/supdate map add-or-replace-response :location-id (:data response))
      :suggestions.when/success (update-in state [1 :moments] add-or-replace-respondables (:data response))
      :suggestions.where/success (update-in state [1 :locations] add-or-replace-respondables (:data response))
+     :suggestions.who/success (update-in state [1 :invitations] (partial reduce add-or-replace-respondables) (:data response))
      state)))
 
 (def ^:private associates (resource :associates))

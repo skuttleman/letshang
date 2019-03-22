@@ -11,6 +11,9 @@
     [com.ben-allred.letshang.common.utils.dates :as dates]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
+(def who-validator
+  (f/validator {:invitation-ids ^::f/coll-of [(f/pred uuid? "Must be a UUID")]}))
+
 (def when-validator
   (f/validator
     {:date   [(f/required "You must select a date")
@@ -57,6 +60,10 @@
 (def location-sorter (sorter* :name))
 
 (def windows [:any-time :morning :mid-day :afternoon :after-work :evening :night :twilight])
+
+(defn who-form [hangout-id]
+  #?(:cljs (forms.std/create (suggest-api nil (partial act.hangouts/suggest-who hangout-id)) who-validator)
+     :default (forms.noop/create nil)))
 
 (defn when-form [hangout-id]
   #?(:cljs (forms.std/create (suggest-api {:window :any-time} (partial act.hangouts/suggest-when hangout-id)) when-validator)

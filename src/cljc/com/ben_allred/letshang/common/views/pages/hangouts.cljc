@@ -21,16 +21,15 @@
     [com.ben-allred.letshang.common.views.pages.hangouts.responses :as responses]
     [com.ben-allred.letshang.common.views.pages.hangouts.suggestions :as suggestions]))
 
-(defn ^:private hangout-form [form {:keys [associates creator? invitees-only? on-saved]} & buttons]
+(defn ^:private hangout-form [form {:keys [associates creator? on-saved]} & buttons]
   [form-view/form
    {:buttons  buttons
     :on-saved on-saved
     :form     form}
-   (when-not invitees-only?
-     [fields/input
-      (-> {:label       "Name"
-           :auto-focus? true}
-          (res.hangouts/with-attrs form [:name]))])
+   [fields/input
+    (-> {:label       "Name"
+         :auto-focus? true}
+        (res.hangouts/with-attrs form [:name]))]
    (when (seq associates)
      [dropdown/dropdown
       (-> {:label   "Invitees"
@@ -62,17 +61,6 @@
          {:type :button :on-click #(change-state nil)}
          "Cancel"]]])))
 
-(defn ^:private invitation-form [{:keys [hangout]}]
-  (let [form (res.hangouts/form hangout)
-        already-invited? (comp (conj (set (map :id (:invitations hangout))) (:created-by hangout)) :id)]
-    (fn [{:keys [associates]}]
-      (when-let [associates (seq (remove already-invited? associates))]
-        [:div.layout--space-below
-         [hangout-form
-          form
-          {:associates associates
-           :invitees-only? true}]]))))
-
 (defn ^:private invitation-item [{:keys [handle response] :as invitation} current-user?]
   [:li.layout--space-between.layout--align-center
    [:em handle]
@@ -92,7 +80,7 @@
         [components/icon :edit]])]))
 
 (defn ^:private hangout-who [{:keys [change-state creator? state]} resources]
-  (let [{:keys [creator invitations others-invite?]} (:hangout resources)]
+  (let [{:keys [creator invitations others-invite?] :as hangout} (:hangout resources)]
     [:<>
      [:h2.title.is-6 {:style {:margin-bottom 0}}
       [:a
@@ -109,7 +97,7 @@
             ^{:key (:id invitation)}
             [invitation-item invitation false])]]
         (when (or creator? others-invite?)
-          [invitation-form resources])])]))
+          [suggestions/invitation-form hangout (:associates resources)])])]))
 
 (defn ^:private hangout-items* [suggestion items form]
   [:div.layout--stack-between

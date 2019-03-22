@@ -44,6 +44,13 @@
                    (http/patch {:body body})
                    (act/request dispatch kwd-ns))))))
 
+(defn suggest-who [hangout-id suggestion]
+  (fn [[dispatch]]
+    #?(:clj  (ch/resolve)
+       :cljs (-> (nav/path-for :api/suggestions.who {:route-params {:hangout-id hangout-id}})
+                 (http/post {:body suggestion})
+                 (act/request dispatch :suggestions.who)))))
+
 (defn suggest-when [hangout-id suggestion]
   (fn [[dispatch]]
     #?(:clj  (ch/resolve)
