@@ -5,6 +5,7 @@
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.encoders.query-params :as qp]
+    [com.ben-allred.letshang.common.utils.fns #?(:clj :refer :cljs :refer-macros) [=>]]
     [com.ben-allred.letshang.common.utils.uuids :as uuids]
     [com.ben-allred.letshang.common.utils.maps :as maps]))
 
@@ -40,11 +41,7 @@
     ["/hangouts"
      [["" :ui/hangouts]
       ["/new" :ui/hangouts.new]
-      [["/" [uuids/regex :hangout-id]]
-       [["" :ui/hangout]
-        ["/invitations" :ui/hangout.invitations]
-        ["/locations" :ui/hangout.locations]
-        ["/moments" :ui/hangout.moments]]]]]
+      [["/" [uuids/regex :hangout-id] "/" [#"invitations|locations|moments" :section]] :ui/hangout]]]
     [true :ui/not-found]]])
 
 (defn ^:private namify [[k v]]
@@ -52,7 +49,8 @@
 
 (defn ^:private re-format [route]
   (-> route
-      (maps/update-maybe :route-params maps/update-maybe :hangout-id uuids/->uuid)))
+      (maps/update-maybe :route-params (=> (maps/update-maybe :hangout-id uuids/->uuid)
+                                           (maps/update-maybe :section keyword)))))
 
 (defn match-route [routes path]
   (let [qp (qp/decode (second (string/split path #"\?")))]
