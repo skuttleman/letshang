@@ -5,7 +5,8 @@
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.encoders.query-params :as qp]
-    [com.ben-allred.letshang.common.utils.uuids :as uuids]))
+    [com.ben-allred.letshang.common.utils.uuids :as uuids]
+    [com.ben-allred.letshang.common.utils.maps :as maps]))
 
 (def app-routes
   [""
@@ -20,17 +21,17 @@
     ["/api"
      [["/hangouts"
        [["" :api/hangouts]
-        [["/" [uuids/regex :hangout-id]] :api/hangout]
         [["/" [uuids/regex :hangout-id]]
-         [["/invitations" :api/hangout.invitations]
-          ["/moments" :api/hangout.moments]
-          ["/locations" :api/hangout.locations]]]]]
+         [["" :api/hangout]
+          ["/invitations" :api/hangout.invitations]
+          ["/locations" :api/hangout.locations]
+          ["/moments" :api/hangout.moments]]]]]
+      ["/invitations"
+       [[["/" [uuids/regex :invitation-id]] :api/invitation]]]
       ["/locations"
        [[["/" [uuids/regex :location-id]] :api/location]]]
       ["/moments"
        [[["/" [uuids/regex :moment-id]] :api/moment]]]
-      ["/invitations"
-       [[["/" [uuids/regex :invitation-id]] :api/invitation]]]
       ["/users"
        [["/associates" :api/associates]]]]]
 
@@ -38,16 +39,20 @@
     ["/" :ui/home]
     ["/hangouts"
      [["" :ui/hangouts]
-      ["/new" :ui/hangout-new]
-      [["/" [uuids/regex :hangout-id]] :ui/hangout]]]
+      ["/new" :ui/hangouts.new]
+      [["/" [uuids/regex :hangout-id]]
+       [["" :ui/hangout]
+        ["/invitations" :ui/hangout.invitations]
+        ["/locations" :ui/hangout.locations]
+        ["/moments" :ui/hangout.moments]]]]]
     [true :ui/not-found]]])
 
 (defn ^:private namify [[k v]]
   [k (str (keywords/safe-name v))])
 
-(defn ^:private re-format [{:keys [handler] :as route}]
-  (cond-> route
-    (#{:api/hangout :ui/hangout} handler) (update-in [:route-params :hangout-id] uuids/->uuid)))
+(defn ^:private re-format [route]
+  (-> route
+      (maps/update-maybe :route-params maps/update-maybe :hangout-id uuids/->uuid)))
 
 (defn match-route [routes path]
   (let [qp (qp/decode (second (string/split path #"\?")))]

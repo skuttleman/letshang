@@ -9,11 +9,14 @@
     [com.ben-allred.letshang.common.views.pages.sign-up :as sign-up]))
 
 (def ^:private handler->component
-  {:ui/home        main/home
-   :ui/not-found   main/not-found
-   :ui/hangouts    hangouts/hangouts
-   :ui/hangout-new hangouts/create
-   :ui/hangout     hangouts/hangout})
+  {:ui/home                main/home
+   :ui/not-found           main/not-found
+   :ui/hangouts            hangouts/hangouts
+   :ui/hangouts.new        hangouts/create
+   :ui/hangout             hangouts/hangout
+   :ui/hangout.invitations hangouts/hangout
+   :ui/hangout.locations   hangouts/hangout
+   :ui/hangout.moments     hangouts/hangout})
 
 (defn ^:private with-layout [component state]
   [:div

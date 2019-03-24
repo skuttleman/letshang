@@ -90,8 +90,8 @@
         {:style {:background-color :white}}
         [suggestion item (:id @store/user)]])]]])
 
-(defn ^:private hangout-who* [{:keys [creator?]} {:keys [invitations] :as resources}]
-  (let [creator (get-in resources [:hangout :creator])
+(defn ^:private hangout-who* [{:keys [creator?]} {:keys [hangout invitations]}]
+  (let [creator (:creator hangout)
         auth-id (:id @store/user)]
     [:div.layout--inset
      [:ul.layout--stack-between
@@ -101,88 +101,89 @@
         ^{:key (:id invitation)}
         [invitation-item invitation (= auth-id (:user-id invitation))])]]))
 
-(defn ^:private hangout-when* [resources]
+(defn ^:private hangout-when* [state]
   [hangout-items*
    suggestions/moment-suggestion
-   (sort res.suggestions/moment-sorter (:moments resources))])
+   (sort res.suggestions/moment-sorter (:moments state))])
 
-(defn ^:private hangout-where* [resources]
+(defn ^:private hangout-where* [state]
   [hangout-items*
    suggestions/location-suggestion
-   (sort res.suggestions/location-sorter (:locations resources))])
+   (sort res.suggestions/location-sorter (:locations state))])
 
-(defn ^:private hangout-who [{:keys [change-state creator? state] :as attrs} resources]
-  (let [{:keys [others-invite?] :as hangout} (:hangout resources)]
+(defn ^:private hangout-who [{:keys [creator?] :as attrs} {:keys [hangout page] :as state}]
+  (let [{hangout-id :id :keys [others-invite?] :as hangout} hangout
+        who? (= :ui/hangout.invitations (:handler page))]
     [:<>
      [:h2.title.is-6 {:style {:margin-bottom 0}}
       [:a
-       {:href "#" :on-click #(change-state (when (not= state :who) :who))}
-       [components/icon (if (= state :who) :minus-circle :plus-circle)]
-       " Who's coming?"]]
-     (when (= state :who)
+       {:href (nav/path-for :ui/hangout.invitations {:route-params {:hangout-id hangout-id}})}
+       [components/icon (if who? :minus-circle :plus-circle)]
+       " Who?"]]
+     (when who?
        [:div.layout--stack-between
         [loading/with-status
-         {:action (act.hangouts/fetch-invitations (get-in resources [:hangout :id]))
+         {:action (act.hangouts/fetch-invitations hangout-id)
           :keys   #{:invitations}
-          :state  resources}
+          :state  state}
          [hangout-who* attrs]]
         (when (or creator? others-invite?)
           [suggestions/invitation-form hangout])])]))
 
-(defn ^:private hangout-when [{:keys [change-state creator? state]} resources]
-  (let [{hangout-id :id :keys [when-suggestions?]} (:hangout resources)]
+(defn ^:private hangout-when [{:keys [creator?]} {:keys [page hangout] :as state}]
+  (let [{hangout-id :id :keys [when-suggestions?]} hangout
+        when? (= :ui/hangout.moments (:handler page))]
     [:<>
      [:h2.title.is-6 {:style {:margin-bottom 0}}
       [:a
-       {:href "#" :on-click #(change-state (when (not= state :when) :when))}
-       [components/icon (if (= state :when) :minus-circle :plus-circle)]
+       {:href (nav/path-for :ui/hangout.moments {:route-params {:hangout-id hangout-id}})}
+       [components/icon (if when? :minus-circle :plus-circle)]
        " When?"]]
-     (when (= state :when)
+     (when when?
        [:div.layout--stack-between
         [loading/with-status
-         {:action (act.hangouts/fetch-moments (get-in resources [:hangout :id]))
+         {:action (act.hangouts/fetch-moments hangout-id)
           :keys   #{:moments}
-          :state  resources}
+          :state  state}
          hangout-when*]
         (when (or creator? when-suggestions?)
           [suggestions/moment-form hangout-id])])]))
 
-(defn ^:private hangout-where [{:keys [change-state creator? state]} resources]
-  (let [{hangout-id :id :keys [where-suggestions?]} (:hangout resources)]
+(defn ^:private hangout-where [{:keys [creator?]} {:keys [page hangout] :as state}]
+  (let [{hangout-id :id :keys [where-suggestions?]} hangout
+        where? (= :ui/hangout.locations (:handler page))]
     [:<>
      [:h2.title.is-6 {:style {:margin-bottom 0}}
       [:a
-       {:href "#" :on-click #(change-state (when (not= state :where) :where))}
-       [components/icon (if (= state :where) :minus-circle :plus-circle)]
+       {:href (nav/path-for :ui/hangout.locations {:route-params {:hangout-id hangout-id}})}
+       [components/icon (if where? :minus-circle :plus-circle)]
        " Where?"]]
-     (when (= state :where)
+     (when where?
        [:div.layout--stack-between
         [loading/with-status
-         {:action (act.hangouts/fetch-locations (get-in resources [:hangout :id]))
+         {:action (act.hangouts/fetch-locations hangout-id)
           :keys   #{:locations}
-          :state  resources
+          :state  state
           :size   :medium}
          hangout-where*]
         (when (or creator? where-suggestions?)
           [suggestions/location-form hangout-id])])]))
 
-(defn ^:private hangout-view [attrs resources]
-  [:div.layout--space-below.layout--stack-between
-   [hangout-header attrs resources]
-   [hangout-who attrs resources]
-   [hangout-when attrs resources]
-   [hangout-where attrs resources]])
-
-(defn ^:private hangout* [resources]
-  [fields/stateful nil [hangout-view
-                        {:creator? (= (:id @store/user) (get-in resources [:hangout :created-by]))}
-                        resources]])
+(defn ^:private hangout* [state]
+  (let [creator? (= (:id @store/user) (get-in state [:hangout :created-by]))]
+    (fn [state]
+      [:div.layout--space-below.layout--stack-between
+       [fields/stateful nil
+        [hangout-header {:creator? creator?} state]]
+       [hangout-who {:creator? creator?} state]
+       [hangout-when {:creator? creator?} state]
+       [hangout-where {:creator? creator?} state]])))
 
 (defn ^:private hangouts* [{:keys [hangouts]}]
   [:div
    [:div.buttons
     [:a.button.is-primary
-     {:href (nav/path-for :ui/hangout-new)}
+     {:href (nav/path-for :ui/hangouts.new)}
      "Create"]]
    (if (seq hangouts)
      [:ul
@@ -193,7 +194,7 @@
           name " created by " (:handle creator)]])]
      [:div "You don't have any hangouts, yet. What are you waiting for?"])])
 
-(defn ^:private create* [_resources]
+(defn ^:private create* [_state]
   (let [form (res.hangouts/form)]
     (fn [{:keys [associates]}]
       [:div
