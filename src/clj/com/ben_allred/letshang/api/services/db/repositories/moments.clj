@@ -40,6 +40,12 @@
   ([moment-id]
     [:= :moments.id moment-id]))
 
+(defn hangout-id-clause
+  ([clause hangout-id]
+   [:and clause (hangout-id-clause hangout-id)])
+  ([hangout-id]
+   [:= :moments.hangout-id hangout-id]))
+
 (defn hangout-ids-clause
   ([clause hangout-ids]
    [:and clause (hangout-ids-clause hangout-ids)])

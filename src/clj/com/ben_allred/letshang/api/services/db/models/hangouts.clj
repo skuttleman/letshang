@@ -26,12 +26,8 @@
   (-> hangout-id
       (repo.hangouts/id-clause)
       (repo.hangouts/has-hangout-clause user-id)
-      (->>
-        (select* db)
-        (models.invitations/with-invitations db)
-        (models.moments/with-moments db)
-        (models.locations/with-locations db)
-        (colls/only!))))
+      (->> (select* db))
+      (colls/only!)))
 
 (defn create [db hangout user-id]
   (let [hangout-id (-> hangout

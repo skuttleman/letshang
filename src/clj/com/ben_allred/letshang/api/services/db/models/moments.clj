@@ -31,13 +31,26 @@
       (repo.invitations/select-by)
       (entities/inner-join entities/hangouts [:= :hangouts.id :invitations.hangout-id])))
 
-(defn with-moments [db hangouts]
-  (->> hangouts
-       (models/with :moments
-                    (=>> (repo.moments/hangout-ids-clause)
-                         (select* db))
-                    [:id :hangout-id])
-       (models.moment-responses/with-moment-responses db)))
+(defn select-for-hangout [db hangout-id user-id]
+  (let [{:keys [created-by invitee-id]}
+        (-> hangout-id
+            (repo.hangouts/id-clause)
+            (repo.hangouts/select-by)
+            (entities/left-join entities/invitations
+                                :invitations
+                                [:and
+                                 [:= :invitations.hangout-id :hangouts.id]
+                                 [:= :invitations.user-id user-id]]
+                                {:user-id    :invitee-id
+                                 :created-by nil})
+            (models/select ::repo.hangouts/model)
+            (repos/exec! db)
+            (colls/only!))]
+    (when (or (= created-by user-id) (= invitee-id user-id))
+      (->> hangout-id
+           (repo.moments/hangout-id-clause)
+           (select* db)
+           (models.moment-responses/with-moment-responses db)))))
 
 (defn suggest-moment [db hangout-id moment user-id]
   (let [{:keys [created-by invitee-id when-suggestions?]}
@@ -72,10 +85,10 @@
         (models.moment-responses/respond db {:moment-id moment-id
                                              :user-id   user-id
                                              :response  :positive})
-        (->> [{:id hangout-id}]
-             (with-moments db)
-             (first)
-             (:moments)
+        (->> hangout-id
+             (repo.moments/hangout-id-clause)
+             (select* db)
+             (models.moment-responses/with-moment-responses db)
              (colls/find (comp #{moment-id} :id)))))))
 
 (defn set-response [db moment-id response user-id]

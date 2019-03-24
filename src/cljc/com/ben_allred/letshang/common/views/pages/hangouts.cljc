@@ -79,8 +79,40 @@
         {:href "#" :on-click #(change-state (when (not= state :edit) :edit))}
         [components/icon :edit]])]))
 
-(defn ^:private hangout-who [{:keys [change-state creator? state]} resources]
-  (let [{:keys [creator invitations others-invite?] :as hangout} (:hangout resources)]
+(defn ^:private hangout-items* [suggestion items]
+  [:div.layout--inset
+   [:ul.layout--stack-between
+    [flip-move/flip-move
+     {}
+     (for [item items]
+       ^{:key (:id item)}
+       [:li.layout--space-between
+        {:style {:background-color :white}}
+        [suggestion item (:id @store/user)]])]]])
+
+(defn ^:private hangout-who* [{:keys [creator?]} {:keys [invitations] :as resources}]
+  (let [creator (get-in resources [:hangout :creator])
+        auth-id (:id @store/user)]
+    [:div.layout--inset
+     [:ul.layout--stack-between
+      (when-not creator?
+        [invitation-item (assoc creator :response :creator) false])
+      (for [invitation invitations]
+        ^{:key (:id invitation)}
+        [invitation-item invitation (= auth-id (:user-id invitation))])]]))
+
+(defn ^:private hangout-when* [resources]
+  [hangout-items*
+   suggestions/moment-suggestion
+   (sort res.suggestions/moment-sorter (:moments resources))])
+
+(defn ^:private hangout-where* [resources]
+  [hangout-items*
+   suggestions/location-suggestion
+   (sort res.suggestions/location-sorter (:locations resources))])
+
+(defn ^:private hangout-who [{:keys [change-state creator? state] :as attrs} resources]
+  (let [{:keys [others-invite?] :as hangout} (:hangout resources)]
     [:<>
      [:h2.title.is-6 {:style {:margin-bottom 0}}
       [:a
@@ -89,31 +121,16 @@
        " Who's coming?"]]
      (when (= state :who)
        [:div.layout--stack-between
-        [:div.layout--inset
-         [:ul.layout--stack-between
-          (when-not creator?
-            [invitation-item (assoc creator :response :creator) false])
-          (for [invitation invitations]
-            ^{:key (:id invitation)}
-            [invitation-item invitation false])]]
+        [loading/with-status
+         {:action (act.hangouts/fetch-invitations (get-in resources [:hangout :id]))
+          :keys   #{:invitations}
+          :state  resources}
+         [hangout-who* attrs]]
         (when (or creator? others-invite?)
-          [suggestions/invitation-form hangout (:associates resources)])])]))
-
-(defn ^:private hangout-items* [suggestion items form]
-  [:div.layout--stack-between
-   [:div.layout--inset
-    [:ul.layout--stack-between
-     [flip-move/flip-move
-      {}
-      (for [item items]
-        ^{:key (:id item)}
-        [:li.layout--space-between
-         {:style {:background-color :white}}
-         [suggestion item (:id @store/user)]])]]]
-   form])
+          [suggestions/invitation-form hangout])])]))
 
 (defn ^:private hangout-when [{:keys [change-state creator? state]} resources]
-  (let [{hangout-id :id :keys [moments when-suggestions?]} (:hangout resources)]
+  (let [{hangout-id :id :keys [when-suggestions?]} (:hangout resources)]
     [:<>
      [:h2.title.is-6 {:style {:margin-bottom 0}}
       [:a
@@ -121,14 +138,17 @@
        [components/icon (if (= state :when) :minus-circle :plus-circle)]
        " When?"]]
      (when (= state :when)
-       [hangout-items*
-        suggestions/moment-suggestion
-        (sort res.suggestions/moment-sorter moments)
+       [:div.layout--stack-between
+        [loading/with-status
+         {:action (act.hangouts/fetch-moments (get-in resources [:hangout :id]))
+          :keys   #{:moments}
+          :state  resources}
+         hangout-when*]
         (when (or creator? when-suggestions?)
           [suggestions/moment-form hangout-id])])]))
 
 (defn ^:private hangout-where [{:keys [change-state creator? state]} resources]
-  (let [{hangout-id :id :keys [locations where-suggestions?]} (:hangout resources)]
+  (let [{hangout-id :id :keys [where-suggestions?]} (:hangout resources)]
     [:<>
      [:h2.title.is-6 {:style {:margin-bottom 0}}
       [:a
@@ -136,9 +156,13 @@
        [components/icon (if (= state :where) :minus-circle :plus-circle)]
        " Where?"]]
      (when (= state :where)
-       [hangout-items*
-        suggestions/location-suggestion
-        (sort res.suggestions/location-sorter locations)
+       [:div.layout--stack-between
+        [loading/with-status
+         {:action (act.hangouts/fetch-locations (get-in resources [:hangout :id]))
+          :keys   #{:locations}
+          :state  resources
+          :size   :medium}
+         hangout-where*]
         (when (or creator? where-suggestions?)
           [suggestions/location-form hangout-id])])]))
 
@@ -195,9 +219,8 @@
 
 (defn hangout [{:keys [page] :as state}]
   [loading/with-status
-   {:action (act/combine (act.hangouts/fetch-hangout (get-in page [:route-params :hangout-id]))
-                         act.users/fetch-associates)
-    :keys   #{:hangout :associates}
+   {:action (act.hangouts/fetch-hangout (get-in page [:route-params :hangout-id]))
+    :keys   #{:hangout}
     :state  state}
    hangout*])
 

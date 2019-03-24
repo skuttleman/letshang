@@ -31,7 +31,7 @@
     (async/go
       (async/<! (store/dispatch action))
       (reset! finished? true))
-    (fn [{:keys [keys state]} control]
+    (fn [{:keys [keys state] :as attrs} control]
       (let [resources (select-keys state keys)
             resource-vals (vals resources)
             statuses (set (map first resource-vals))
@@ -43,7 +43,7 @@
           [components/alert :error [status-messages messages]]
 
           (and @finished? (= #{:success} statuses))
-          [components/render control (maps/map-vals second resources)]
+          [components/render control (merge state (maps/map-vals second resources))]
 
           :else
-          [:div.layout--center-content [spinner {:size :large}]])))))
+          [:div.layout--center-content [spinner {:size (:size attrs :large)}]])))))

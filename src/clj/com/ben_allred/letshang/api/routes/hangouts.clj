@@ -35,34 +35,54 @@
            (models.hangouts/create db (:data body))
            (hash-map :data)
            (conj [:http.status/created])))
+
     (GET "/"
          {:keys [auth/user db]}
       (->> (:id user)
            (models.hangouts/select-for-user db)
            (hash-map :data)
            (conj [:http.status/ok])))
+
     (context "/:hangout-id" ^{:transformer transform-spec} _
-      (PATCH "/"
-             ^{:request-spec save-spec}
-             {{:keys [hangout-id]} :params :keys [auth/user body db]}
+      (PATCH "/" ^{:request-spec save-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
         (if-let [hangout (models.hangouts/modify db hangout-id (:data body) (:id user))]
           [:http.status/ok {:data hangout}]
           [:http.status/not-found {:message "Hangout not found for user"}]))
-      (GET "/"
-           {{:keys [hangout-id]} :params :keys [auth/user db]}
+
+      (GET "/" {{:keys [hangout-id]} :params :keys [auth/user db]}
         (if-let [hangout (models.hangouts/find-for-user db hangout-id (:id user))]
           [:http.status/ok {:data hangout}]
           [:http.status/not-found {:message "Hangout not found for user"}]))
-      (context "/suggestions" _
-        (POST "/when" ^{:request-spec when-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
+
+      (context "/moments" _
+        (POST "/" ^{:request-spec when-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
           (if-let [suggestion (models.moments/suggest-moment db hangout-id (:data body) (:id user))]
             [:http.status/created {:data suggestion}]
             [:http.status/not-found {:message "Cannot suggests when for this hangout"}]))
-        (POST "/where" ^{:request-spec where-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
+
+        (GET "/" {{:keys [hangout-id]} :params :keys [auth/user db]}
+          (if-let [moments (models.moments/select-for-hangout db hangout-id (:id user))]
+            [:http.status/ok {:data moments}]
+            [:http.status/not-found {:message "Hangout not found for user"}])))
+
+      (context "/locations" _
+        (POST "/" ^{:request-spec where-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
           (if-let [suggestion (models.locations/suggest-location db hangout-id (:data body) (:id user))]
             [:http.status/created {:data suggestion}]
             [:http.status/not-found {:message "Cannot suggests where for this hangout"}]))
-        (POST "/who" ^{:request-spec who-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
+
+        (GET "/" {{:keys [hangout-id]} :params :keys [auth/user db]}
+          (if-let [locations (models.locations/select-for-hangout db hangout-id (:id user))]
+            [:http.status/ok {:data locations}]
+            [:http.status/not-found {:message "Hangout not found for user"}])))
+
+      (context "/invitations" _
+        (POST "/" ^{:request-spec who-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
           (if-let [suggestion (models.invitations/suggest-invitees db hangout-id (:data body) (:id user))]
             [:http.status/created {:data suggestion}]
-            [:http.status/not-found {:message "Cannot suggests who for this hangout"}]))))))
+            [:http.status/not-found {:message "Cannot suggests who for this hangout"}]))
+
+        (GET "/" {{:keys [hangout-id]} :params :keys [auth/user db]}
+          (if-let [invitations (models.invitations/select-for-hangout db hangout-id (:id user))]
+            [:http.status/ok {:data invitations}]
+            [:http.status/not-found {:message "Hangout not found for user"}]))))))

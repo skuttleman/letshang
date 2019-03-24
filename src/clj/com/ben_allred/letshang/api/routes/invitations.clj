@@ -15,8 +15,7 @@
 (defroutes routes
   (context "/invitations" []
     (PATCH "/:invitation-id"
-           ^{:request-spec save-spec
-             :transformer  transform-spec}
+           ^{:request-spec save-spec :transformer  transform-spec}
            {{:keys [invitation-id]} :params :keys [auth/user body db]}
       (if (models.invitations/set-response db invitation-id (get-in body [:data :response]) (:id user))
         [:http.status/no-content]

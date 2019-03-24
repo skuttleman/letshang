@@ -25,3 +25,9 @@
 
 (defn upsert [moment-response]
   (entities/upsert entities/moment-responses [moment-response] [:moment-id :user-id] [:response]))
+
+(defn moment-ids-clause
+  ([clause moment-ids]
+   [:and clause (moment-ids-clause moment-ids)])
+  ([moment-ids]
+   [:in :moment-responses.moment-id moment-ids]))

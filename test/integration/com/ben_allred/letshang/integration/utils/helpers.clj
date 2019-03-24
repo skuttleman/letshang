@@ -33,6 +33,21 @@
       (test.http/get token)
       (http*)))
 
+(defn fetch-invitations [token hangout-id]
+  (-> (nav/path-for :api/hangout.invitations {:route-params {:hangout-id hangout-id}})
+      (test.http/get token)
+      (http*)))
+
+(defn fetch-locations [token hangout-id]
+  (-> (nav/path-for :api/hangout.locations {:route-params {:hangout-id hangout-id}})
+      (test.http/get token)
+      (http*)))
+
+(defn fetch-moments [token hangout-id]
+  (-> (nav/path-for :api/hangout.moments {:route-params {:hangout-id hangout-id}})
+      (test.http/get token)
+      (http*)))
+
 (defn create-hangout [token data]
   (-> (nav/path-for :api/hangouts)
       (test.http/post token {:body {:data data}})
@@ -44,16 +59,16 @@
       (http*)))
 
 (defn suggest-who [token hangout-id user-ids]
-  (-> (nav/path-for :api/suggestions.who {:route-params {:hangout-id hangout-id}})
+  (-> (nav/path-for :api/hangout.invitations {:route-params {:hangout-id hangout-id}})
       (test.http/post token {:body {:data {:invitation-ids user-ids}}})
       (http*)))
 
 (defn suggest-when [token hangout-id data]
-  (-> (nav/path-for :api/suggestions.when {:route-params {:hangout-id hangout-id}})
+  (-> (nav/path-for :api/hangout.moments {:route-params {:hangout-id hangout-id}})
       (test.http/post token {:body {:data data}})
       (http*)))
 
 (defn suggest-where [token hangout-id data]
-  (-> (nav/path-for :api/suggestions.where {:route-params {:hangout-id hangout-id}})
+  (-> (nav/path-for :api/hangout.locations {:route-params {:hangout-id hangout-id}})
       (test.http/post token {:body {:data data}})
       (http*)))

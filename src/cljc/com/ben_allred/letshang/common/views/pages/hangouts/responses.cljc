@@ -28,7 +28,7 @@
 
 (defn form [response-type {:keys [id response]}]
   (let [form (res.responses/form response-type {:id id :response response :user-id (:id @store/user)})
-        unsubscribe (store/subscribe #{:suggestions.where/success :suggestions.when/success} (res.responses/sub form))]
+        unsubscribe (store/subscribe #{:suggestions.where/success :suggestions.when/success} (res.responses/sub response-type form))]
     (r/create-class
       {:component-will-unmount
        (fn [_]

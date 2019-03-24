@@ -20,12 +20,23 @@
       (models/select ::repo.invitations/model)
       (repos/exec! db)))
 
-(defn with-invitations [db hangouts]
-  (models/with :invitations
-               (=>> (repo.invitations/hangout-ids-clause)
-                    (select* db))
-               [:id :hangout-id]
-               hangouts))
+(defn select-for-hangout [db hangout-id user-id]
+  (let [{:keys [created-by invitee-id]}
+        (-> hangout-id
+            (repo.hangouts/id-clause)
+            (repo.hangouts/select-by)
+            (entities/left-join entities/invitations
+                                :invitations
+                                [:and
+                                 [:= :invitations.hangout-id :hangouts.id]
+                                 [:= :invitations.user-id user-id]]
+                                {:user-id    :invitee-id
+                                 :created-by nil})
+            (models/select ::repo.hangouts/model)
+            (repos/exec! db)
+            (colls/only!))]
+    (when (or (= created-by user-id) (= invitee-id user-id))
+      (select* db (repo.invitations/hangout-id-clause hangout-id)))))
 
 (defn insert-many! [db hangout-ids user-ids created-by]
   (some-> (for [hangout-id hangout-ids
@@ -66,8 +77,7 @@
             (colls/only!))]
     (when (or (= user-id created-by) (and others-invite? (= user-id invitee-id)))
       (insert-many! db [hangout-id] (:invitation-ids invitation) user-id)
-      (->> [{:id hangout-id}]
-           (with-invitations db)
-           (colls/only!)
-           (:invitations)
+      (->> hangout-id
+           (repo.invitations/hangout-id-clause)
+           (select* db)
            (filter (comp (set (:invitation-ids invitation)) :user-id))))))

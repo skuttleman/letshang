@@ -37,24 +37,41 @@
          error [:error response]
          state)))))
 
-(defn ^:private modify-hangout
+(def ^:private associates (resource :associates))
+(def ^:private hangouts (resource :hangouts))
+(def ^:private hangout (resource :hangout))
+
+(defn ^:private invitations
+  ([] [:init])
+  ([state [type response :as thing]]
+   (case type
+     :invitations/request [:requesting (when (not= [:init] state) state)]
+     :invitations/success [:success (:data response)]
+     :invitations/error [:error response]
+     :suggestions.who/success [:success (reduce add-or-replace-respondables (second state) (:data response))]
+     state)))
+
+(defn ^:private locations
   ([] [:init])
   ([state [type response]]
    (case type
-     :hangout/success [:success (-> response
-                                    (:data)
-                                    (update :moments (partial map count-respondable))
-                                    (update :locations (partial map count-respondable)))]
-     :moment/success (update-in state [1 :moments] colls/supdate map add-or-replace-response :moment-id (:data response))
-     :location/success (update-in state [1 :locations] colls/supdate map add-or-replace-response :location-id (:data response))
-     :suggestions.when/success (update-in state [1 :moments] add-or-replace-respondables (:data response))
-     :suggestions.where/success (update-in state [1 :locations] add-or-replace-respondables (:data response))
-     :suggestions.who/success (update-in state [1 :invitations] (partial reduce add-or-replace-respondables) (:data response))
+     :locations/request [:requesting (when (not= [:init] state) state)]
+     :locations/success [:success (map count-respondable (:data response))]
+     :locations/error [:error response]
+     :response.location/success [:success (colls/supdate (second state) map add-or-replace-response :location-id (:data response))]
+     :suggestions.where/success [:success (add-or-replace-respondables (second state) (:data response))]
      state)))
 
-(def ^:private associates (resource :associates))
-(def ^:private hangouts (resource :hangouts))
-(def ^:private hangout (collaj.reducers/comp modify-hangout (resource :hangout)))
+(defn ^:private moments
+  ([] [:init])
+  ([state [type response]]
+   (case type
+     :moments/request [:requesting (when (not= [:init] state) state)]
+     :moments/success [:success (map count-respondable (:data response))]
+     :moments/error [:error response]
+     :response.moment/success [:success (colls/supdate (second state) map add-or-replace-response :moment-id (:data response))]
+     :suggestions.when/success [:success (add-or-replace-respondables (second state) (:data response))]
+     state)))
 
 (defn ^:private page
   ([] nil)
@@ -79,5 +96,8 @@
                                        :auth/sign-up (constantly (env/get :auth/sign-up))
                                        hangout
                                        hangouts
+                                       invitations
+                                       locations
+                                       moments
                                        page
                                        toasts)))

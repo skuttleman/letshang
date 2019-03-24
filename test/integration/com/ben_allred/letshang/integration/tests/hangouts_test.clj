@@ -35,21 +35,18 @@
        (map :id)))
 
 (defn ^:private fetch-invitees [token hangout-id]
-  (->> (h/fetch-hangout token hangout-id)
-       (:invitations)
+  (->> (h/fetch-invitations token hangout-id)
        (map :user-id)
        (set)))
 
 (defn ^:private fetch-moment [token hangout-id window]
-  (some-> (h/fetch-hangout token hangout-id)
-          (:moments)
+  (some-> (h/fetch-moments token hangout-id)
           (->> (colls/find (comp window :window)))
           (select-keys #{:window :date})
           (update :date (comp #(.toLocalDate %) #'dates/->internal))))
 
 (defn ^:private fetch-location [token hangout-id location]
-  (-> (h/fetch-hangout token hangout-id)
-      (:locations)
+  (-> (h/fetch-locations token hangout-id)
       (->> (colls/find (comp location :name)))))
 
 (deftest ^:integration user-hangouts-test

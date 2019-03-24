@@ -1,7 +1,12 @@
 (ns com.ben-allred.letshang.common.views.pages.hangouts.suggestions
   (:require
-    #?(:cljs [com.ben-allred.letshang.ui.services.forms.standard :as forms.std])
+    #?@(:cljs [[com.ben-allred.letshang.ui.services.forms.remote :as remote]
+               [com.ben-allred.letshang.ui.services.forms.standard :as forms.std]])
     [com.ben-allred.letshang.common.resources.hangouts.suggestions :as res.suggestions]
+    [com.ben-allred.letshang.common.services.forms.dependent :as forms.dep]
+    [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
+    [com.ben-allred.letshang.common.services.store.actions.users :as act.users]
+    [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.dates :as dates]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
@@ -45,20 +50,31 @@
     {:style {:margin-left "10px"}}
     [components/icon (if (:open? attrs) :chevron-up :chevron-down)]]])
 
-(defn invitation-form [hangout _associates]
-  (let [form (res.suggestions/who-form (:id hangout))]
-    (fn [hangout associates]
-      (let [already-invited? (comp (conj (set (map :id (:invitations hangout))) (:created-by hangout)) :id)]
-        (when-let [associates (seq (remove already-invited? associates))]
-          [:div.layout--space-below
-           [form-view/form
-            {:inline?   true
-             :form      form
-             :save-text "Invite"}
-            [dropdown/dropdown
-             (-> {:label   "Invitees"
-                  :options (map (juxt :id users/full-name) associates)}
-                 (res.suggestions/with-attrs form [:invitation-ids]))]]])))))
+(defn invitation-form [hangout]
+  (store/dispatch act.users/fetch-associates)
+  (let [associates #?(:cljs    (remote/create (comp :associates store/get-state))
+                      :default (forms.noop/create nil))
+        invitations #?(:cljs    (remote/create (comp :invitations store/get-state))
+                       :default (forms.noop/create nil))
+        who-form (res.suggestions/who-form (:id hangout))
+        remotes #?(:cljs (remote/combine associates invitations) :default who-form)
+        form (forms.dep/create who-form remotes)]
+    (fn [hangout]
+      [:div.layout--space-below
+       [form-view/form
+        {:inline?   true
+         :form      form
+         :save-text "Invite"}
+        [dropdown/dropdown
+         (-> {:label    "Invitees"
+              :options  (let [invited? (-> (map :user-id @invitations)
+                                           (set)
+                                           (conj (:created-by hangout))
+                                           (comp :id))]
+                          (->> @associates
+                               (remove invited?)
+                               (map (juxt :id users/full-name))))}
+             (res.suggestions/with-attrs form [:invitation-ids]))]]])))
 
 (defn moment-form [hangout-id]
   (let [form (res.suggestions/when-form hangout-id)]

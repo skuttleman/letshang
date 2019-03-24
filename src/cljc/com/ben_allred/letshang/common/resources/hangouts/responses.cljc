@@ -8,6 +8,7 @@
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.colls :as colls]
+    [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (defn ^:private response-api [response-type model]
@@ -53,14 +54,15 @@
    :negative "is-warning"
    :neutral  "is-info"})
 
-(defn sub [form]
-  (fn [[_ {:keys [data]}]]
-    (let [model @form]
-      (some->> data
-               (:responses)
-               (colls/find (comp #{[(:user-id model) (:id model)]} (juxt :user-id :moment-id)))
-               (:response)
-               (swap! form assoc :response)))))
+(defn sub [response-type form]
+  (let [response-fn (keywords/join :- [response-type :id])]
+    (fn [[_ {:keys [data]}]]
+      (let [model @form]
+        (some->> data
+                 (:responses)
+                 (colls/find (comp #{[(:user-id model) (:id model)]} (juxt :user-id response-fn)))
+                 (:response)
+                 (swap! form assoc :response))))))
 
 (defn form [response-type model]
   #?(:clj  (forms.noop/create nil)

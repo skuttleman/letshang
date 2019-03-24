@@ -21,10 +21,10 @@
      [["/hangouts"
        [["" :api/hangouts]
         [["/" [uuids/regex :hangout-id]] :api/hangout]
-        [["/" [uuids/regex :hangout-id] "/suggestions"]
-         [["/who" :api/suggestions.who]
-          ["/when" :api/suggestions.when]
-          ["/where" :api/suggestions.where]]]]]
+        [["/" [uuids/regex :hangout-id]]
+         [["/invitations" :api/hangout.invitations]
+          ["/moments" :api/hangout.moments]
+          ["/locations" :api/hangout.locations]]]]]
       ["/locations"
        [[["/" [uuids/regex :location-id]] :api/location]]]
       ["/moments"

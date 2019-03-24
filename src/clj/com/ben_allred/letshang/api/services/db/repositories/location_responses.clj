@@ -25,3 +25,9 @@
 
 (defn upsert [location-response]
   (entities/upsert entities/location-responses [location-response] [:location-id :user-id] [:response]))
+
+(defn location-ids-clause
+  ([clause location-ids]
+   [:and clause (location-ids-clause location-ids)])
+  ([location-ids]
+   [:in :location-responses.location-id location-ids]))
