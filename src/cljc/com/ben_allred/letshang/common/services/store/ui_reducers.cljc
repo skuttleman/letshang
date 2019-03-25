@@ -62,6 +62,16 @@
      :suggestions.where/success [:success (add-or-replace-respondables (second state) (:data response))]
      state)))
 
+(defn ^:private messages
+  ([] [:init])
+  ([[_ data :as state] [type response]]
+   (case type
+     :messages/request [:requesting]
+     :messages/success [:success (into (or data []) (:data response))]
+     :messages/error (if (nil? data) [:error response] state)
+     :messages.create/success (update state 1 (partial into [(:data response)]))
+     state)))
+
 (defn ^:private moments
   ([] [:init])
   ([state [type response]]
@@ -98,6 +108,7 @@
                                        hangouts
                                        invitations
                                        locations
+                                       messages
                                        moments
                                        page
                                        toasts)))

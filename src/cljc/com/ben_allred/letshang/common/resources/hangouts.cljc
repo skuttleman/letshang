@@ -59,7 +59,7 @@
 
 (def validator
   (f/validator [res.suggestions/who-validator
-                {:name [(f/pred (complement string/blank?) "Your hangout must have a name")
+                {:name [(f/pred (every-pred string? (complement string/blank?)) "Your hangout must have a name")
                         (f/required "Your hangout must have a name")]}]))
 
 (defn form

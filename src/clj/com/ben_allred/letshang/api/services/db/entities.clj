@@ -48,6 +48,9 @@
       (set/rename-keys {:fields :select :table :from})
       (update :from vector)))
 
+(defn order [query column direction]
+  (update query :order-by (fnil conj []) [column direction]))
+
 (defn left-join
   ([query entity on]
    (left-join query entity (:table entity) on))
@@ -79,6 +82,10 @@
 (def location-responses
   {:fields #{:location-id :response :user-id}
    :table :location-responses})
+
+(def messages
+  {:fields #{:body :created-at :created-by :hangout-id :id}
+   :table :messages})
 
 (def moments
   {:fields #{:created-at :created-by :date :hangout-id :id :moment-window}

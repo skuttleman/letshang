@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.api.services.db.repositories.users
   (:require
+    [clojure.string :as string]
     [com.ben-allred.letshang.api.services.db.entities :as entities]))
 
 (defn select-by [clause]
@@ -42,7 +43,7 @@
   ([clause email]
    [:and clause (email-clause email)])
   ([email]
-   [:= :users.email email]))
+   [:= :users.email (string/lower-case (string/trim email))]))
 
 (defn conflict-clause
   ([clause user]

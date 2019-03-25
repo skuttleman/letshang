@@ -11,18 +11,23 @@
     [com.ben-allred.letshang.common.utils.dates :as dates]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
+(def windows [:any-time :morning :mid-day :afternoon :after-work :evening :night :twilight])
+
 (def who-validator
-  (f/validator {:invitation-ids ^::f/coll-of [(f/pred uuid? "Must be a UUID")]}))
+  (f/validator {:invitation-ids ^::f/coll-of [[(f/required "Must not be missing")
+                                               (f/pred uuid? "Must be a UUID")]]}))
 
 (def when-validator
   (f/validator
     {:date   [(f/required "You must select a date")
               (f/pred #(not (dates/before? % (dates/today))) "Cannot be in the past")]
-     :window (f/required "You must select a window")}))
+     :window [(f/required "You must select a window")
+              (f/pred (set windows) "Not a valid window")]}))
 
 (def where-validator
   (f/validator
-    {:name (f/required "You must select a place")}))
+    {:name [(f/required "You must select a place")
+            (f/pred string? "Must be a string")]}))
 
 (def ^:private model->source
   (comp (partial hash-map :data)
@@ -58,8 +63,6 @@
 (def moment-sorter (sorter* :date))
 
 (def location-sorter (sorter* :name))
-
-(def windows [:any-time :morning :mid-day :afternoon :after-work :evening :night :twilight])
 
 (defn who-form [hangout-id]
   #?(:cljs (forms.std/create (suggest-api nil (partial act.hangouts/suggest-who hangout-id)) who-validator)

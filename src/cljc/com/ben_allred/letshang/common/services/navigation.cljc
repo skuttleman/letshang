@@ -26,6 +26,7 @@
          [["" :api/hangout]
           ["/invitations" :api/hangout.invitations]
           ["/locations" :api/hangout.locations]
+          ["/messages" :api/hangout.messages]
           ["/moments" :api/hangout.moments]]]]]
       ["/invitations"
        [[["/" [uuids/regex :invitation-id]] :api/invitation]]]
@@ -41,7 +42,7 @@
     ["/hangouts"
      [["" :ui/hangouts]
       ["/new" :ui/hangouts.new]
-      [["/" [uuids/regex :hangout-id] "/" [#"invitations|locations|moments" :section]] :ui/hangout]]]
+      [["/" [uuids/regex :hangout-id] "/" [#"conversation|invitations|locations|moments" :section]] :ui/hangout]]]
     [true :ui/not-found]]])
 
 (defn ^:private namify [[k v]]

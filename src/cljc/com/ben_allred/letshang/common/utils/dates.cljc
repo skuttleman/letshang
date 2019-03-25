@@ -70,7 +70,7 @@
        :cljs (-> fmt
                  (formats fmt)
                  (->> (hash-map :format-str))
-                 (time.format/unparse (->internal inst))))))
+                 (time.format/unparse (time/to-default-time-zone (->internal inst)))))))
 
 (defn ->inst [v]
   #?(:clj  (cond

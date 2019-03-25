@@ -37,8 +37,10 @@
                      (f/pred validators/email? "Not a valid email")]
      :handle        [(f/required "Handle is required")
                      (f/identity string/lower-case "Handle must be lower-case")]
-     :first-name    (f/required "First name is required")
-     :last-name     (f/required "Last name is required")
+     :first-name    [(f/required "First name is required")
+                     (f/pred string? "Must be a string")]
+     :last-name     [(f/required "Last name is required")
+                     (f/pred string? "Must be a string")]
      :mobile-number [(f/required "Mobile number is required")
                      (f/pred validators/phone-number? "Not a valid phone number")]}))
 

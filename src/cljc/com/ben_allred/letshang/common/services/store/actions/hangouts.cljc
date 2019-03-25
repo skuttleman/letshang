@@ -40,6 +40,13 @@
                  (http/get)
                  (act/request dispatch :locations)))))
 
+(defn fetch-messages [hangout-id]
+  (fn [[dispatch]]
+    #?(:clj  (ch/resolve)
+       :cljs (-> (nav/path-for :api/hangout.messages {:route-params {:hangout-id hangout-id}})
+                 (http/get)
+                 (act/request dispatch :messages)))))
+
 (defn fetch-moments [hangout-id]
   (fn [[dispatch]]
     #?(:clj  (ch/resolve)
@@ -53,6 +60,13 @@
        :cljs (-> (nav/path-for :api/hangout {:route-params {:hangout-id hangout-id}})
                  (http/patch {:body hangout})
                  (act/request dispatch :hangout)))))
+
+(defn save-message [hangout-id body]
+  (fn [[dispatch]]
+    #?(:clj  (ch/resolve)
+       :cljs (-> (nav/path-for :api/hangout.messages {:route-params {:hangout-id hangout-id}})
+                 (http/post {:body body})
+                 (act/request dispatch :messages.create)))))
 
 (defn set-response [response-type id body]
   (fn [[dispatch]]

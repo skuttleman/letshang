@@ -18,6 +18,7 @@
     [com.ben-allred.letshang.common.views.components.flip-move :as flip-move]
     [com.ben-allred.letshang.common.views.components.form-view :as form-view]
     [com.ben-allred.letshang.common.views.components.loading :as loading]
+    [com.ben-allred.letshang.common.views.pages.hangouts.conversations :as conversations]
     [com.ben-allred.letshang.common.views.pages.hangouts.responses :as responses]
     [com.ben-allred.letshang.common.views.pages.hangouts.suggestions :as suggestions]))
 
@@ -71,18 +72,18 @@
 (defn ^:private hangout-header [{:keys [change-state creator? state]} {:keys [hangout page]}]
   (let [current-section (get-in page [:route-params :section])]
     [:div.layout--stack-between
-     [:div.layout--space-between
-      [:h1.title.is-5 {:style {:margin-bottom 0}} "Name: "]
-      [:span (:name hangout)]
-      (when creator?
-        [:a
-         {:href "#" :on-click #(change-state (when (not= state :edit) :edit))}
-         [components/icon :edit]])]
-     (when (= state :edit)
-       [edit-form hangout change-state])
+     (if (= state :edit)
+       [edit-form hangout change-state]
+       [:div.layout--space-between
+        [:h1.title.is-5 {:style {:margin-bottom 0}} "Name: "]
+        [:span (:name hangout)]
+        (when creator?
+          [:a
+           {:href "#" :on-click #(change-state (when (not= state :edit) :edit))}
+           [components/icon :edit]])])
      [:div.tabs.hangout-tabs
       [:ul
-       (for [[label section] [["Who" :invitations] ["When" :moments] ["Where" :locations]]]
+       (for [[label section] [["Who" :invitations] ["What" :conversation] ["When" :moments] ["Where" :locations]]]
          ^{:key section}
          [:li
           {:class [(when (= current-section section) "is-active")]}
@@ -157,9 +158,10 @@
        [suggestions/location-form hangout-id])]))
 
 (def ^:private section->component
-  {:invitations hangout-who
-   :locations   hangout-where
-   :moments     hangout-when})
+  {:conversation conversations/conversation
+   :invitations  hangout-who
+   :locations    hangout-where
+   :moments      hangout-when})
 
 (defn ^:private hangout-view [attrs state]
   (let [section (get-in state [:page :route-params :section])]
