@@ -10,6 +10,7 @@
     [com.ben-allred.letshang.common.resources.hangouts.conversations :as res.conversations]
     [com.ben-allred.letshang.common.resources.hangouts.suggestions :as res.suggestions]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.numbers :as numbers]
     [com.ben-allred.letshang.common.utils.uuids :as uuids]
     [compojure.core :refer [defroutes]]))
 
@@ -20,7 +21,8 @@
   {:data res.hangouts/validator})
 
 (def ^:private transform-spec
-  {:hangout-id uuids/->uuid})
+  {:hangout-id uuids/->uuid
+   :offset     numbers/parse-int})
 
 (def ^:private when-spec
   {:data res.suggestions/when-validator})
@@ -87,9 +89,9 @@
             [:http.status/created {:data message}]
             [:http.status/not-found {:message "Message could not be created for this hangout"}]))
 
-        (GET "/" {{:keys [hangout-id]} :params :keys [auth/user db]}
-          (if-let [messages (models.messages/select-for-hangout db hangout-id (:id user))]
-            [:http.status/created {:data messages}]
+        (GET "/" {{:keys [hangout-id offset]} :params :keys [auth/user db]}
+          (if-let [messages (models.messages/select-for-hangout db hangout-id (:id user) {:limit 20 :offset offset})]
+            [:http.status/ok {:data messages}]
             [:http.status/not-found {:message "Cannot suggests when for this hangout"}])))
 
       (context "/moments" _

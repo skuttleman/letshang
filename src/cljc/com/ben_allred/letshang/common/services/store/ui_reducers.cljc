@@ -62,14 +62,22 @@
      :suggestions.where/success [:success (add-or-replace-respondables (second state) (:data response))]
      state)))
 
+(def ^:private messages-init [{:status [:init] :length 0 :realized? false} []])
 (defn ^:private messages
-  ([] [:init])
-  ([[_ data :as state] [type response]]
+  ([] messages-init)
+  ([[meta data :as state] [type response]]
    (case type
-     :messages/request [:requesting]
-     :messages/success [:success (into (or data []) (:data response))]
-     :messages/error (if (nil? data) [:error response] state)
-     :messages.create/success (update state 1 (partial into [(:data response)]))
+     :messages/request [(assoc meta :status :requesting) data]
+     :messages/success (let [length (count (:data response))]
+                         [(-> meta
+                              (assoc :status :success)
+                              (update :length + length)
+                              (cond-> (zero? length) (assoc :realized? true)))
+                          (concat data (:data response))])
+     :messages/error [(assoc meta :status :error :error response) data]
+     :messages.create/success [(update meta :length inc)
+                               (cons (:data response) data)]
+     :router/navigate messages-init
      state)))
 
 (defn ^:private moments

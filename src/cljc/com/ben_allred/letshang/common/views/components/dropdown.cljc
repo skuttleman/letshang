@@ -8,7 +8,7 @@
     [com.ben-allred.letshang.common.utils.fns #?(:clj :refer :cljs :refer-macros) [=>>]]
     [com.ben-allred.letshang.common.views.components.loading :as loading]))
 
-(defn lazy-list [{:keys [value options]}]
+(defn option-list [{:keys [value options]}]
   (let [options (concat (filter (comp (partial contains? value) first) options)
                         (remove (comp (partial contains? value) first) options))]
     (fn [{:keys [item-control on-change value]}]
@@ -41,7 +41,7 @@
       [components/icon (if (:open? attrs) :chevron-up :chevron-down)]]]))
 
 (defn ^:private dropdown* [{:keys [button-control loading? list-control on-search open? options options-by-id value]
-                            :or   {list-control lazy-list button-control button}
+                            :or   {list-control option-list button-control button}
                             :as   attrs}]
   (let [selected (seq (map options-by-id value))]
     [:div.dropdown

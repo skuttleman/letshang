@@ -39,6 +39,9 @@
 (defn limit [query amt]
   (assoc query :limit amt))
 
+(defn offset [query amt]
+  (assoc query :offset amt))
+
 (defn modify [entity m]
   {:update (:table entity)
    :set    m})

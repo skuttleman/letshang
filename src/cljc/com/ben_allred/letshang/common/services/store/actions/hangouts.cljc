@@ -40,10 +40,11 @@
                  (http/get)
                  (act/request dispatch :locations)))))
 
-(defn fetch-messages [hangout-id]
+(defn fetch-messages [hangout-id length]
   (fn [[dispatch]]
     #?(:clj  (ch/resolve)
-       :cljs (-> (nav/path-for :api/hangout.messages {:route-params {:hangout-id hangout-id}})
+       :cljs (-> (nav/path-for :api/hangout.messages {:route-params {:hangout-id hangout-id}
+                                                      :query-params {:offset length}})
                  (http/get)
                  (act/request dispatch :messages)))))
 
