@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.common.views.pages.hangouts
   (:require
+    #?(:cljs [com.ben-allred.letshang.ui.services.ws :as ws])
     [#?(:clj  com.ben-allred.letshang.api.services.navigation
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [clojure.set :as set]
@@ -10,6 +11,7 @@
     [com.ben-allred.letshang.common.services.store.actions.shared :as act]
     [com.ben-allred.letshang.common.services.store.actions.users :as act.users]
     [com.ben-allred.letshang.common.services.store.core :as store]
+    [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.users :as users]
     [com.ben-allred.letshang.common.views.components.core :as components]
@@ -171,10 +173,17 @@
        [(section->component section) attrs state])]))
 
 (defn ^:private hangout* [state]
-  (let [creator? (= (:id @store/user) (get-in state [:hangout :created-by]))]
-    (fn [state]
-      [fields/stateful nil
-       [hangout-view {:creator? creator?} state]])))
+  (let [{hangout-id :id :keys [created-by]} (:hangout state)
+        creator? (= (:id @store/user) created-by)]
+    #?(:cljs (ws/subscribe! [:hangout hangout-id]))
+    (r/create-class
+      {:component-will-unmount
+       (fn [_]
+         #?(:cljs (ws/unsubscribe! [:hangout hangout-id])))
+       :reagent-render
+       (fn [state]
+         [fields/stateful nil
+          [hangout-view {:creator? creator?} state]])})))
 
 (defn ^:private hangouts* [{:keys [hangouts]}]
   [:div

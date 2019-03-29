@@ -9,6 +9,7 @@
     [com.ben-allred.letshang.api.services.handlers :refer [GET ANY context]]
     [com.ben-allred.letshang.api.services.html :as html]
     [com.ben-allred.letshang.api.services.middleware :as middleware]
+    [com.ben-allred.letshang.api.services.ws :as ws]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [compojure.core :refer [defroutes]]
     [compojure.route :as route]
@@ -24,7 +25,9 @@
   #'invitations/routes
   #'locations/routes
   #'moments/routes
-  #'users/routes)
+  #'users/routes
+  (GET "/events" req
+    (ws/connect req)))
 
 (def ^:private api
   (-> #'api*

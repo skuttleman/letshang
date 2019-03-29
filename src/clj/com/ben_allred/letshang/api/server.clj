@@ -31,8 +31,11 @@
   (web/run app {:port port :host "0.0.0.0"})
   (println "Server is listening on port" port))
 
+(defn ^:private start! [port app]
+  (run port app))
+
 (defn -main [& {:as env}]
-  (run (server-port env :port 3000) #'routes/app))
+  (start! (server-port env :port 3000) #'routes/app))
 
 (defn -dev [& {:as env}]
   (let [env (maps/map-keys (comp keyword string/lower-case strings/snake->kebab) env)
@@ -40,7 +43,7 @@
         nrepl-port (server-port env :nrepl-port 7000)
         base-url (format "http://%s:%d" (:canonicalHostName (bean (InetAddress/getLocalHost))) port)]
     (alter-var-root #'env/get merge env {:dev? true :base-url base-url :port port})
-    (run port #'routes/app-dev)
+    (start! port #'routes/app-dev)
     (println "Server is running with #'wrap-reload")
     (nrepl/start-server :port nrepl-port)
     (println "REPL is listening on port" nrepl-port)))

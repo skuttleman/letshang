@@ -20,7 +20,8 @@
 
     ;; API
     ["/api"
-     [["/hangouts"
+     [["/events" :api/events]
+      ["/hangouts"
        [["" :api/hangouts]
         [["/" [uuids/regex :hangout-id]]
          [["" :api/hangout]
