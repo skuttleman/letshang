@@ -10,12 +10,13 @@
 
 (enable-console-print!)
 
+(defonce ^:private init (delay (ws/connect! store/dispatch)))
+
 (defn ^:private app []
-  (ws/connect! store/dispatch)
-  (fn []
-    [views/app (store/get-state)]))
+  [views/app (store/get-state)])
 
 (defn ^:export mount! []
+  @init
   (r/render
     [app]
     (.getElementById dom/document "app")))

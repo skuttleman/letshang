@@ -6,6 +6,7 @@
     [com.ben-allred.letshang.api.services.db.models.messages :as models.messages]
     [com.ben-allred.letshang.api.services.db.models.moments :as models.moments]
     [com.ben-allred.letshang.api.services.handlers :refer [GET PATCH POST context]]
+    [com.ben-allred.letshang.api.services.ws :as ws]
     [com.ben-allred.letshang.common.resources.hangouts :as res.hangouts]
     [com.ben-allred.letshang.common.resources.hangouts.conversations :as res.conversations]
     [com.ben-allred.letshang.common.resources.hangouts.suggestions :as res.suggestions]
@@ -86,7 +87,9 @@
       (context "/messages" _
         (POST "/" ^{:request-spec message-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
           (if-let [message (models.messages/create db hangout-id (:data body) (:id user))]
-            [:http.status/created {:data message}]
+            (do
+              (ws/publish! :topic [:hangout hangout-id] [:messages/new message])
+              [:http.status/created {:data message}])
             [:http.status/not-found {:message "Message could not be created for this hangout"}]))
 
         (GET "/" {{:keys [hangout-id offset]} :params :keys [auth/user db]}

@@ -70,26 +70,26 @@
 
 (defn ^:private publish-dispatch [target _ _] target)
 
-(defmulti publish #'publish-dispatch)
+(defmulti publish! #'publish-dispatch)
 
 (defn ^:private publish* [ch-ids body]
   (doseq [ch-id ch-ids
           :let [ws (get-in @subscribers [:channels ch-id])]]
     (send! ws body)))
 
-(defmethod publish :topic
+(defmethod publish! :topic
   [_ topic body]
   (publish* (get-in @subscribers [:topics topic]) [:ws/message {:topic topic :body body}]))
 
-(defmethod publish :user
+(defmethod publish! :user
   [_ user-id body]
   (publish* (get-in @subscribers [:users user-id]) [:ws/message {:topic [:user user-id] :body body}]))
 
-(defmethod publish :broadcast
+(defmethod publish! :broadcast
   [_ _ body]
   (publish* (keys (:channels @subscribers)) [:ws/broadcast {:body body}]))
 
-(defmethod publish :default
+(defmethod publish! :default
   [_ _ _]
   nil)
 

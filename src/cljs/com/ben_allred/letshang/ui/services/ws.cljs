@@ -4,15 +4,18 @@
     [com.ben-allred.letshang.common.utils.encoders.transit :as transit]
     [com.ben-allred.letshang.common.utils.strings :as strings]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [cljs.core.match :refer [match]]
     [com.ben-allred.letshang.ui.services.navigation :as nav]))
 
 (declare subscribe! unsubscribe!)
 
 (defn ^:private on-message [dispatch]
   (fn [event]
-    (let [message (transit/decode (.-data event))]
-      (when (not= [:ws/ping] message)
-        (dispatch [:ws/message (log/spy message)])))))
+    (when-let [event (match (transit/decode (.-data event))
+                       [:ws/ping] nil
+                       [:ws/message {:topic topic :body [:messages/new body]}] [:ws/message.new body]
+                       :else nil)]
+      (dispatch event))))
 
 (defn ^:private send! [ws body]
   (when ws

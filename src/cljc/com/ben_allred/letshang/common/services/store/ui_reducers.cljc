@@ -43,7 +43,7 @@
 
 (defn ^:private invitations
   ([] [:init])
-  ([state [type response :as thing]]
+  ([state [type response]]
    (case type
      :invitations/request [:requesting (when (not= [:init] state) state)]
      :invitations/success [:success (:data response)]
@@ -75,8 +75,7 @@
                               (cond-> (zero? length) (assoc :realized? true)))
                           (concat data (:data response))])
      :messages/error [(assoc meta :status :error :error response) data]
-     :messages.create/success [(update meta :length inc)
-                               (cons (:data response) data)]
+     :ws/message.new [(update meta :length inc) (cons response data)]
      :router/navigate messages-init
      state)))
 

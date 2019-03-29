@@ -18,12 +18,12 @@
                                             (partial js/console.log "Action dispatched:")
                                             (partial js/console.log "New state:")))))))
 
-(def get-state (:get-state store))
+(defonce get-state (:get-state store))
 
-(def dispatch (:dispatch store))
+(defonce dispatch (:dispatch store))
 
-(def subscribe (:subscribe store))
+(defonce subscribe (:subscribe store))
 
-(def user (delay (:auth/user (get-state))))
+(defonce user (delay (:auth/user (get-state))))
 
-(def sign-up (delay (:auth/sign-up (get-state))))
+(defonce sign-up (delay (:auth/sign-up (get-state))))

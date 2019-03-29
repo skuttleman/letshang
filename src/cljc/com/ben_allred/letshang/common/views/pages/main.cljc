@@ -13,7 +13,7 @@
 
 (def ^:private home? #{:ui/home})
 
-(def ^:private hangout? #{:ui/hangouts :ui/hangout})
+(def ^:private hangout? #{:ui/hangouts :ui/hangouts.new :ui/hangout})
 
 (defn header [_state]
   (let [shown? (r/atom false)]
