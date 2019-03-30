@@ -86,8 +86,9 @@
            "server" ["lein" "run"]}
 
   :profiles {:dev     {:dependencies  [[binaryage/devtools "0.9.4"]
+                                       [cider/piggieback "0.4.0"]
                                        [figwheel-sidecar "0.5.18"]
-                                       [cider/piggieback "0.4.0"]]
+                                       [stylefruits/gniazdo "1.1.1"]]
                        :main          com.ben-allred.letshang.api.server/-dev
                        :source-paths  ["src/clj" "src/cljs" "src/cljc" "dev"]
                        :plugins       [[cider/cider-nrepl "0.21.1"]]

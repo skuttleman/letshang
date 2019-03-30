@@ -7,9 +7,12 @@
     [com.ben-allred.letshang.integration.utils.fixtures :as fixtures]
     [com.ben-allred.letshang.integration.utils.helpers :as h]))
 
-(use-fixtures :once #'fixtures/with-db)
+(use-fixtures :once
+              (#'fixtures/with-app)
+              #'fixtures/with-db)
 
-(use-fixtures :each (#'fixtures/with-seed))
+(use-fixtures :each
+              (#'fixtures/with-seed))
 
 (defn ^:private modifier [expectation token hangouts old-name]
   (let [hangout-id (:id (colls/find (comp #{old-name} :name) hangouts))]
