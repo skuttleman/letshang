@@ -1,7 +1,10 @@
 (ns com.ben-allred.letshang.common.utils.encoders.query-params
   (:require
     [clojure.string :as string]
-    [com.ben-allred.letshang.common.utils.keywords :as keywords]))
+    [com.ben-allred.letshang.common.utils.keywords :as keywords])
+  #?(:clj
+     (:import
+       (java.net URLEncoder))))
 
 (defn ^:private encode-type [_ value]
   (cond
@@ -41,7 +44,11 @@
 
 (defmethod ^:private encode* :default
   [key value]
-  [[key (str (keywords/safe-name value))]])
+  (when (some? value)
+    [[key (-> value
+              (keywords/safe-name)
+              (str)
+              #?(:clj (URLEncoder/encode) :cljs (js/encodeURIComponent)))]]))
 
 (defn ^:private decodify [k v]
   (cond

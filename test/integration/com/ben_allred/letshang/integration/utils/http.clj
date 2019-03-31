@@ -4,12 +4,15 @@
     [clojure.core.async :as async]
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.services.http :as http]
+    [com.ben-allred.letshang.common.utils.fns :as fns]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(defn request* [f auth-token path request assert?]
+(defn request* [f [auth-token csrf-token] path request assert?]
   (let [response (-> request
+                     (update [:headers "accept"] fns/or "application/transit")
                      (cond->
-                       auth-token (assoc-in [:headers "cookie"] (str "auth-token=" auth-token)))
+                       auth-token (assoc-in [:headers "cookie"] (str "auth-token=" auth-token))
+                       csrf-token (assoc-in [:headers "x-csrf-token"] csrf-token))
                      (->> (f (str (env/get :base-url) path)))
                      (async/<!!))]
     (when assert? (assert (http/success? response) (pr-str (second response))))

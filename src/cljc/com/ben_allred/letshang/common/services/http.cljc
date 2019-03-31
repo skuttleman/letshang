@@ -86,6 +86,7 @@
                                    (async/put! ch (assoc (ex-data exception) :cookies (clj-http.cookies/get-cookies cs))))))
              ch)
      :cljs (-> request
+               (assoc-in [:headers :x-csrf-token] (env/get :csrf-token))
                (update :headers (partial maps/map-keys keywords/safe-name))
                (client/request))))
 

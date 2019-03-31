@@ -1,6 +1,9 @@
 (ns com.ben-allred.letshang.api.services.html
   (:require
+    [clojure.core.async :as async]
     [com.ben-allred.collaj.core :as collaj]
+    [com.ben-allred.letshang.api.services.db.models.sessions :as models.sessions]
+    [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.services.navigation :as nav*]
     [com.ben-allred.letshang.common.services.store.ui-reducers :as ui-reducers]
@@ -11,7 +14,7 @@
     [com.ben-allred.letshang.common.views.core :as views]
     [hiccup.core :as hiccup]))
 
-(defn ^:private template [content user sign-up]
+(defn ^:private template [content user sign-up csrf-ch]
   [:html
    [:head
     [:meta {:charset "UTF-8"}]
@@ -38,7 +41,8 @@
      (format "window.ENV=%s;" (-> {}
                                   (maps/assoc-maybe :dev? (env/get :dev?)
                                                     :auth/user user
-                                                    :auth/sign-up sign-up)
+                                                    :auth/sign-up sign-up
+                                                    :csrf-token (async/<!! csrf-ch))
                                   (transit/encode)
                                   (pr-str)))]
     [:script {:type "text/javascript" :src "/js/compiled/app.js"}]
@@ -47,12 +51,15 @@
      "com.ben_allred.letshang.ui.app.mount_BANG_();"]]])
 
 (defn hydrate [page user sign-up]
-  (let [{:keys [get-state]} (collaj/create-store ui-reducers/root)]
+  (let [csrf-ch (async/go
+                  (when user
+                    (:id (repos/transact #(models.sessions/upsert % (:id user))))))
+        {:keys [get-state]} (collaj/create-store ui-reducers/root)]
     (-> (get-state)
         (assoc :page page :auth/user user :auth/sign-up sign-up)
         (views/app)
         (templates/render)
-        (template user sign-up)
+        (template user sign-up csrf-ch)
         (hiccup/html)
         (->> (str "<!DOCTYPE html>")))))
 

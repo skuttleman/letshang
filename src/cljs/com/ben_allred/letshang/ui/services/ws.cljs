@@ -12,8 +12,8 @@
 
 (defn ^:private send! [body]
   (when-let [ws (:ws @socket)]
-    (when (= (.-readState ws) (.-OPEN js/WebSocket)))
-    (.send ws (transit/encode body))))
+    (when (= (.-readyState ws) (.-OPEN js/WebSocket))
+      (.send ws (transit/encode body)))))
 
 (defn ^:private on-message [dispatch]
   (fn [event]
@@ -32,12 +32,13 @@
   (send! [:subscriptions/unsubscribe topic]))
 
 (defn connect! [dispatch]
-  (let [path (nav/path-for :api/events)]
-    (when-let [ws (when (.-WebSocket js/window)
+  (let [csrf (env/get :csrf-token)
+        uri (nav/path-for :api/events {:query-params {:x-csrf-token csrf}})]
+    (when-let [ws (when (and csrf (.-WebSocket js/window))
                     (js/WebSocket. (strings/format "ws%s://%s%s"
                                                    (if (= :https (env/get :protocol)) "s" "")
                                                    (env/get :host)
-                                                   path)))]
+                                                   uri)))]
       (doto ws
         (.addEventListener "message" (on-message dispatch))
         (.addEventListener "close" #(do

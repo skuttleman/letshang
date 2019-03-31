@@ -7,6 +7,7 @@
     [com.ben-allred.letshang.api.services.navigation :as nav]
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.services.http :as http]
+    [com.ben-allred.letshang.common.utils.encoders.edn :as edn]
     [com.ben-allred.letshang.common.utils.encoders.transit :as transit]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.integration.utils.http :as test.http]
@@ -31,8 +32,24 @@
       (:data)))
 
 (defn login [email]
-  (-> (test.http/request* http/get nil (nav/path-for :auth/login {:query-params {:email email}}) nil false)
-      (get-in [3 :cookies "auth-token" :value])))
+  (let [token (-> (test.http/request* http/get
+                                      nil
+                                      (nav/path-for :auth/login {:query-params {:email email}})
+                                      nil
+                                      false)
+                  (get-in [3 :cookies "auth-token" :value]))]
+    (-> (test.http/request* http/get
+                            [token]
+                            (nav/path-for :ui/home)
+                            {:headers {"accept" "text/html"}}
+                            false)
+        (second)
+        (->> (re-find #"window.ENV=(.+);"))
+        (second)
+        (edn/decode)
+        (transit/decode)
+        (:csrf-token)
+        (->> (conj [token])))))
 
 (defn seed! [seed-file]
   (migrations/seed! (str "db/test/" seed-file)))
@@ -97,10 +114,10 @@
       (test.http/post token {:body {:data data}})
       (http*)))
 
-(defn ws-connect [auth-token]
+(defn ws-connect [[auth-token csrf-token]]
   (let [url (-> (env/get :base-url)
                 (string/replace #"http" "ws")
-                (str (nav/path-for :api/events)))
+                (str (nav/path-for :api/events {:query-params {:x-csrf-token csrf-token}})))
         uri (URI. url)
         ch (async/chan 64)
         open-ch (async/chan)

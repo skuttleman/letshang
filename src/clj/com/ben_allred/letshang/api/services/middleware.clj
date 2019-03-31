@@ -2,6 +2,7 @@
   (:require
     [clojure.string :as string]
     [com.ben-allred.formation.core :as f]
+    [com.ben-allred.letshang.api.services.db.models.sessions :as models.sessions]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.content :as content]
@@ -38,7 +39,7 @@
         (cond-> (api? request) (content/prepare #{"content-type"} (get headers "accept"))))))
 
 (defn auth [handler]
-  (fn [{:keys [uri headers] :as request}]
+  (fn [{:keys [headers uri] :as request}]
     (let [{:keys [user sign-up]} (when (or (re-find #"^(/api|/auth|/ws)" uri)
                                            (re-find #"text/html" (str (get headers "accept"))))
                                    (some-> request
@@ -65,8 +66,10 @@
           (throw ex))))))
 
 (defn restricted [handler]
-  (fn [request]
-    (if (:auth/user request)
+  (fn [{:keys [auth/user db headers params] :as request}]
+    (if (models.sessions/exists? db
+                                 (get headers "x-csrf-token" (:x-csrf-token params))
+                                 (:id user))
       (handler request)
       (respond/with [:http.status/forbidden {:message "You must authenticate to use this API."}]))))
 

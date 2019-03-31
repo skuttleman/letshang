@@ -40,7 +40,7 @@
 (defn insert-many [query entity model]
   (update query :values (comp (partial map (comp
                                              (prep/prepare repos/->sql-value (:table entity))
-                                             #(select-keys (repos/->db model %) (disj (:fields entity) :created-at :id))))
+                                             #(select-keys (repos/->db model %) (disj (:fields entity) :created-at))))
                               colls/force-sequential)))
 
 (defn modify [query entity model]

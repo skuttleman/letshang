@@ -64,4 +64,4 @@
 (defn path-for [routes page {:keys [query-params route-params]}]
   (let [qp (qp/encode query-params)]
     (cond-> (apply bidi/path-for routes page (mapcat namify route-params))
-      (seq query-params) (str "?" qp))))
+      (seq qp) (str "?" qp))))

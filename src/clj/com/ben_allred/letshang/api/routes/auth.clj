@@ -32,7 +32,7 @@
 (defn ^:private logout []
   (redirect {:max-age 0} ""))
 
-(defn ^:private login [sign-up-user user]
+(defn ^:private login [user sign-up-user]
   (cond
     (seq user)
     (redirect nil (jwt/encode {:user user}))
@@ -78,8 +78,9 @@
           (str (nav/path-for :auth/callback {:query-params (select-keys params #{:email})}))
           (resp/redirect)))
     (GET "/callback" {{:keys [email]} :params :keys [db]}
-      (->> email
-           (models.users/find-by-email db)
-           (login {:email email})))
+      (-> email
+          (->> (models.users/find-by-email db))
+          (some-> (select-keys #{:first-name :last-name :id :handle}))
+          (login {:email email})))
     (GET "/logout" []
       (logout))))

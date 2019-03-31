@@ -31,7 +31,10 @@
 (defn upsert [entity rows conflict keys]
   (-> entity
       (insert-into rows)
-      (assoc :on-conflict conflict :do-update-set keys)))
+      (assoc :on-conflict conflict)
+      (cond->
+        keys (assoc :do-update-set keys)
+        (not keys) (assoc :do-nothing []))))
 
 (defn on-conflict-nothing [query conflict]
   (assoc query :on-conflict conflict :do-nothing []))
@@ -97,6 +100,10 @@
 (def moment-responses
   {:fields #{:moment-id :response :user-id}
    :table :moment-responses})
+
+(def sessions
+  {:fields #{:created-at :id :user-id}
+   :table  :sessions})
 
 (def users
   {:fields #{:created-at :email :first-name :handle :id :last-name :mobile-number}
