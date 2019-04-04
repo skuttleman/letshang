@@ -70,7 +70,8 @@
        :cljs (forms.std/create (if hangout (edit-api hangout) create-api) validator))))
 
 (defn create->modify [response]
-  (nav/nav-and-replace! :ui/hangout {:route-params {:hangout-id (:id response)}}))
+  (nav/nav-and-replace! :ui/hangout {:route-params {:hangout-id (:id response)
+                                                    :section    :invitations}}))
 
 (defn with-attrs
   ([form path]
