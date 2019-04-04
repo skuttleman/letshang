@@ -9,7 +9,7 @@
 
 (defn request* [f [auth-token csrf-token] path request assert?]
   (let [response (-> request
-                     (update [:headers "accept"] fns/or "application/transit")
+                     (update [:headers "accept"] fns/or "application/transit+json")
                      (cond->
                        auth-token (assoc-in [:headers "cookie"] (str "auth-token=" auth-token))
                        csrf-token (assoc-in [:headers "x-csrf-token"] csrf-token))

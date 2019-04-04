@@ -99,7 +99,7 @@
                                                  (update :headers (partial maps/map-keys keyword)))
           status (status->kw status status)
           body (case (when (string? body) (:content-type headers))
-                 "application/transit" (transit/decode body)
+                 "application/transit+json" (transit/decode body)
                  "application/edn" (edn/decode body)
                  "application/json" (json/decode body)
                  body)]
@@ -108,7 +108,7 @@
         [:error body status response]))))
 
 (defn ^:private go [method url request]
-  (let [content-type (if (env/get :dev?) "application/edn" "application/transit")
+  (let [content-type (if (env/get :dev?) "application/edn" "application/transit+json")
         headers (merge {:content-type content-type :accept content-type}
                        (:headers request))]
     (-> request

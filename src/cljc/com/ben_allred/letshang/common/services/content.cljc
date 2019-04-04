@@ -10,21 +10,21 @@
 (defn ^:private content-type->header [content-type]
   (condp re-find (str content-type)
     #"application/edn" "application/edn"
-    #"application/transit" "application/transit"
+    #"application/transit\+json" "application/transit+json"
     "application/json"))
 
 (defn ^:private content-type->encoder [content-type]
   (condp re-find (str content-type)
     #"application/edn" edn/encode
     #"application/json" json/encode
-    #"application/transit" transit/encode
+    #"application/transit\+json" transit/encode
     nil))
 
 (defn ^:private content-type->decoder [content-type]
   (condp re-find (str content-type)
     #"application/edn" edn/decode
     #"application/json" json/decode
-    #"application/transit" transit/decode
+    #"application/transit\+json" transit/decode
     nil))
 
 (defn ^:private with-headers [request header-keys content-type]
