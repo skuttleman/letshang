@@ -32,11 +32,6 @@
     x-form
     (map (partial repos/->api model))]))
 
-(defn xform [query {:keys [before after]}]
-  (cond-> query
-    before (update 1 comp before)
-    after (update 2 comp after)))
-
 (defn insert-many [query entity model]
   (update query :values (comp (partial map (comp
                                              (prep/prepare repos/->sql-value (:table entity))
@@ -49,6 +44,3 @@
 
 (defn with [k f [pk fk] values]
   (map (with* k f [pk fk] values) values))
-
-(defn with-inner [outer-k k f [pk fk] values]
-  (colls/supdate values map update outer-k colls/supdate map (with* k f [pk fk] values)))

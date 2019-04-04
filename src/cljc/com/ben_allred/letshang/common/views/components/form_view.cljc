@@ -3,6 +3,7 @@
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.dom :as dom]
+    [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.views.components.loading :as loading]))
 
 (defn form [{:keys [buttons form on-failed on-saved save-text]} & body]

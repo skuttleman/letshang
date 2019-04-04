@@ -2,8 +2,6 @@
   (:require
     [com.ben-allred.letshang.api.services.db.entities :as entities]
     [com.ben-allred.letshang.api.services.db.models.invitations :as models.invitations]
-    [com.ben-allred.letshang.api.services.db.models.locations :as models.locations]
-    [com.ben-allred.letshang.api.services.db.models.moments :as models.moments]
     [com.ben-allred.letshang.api.services.db.models.shared :as models]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.hangouts :as repo.hangouts]
@@ -46,7 +44,6 @@
             (repo.hangouts/creator-clause user-id)
             (->> (repo.hangouts/modify hangout))
             (models/modify entities/hangouts ::repo.hangouts/model)
-            (update :set dissoc :invitation-ids)
             (repos/exec! db)
             (first)
             (pos?))

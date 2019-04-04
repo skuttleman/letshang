@@ -39,5 +39,6 @@
 (defn create [db user]
   (when (-> user
             (repo.users/insert)
+            (models/insert-many entities/users ::repo.users/model)
             (repos/exec! db))
     (find-by-email db (:email user))))

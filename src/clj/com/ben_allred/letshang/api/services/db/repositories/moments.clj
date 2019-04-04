@@ -36,9 +36,9 @@
 
 (defn id-clause
   ([clause moment-id]
-    [:and clause (id-clause moment-id)])
+   [:and clause (id-clause moment-id)])
   ([moment-id]
-    [:= :moments.id moment-id]))
+   [:= :moments.id moment-id]))
 
 (defn hangout-id-clause
   ([clause hangout-id]
@@ -56,7 +56,7 @@
   ([clause moment]
    [:and clause (moment-window-clause moment)])
   ([{:keys [hangout-id date moment-window]}]
-    [:and
-     [:= :moments.hangout-id hangout-id]
-     [:= :moments.date date]
-     [:= :moments.moment-window moment-window]]))
+   [:and
+    [:= :moments.hangout-id hangout-id]
+    [:= :moments.date date]
+    [:= :moments.moment-window moment-window]]))
