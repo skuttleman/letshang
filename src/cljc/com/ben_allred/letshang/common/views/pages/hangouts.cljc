@@ -97,7 +97,7 @@
   [:div.layout--inset
    [:ul.layout--stack-between
     [flip-move/flip-move
-     {}
+     {:enter-animation :none}
      (for [item items]
        ^{:key (:id item)}
        [:li.layout--space-between

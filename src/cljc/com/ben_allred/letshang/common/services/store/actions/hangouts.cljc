@@ -4,7 +4,8 @@
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [com.ben-allred.letshang.common.services.http :as http]
     [com.ben-allred.letshang.common.services.store.actions.shared :as act]
-    [com.ben-allred.letshang.common.utils.chans :as ch]))
+    [com.ben-allred.letshang.common.utils.chans :as ch]
+    [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (defn create-hangout [hangout]
   (fn [[dispatch]]

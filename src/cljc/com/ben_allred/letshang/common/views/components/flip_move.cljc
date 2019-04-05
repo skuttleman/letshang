@@ -3,4 +3,4 @@
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     #?(:cljs cljsjs.react-flip-move)))
 
-(def flip-move #?(:clj (constantly nil) :cljs (r/adapt-react-class js/FlipMove)))
+(def flip-move (r/adapt-react-class #?(:cljs js/FlipMove)))
