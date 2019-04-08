@@ -31,7 +31,7 @@
 
 (def ^:private api
   (-> #'api*
-      (#'middleware/restricted)))
+      (#'middleware/with-authentication)))
 
 (defroutes ^:private base
   (context "/api" []
@@ -51,15 +51,15 @@
 (def app
   (-> #'base
       (#'middleware/with-transaction)
-      (#'middleware/auth)
-      (#'middleware/log-response)
+      (#'middleware/with-jwt)
+      (#'middleware/with-logging)
       (wrap-multipart-params)
       (wrap-keyword-params)
       (wrap-nested-params)
       (wrap-params)
       (wrap-cookies)
-      (#'middleware/abortable)
-      (#'middleware/content-type)))
+      (#'middleware/with-abortable)
+      (#'middleware/with-content-type)))
 
 (def app-dev
   (-> #'app

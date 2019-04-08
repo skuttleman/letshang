@@ -91,6 +91,25 @@
              (models.moment-responses/with-moment-responses db)
              (colls/find (comp #{moment-id} :id)))))))
 
+(defn lock-moment [db moment-id locked? user-id]
+  (when (-> moment-id
+            (repo.moments/id-clause)
+            (repo.hangouts/creator-clause user-id)
+            (repo.moments/select-by)
+            (entities/inner-join entities/hangouts [:= :hangouts.id :moments.hangout-id])
+            (repos/exec! db)
+            (seq))
+    (-> moment-id
+        (repo.moments/id-clause)
+        (->> (repo.moments/modify {:locked? locked?}))
+        (models/modify entities/moments ::repo.moments/model)
+        (repos/exec! db))
+    (->> moment-id
+         (repo.moments/id-clause)
+         (select* db)
+         (models.moment-responses/with-moment-responses db)
+         (colls/only!))))
+
 (defn set-response [db moment-id response user-id]
   (when (-> moment-id
             (repo.moments/id-clause)

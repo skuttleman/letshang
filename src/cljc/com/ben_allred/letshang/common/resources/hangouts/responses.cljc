@@ -1,6 +1,7 @@
 (ns com.ben-allred.letshang.common.resources.hangouts.responses
   (:require
     #?(:cljs [com.ben-allred.letshang.ui.services.forms.live :as forms.live])
+    [com.ben-allred.formation.core :as f]
     [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
@@ -23,6 +24,11 @@
           (store/dispatch)
           (ch/peek (constantly nil)
                    (res/toast-error "Something went wrong."))))))
+
+(def response-validator
+  (f/validator
+    [(f/required "Must specify a response")
+     (f/pred #{:positive :negative :neutral} "Invalid response value")]))
 
 (def response->label
   {:invitation "Are you coming?"

@@ -9,13 +9,15 @@
 (defmethod repos/->api ::model
   [_ moment]
   (-> moment
-      (set/rename-keys {:moment-window :window})
+      (set/rename-keys {:moment-window :window
+                        :locked        :locked?})
       (maps/update-maybe :window keyword)))
 
 (defmethod repos/->db ::model
   [_ moment]
   (-> moment
-      (set/rename-keys {:window :moment-window})))
+      (set/rename-keys {:window  :moment-window
+                        :locked? :locked})))
 
 (defmethod repos/->sql-value [:moments :moment-window]
   [_ _ value]
@@ -33,6 +35,11 @@
 
 (defn insert [moment]
   (entities/insert-into entities/moments [moment]))
+
+(defn modify [moment clause]
+  (-> entities/moments
+      (entities/modify moment)
+      (assoc :where clause)))
 
 (defn id-clause
   ([clause moment-id]

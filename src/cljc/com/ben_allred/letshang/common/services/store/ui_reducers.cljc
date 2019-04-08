@@ -20,7 +20,7 @@
 (defn ^:private add-or-replace-respondable [respondable response]
   (cond-> respondable
           (= (:id respondable) (:id response)) (-> (assoc :responses (:responses response))
-                                              (count-respondable))))
+                                                   (count-respondable))))
 
 (defn ^:private add-or-replace-respondables [respondables response]
   (colls/assoc-by :id (count-respondable response) (map #(add-or-replace-respondable % response) respondables)))
@@ -58,6 +58,7 @@
      :locations/request [:requesting (when (not= [:init] state) state)]
      :locations/success [:success (map count-respondable (:data response))]
      :locations/error [:error response]
+     :location/success [:success (add-or-replace-respondables (second state) (:data response))]
      :response.location/success [:success (colls/supdate (second state) map add-or-replace-response :location-id (:data response))]
      :suggestions.where/success [:success (add-or-replace-respondables (second state) (:data response))]
      state)))
@@ -86,6 +87,7 @@
      :moments/request [:requesting (when (not= [:init] state) state)]
      :moments/success [:success (map count-respondable (:data response))]
      :moments/error [:error response]
+     :moment/success [:success (add-or-replace-respondables (second state) (:data response))]
      :response.moment/success [:success (colls/supdate (second state) map add-or-replace-response :moment-id (:data response))]
      :suggestions.when/success [:success (add-or-replace-respondables (second state) (:data response))]
      state)))

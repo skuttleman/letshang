@@ -18,7 +18,7 @@
        (or (= "/auth/register" uri)
            (re-find #"(^/api|^/health)" uri))))
 
-(defn log-response [handler]
+(defn with-logging [handler]
   (fn [request]
     (let [start (Date.)
           response (handler request)
@@ -31,14 +31,14 @@
                           (:uri request))))
       response)))
 
-(defn content-type [handler]
+(defn with-content-type [handler]
   (fn [{:keys [headers] :as request}]
     (-> request
         (content/parse (get headers "content-type"))
         (handler)
         (cond-> (api? request) (content/prepare #{"content-type"} (get headers "accept"))))))
 
-(defn auth [handler]
+(defn with-jwt [handler]
   (fn [{:keys [headers uri] :as request}]
     (let [{:keys [user sign-up]} (when (or (re-find #"^(/api|/auth|/ws)" uri)
                                            (re-find #"text/html" (str (get headers "accept"))))
@@ -56,7 +56,7 @@
       (fn [db]
         (handler (assoc request :db db))))))
 
-(defn abortable [handler]
+(defn with-abortable [handler]
   (fn [request]
     (try
       (handler request)
@@ -65,15 +65,15 @@
           (update response :status #(or % 500))
           (throw ex))))))
 
-(defn restricted [handler]
+(defn with-authentication [handler]
   (fn [{:keys [auth/user db headers params] :as request}]
     (if (models.sessions/exists? db
                                  (get headers "x-csrf-token" (:x-csrf-token params))
                                  (:id user))
       (handler request)
-      (respond/with [:http.status/forbidden {:message "You must authenticate to use this API."}]))))
+      (respond/with [:http.status/unauthorized {:message "You must authenticate to use this API."}]))))
 
-(defn conform-params [handler spec]
+(defn with-request-conforming [handler spec]
   (if-not spec
     handler
     (let [transformer (f/transformer spec)]
@@ -82,7 +82,7 @@
             (update :params transformer)
             (handler))))))
 
-(defn validate-body! [handler spec]
+(defn with-request-validation [handler spec]
   (if-not spec
     handler
     (let [validator (f/validator spec)]

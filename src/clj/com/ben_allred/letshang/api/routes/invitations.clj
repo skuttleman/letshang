@@ -2,7 +2,7 @@
   (:require
     [com.ben-allred.letshang.api.services.db.models.invitations :as models.invitations]
     [com.ben-allred.letshang.api.services.handlers :refer [PATCH context]]
-    [com.ben-allred.letshang.common.resources.core :as res]
+    [com.ben-allred.letshang.common.resources.hangouts.responses :as res.responses]
     [com.ben-allred.letshang.common.utils.uuids :as uuids]
     [compojure.core :refer [defroutes]]))
 
@@ -10,7 +10,7 @@
   {:invitation-id uuids/->uuid})
 
 (def ^:private save-spec
-  {:data {:response res/response-validator}})
+  {:data {:response res.responses/response-validator}})
 
 (defroutes routes
   (context "/invitations" []

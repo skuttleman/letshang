@@ -6,20 +6,22 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.views.components.loading :as loading]))
 
-(defn form [{:keys [buttons form on-failed on-saved save-text]} & body]
+(defn form [{:keys [buttons disabled form on-failed on-saved save-text]} & body]
   (-> [:form.form.layout--stack-between
        {:on-submit (fn [e]
                      (dom/prevent-default e)
-                     (-> form
-                         (forms/persist!)
-                         (cond->
-                           on-saved (ch/then on-saved)
-                           on-failed (ch/catch on-failed))))}]
+                     (when-not disabled
+                       (-> form
+                           (forms/persist!)
+                           (cond->
+                             on-saved (ch/then on-saved)
+                             on-failed (ch/catch on-failed)))))}]
       (into body)
       (conj (cond-> [:div.buttons
                      [:button.button.is-primary
                       {:type     :submit
-                       :disabled (or (not (forms/ready? form))
+                       :disabled (or disabled
+                                     (not (forms/ready? form))
                                      (and (forms/attempted? form) (not (forms/valid? form))))}
                       (or save-text "Save")]]
               buttons

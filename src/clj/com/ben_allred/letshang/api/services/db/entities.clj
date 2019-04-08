@@ -82,7 +82,7 @@
    :table  :invitations})
 
 (def locations
-  {:fields #{:created-at :created-by :hangout-id :id :name}
+  {:fields #{:created-at :created-by :hangout-id :id :locked :name}
    :table  :locations})
 
 (def location-responses
@@ -94,7 +94,7 @@
    :table :messages})
 
 (def moments
-  {:fields #{:created-at :created-by :date :hangout-id :id :moment-window}
+  {:fields #{:created-at :created-by :date :hangout-id :id :locked :moment-window}
    :table  :moments})
 
 (def moment-responses

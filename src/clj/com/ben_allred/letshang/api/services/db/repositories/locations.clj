@@ -1,7 +1,19 @@
 (ns com.ben-allred.letshang.api.services.db.repositories.locations
   (:require
+    [clojure.set :as set]
     [com.ben-allred.letshang.api.services.db.entities :as entities]
+    [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [honeysql.core :as sql]))
+
+(defmethod repos/->api ::model
+  [_ location]
+  (-> location
+      (set/rename-keys {:locked :locked?})))
+
+(defmethod repos/->db ::model
+  [_ location]
+  (-> location
+      (set/rename-keys {:locked? :locked})))
 
 (defn select-by [clause]
   (-> entities/locations
@@ -11,6 +23,11 @@
 
 (defn insert [location]
   (entities/insert-into entities/locations [location]))
+
+(defn modify [location clause]
+  (-> entities/locations
+      (entities/modify location)
+      (assoc :where clause)))
 
 (defn id-clause
   ([clause location-id]

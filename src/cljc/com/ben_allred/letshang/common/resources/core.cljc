@@ -5,11 +5,6 @@
     [com.ben-allred.letshang.common.services.store.actions.toast :as act.toast]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(def response-validator
-  (f/validator
-    [(f/required "Must specify a response")
-     (f/pred #{:positive :negative :neutral} "Invalid response value")]))
-
 (defn toast-error [msg]
   (fn [error]
     (->> (:message error msg)

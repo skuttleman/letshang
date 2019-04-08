@@ -6,7 +6,7 @@
   (reify
     forms/ISync
     (ready? [_]
-      (#{:success :error} (first (f))))
+      (boolean (#{:success :error} (first (f)))))
 
     forms/IValidate
     (errors [_]

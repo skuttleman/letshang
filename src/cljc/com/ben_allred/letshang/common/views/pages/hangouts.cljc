@@ -93,16 +93,23 @@
                :on-click #(change-state nil)}
            label]])]]]))
 
-(defn ^:private hangout-items* [suggestion items]
-  [:div.layout--inset
-   [:ul.layout--stack-between
-    [flip-move/flip-move
-     {:enter-animation :none}
-     (for [item items]
-       ^{:key (:id item)}
-       [:li.layout--space-between
-        {:style {:background-color :white}}
-        [suggestion item (:id @store/user)]])]]])
+(defn ^:private hangout-items* [{:keys [created-by]} suggestion items]
+  (let [user-id (:id @store/user)
+        {locked true unlocked false} (group-by :locked? items)
+        can-lock? (= user-id created-by)]
+    [:div.layout--inset
+     [:ul.layout--stack-between
+      [flip-move/flip-move
+       {:enter-animation :none
+        :leave-animation :none}
+       (if-let [item (first locked)]
+         [suggestion item user-id true can-lock?]
+         (for [item unlocked]
+           ^{:key (:id item)}
+           [:li
+            {:style {:background-color :white}}
+            [:div.layout--space-between
+             [suggestion item user-id false can-lock?]]]))]]]))
 
 (defn ^:private hangout-who* [{:keys [creator?]} {:keys [hangout invitations]}]
   (let [creator (:creator hangout)
@@ -115,15 +122,17 @@
         ^{:key (:id invitation)}
         [invitation-item invitation (= auth-id (:user-id invitation))])]]))
 
-(defn ^:private hangout-when* [state]
+(defn ^:private hangout-when* [{:keys [hangout moments]}]
   [hangout-items*
+   hangout
    suggestions/moment-suggestion
-   (sort res.suggestions/moment-sorter (:moments state))])
+   (sort res.suggestions/moment-sorter moments)])
 
-(defn ^:private hangout-where* [state]
+(defn ^:private hangout-where* [{:keys [hangout locations]}]
   [hangout-items*
+   hangout
    suggestions/location-suggestion
-   (sort res.suggestions/location-sorter (:locations state))])
+   (sort res.suggestions/location-sorter locations)])
 
 (defn ^:private hangout-who [{:keys [creator?] :as attrs} {:keys [hangout page] :as state}]
   (let [{hangout-id :id :keys [others-invite?] :as hangout} hangout]
@@ -147,7 +156,7 @@
      (when (or creator? when-suggestions?)
        [suggestions/moment-form hangout-id])]))
 
-(defn ^:private hangout-where [{:keys [creator?]} {:keys [page hangout] :as state}]
+(defn ^:private hangout-where [{:keys [creator?]} {:keys [hangout] :as state}]
   (let [{hangout-id :id :keys [where-suggestions?]} hangout]
     [:div.layout--stack-between
      [loading/with-status
@@ -196,7 +205,7 @@
       (for [{:keys [creator id name]} hangouts]
         ^{:key id}
         [:li
-         [:a {:href (nav/path-for :ui/hangout {:route-params {:hangout-id id :section :invitations}})}
+         [:a {:href (nav/path-for :ui/hangout {:route-params {:hangout-id id :section :conversation}})}
           name " created by " (:handle creator)]])]
      [:div "You don't have any hangouts, yet. What are you waiting for?"])])
 

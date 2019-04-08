@@ -1,6 +1,8 @@
 (ns com.ben-allred.letshang.common.services.http
   (:refer-clojure :exclude [get])
   (:require
+    [#?(:clj  com.ben-allred.letshang.api.services.navigation
+        :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [#?(:clj clj-http.client :cljs cljs-http.client) :as client]
     [#?(:clj clojure.core.async :cljs cljs.core.async) :as async]
     [clojure.set :as set]
@@ -74,6 +76,15 @@
 (def ^{:arglists '([response])} server-error?
   (partial check-status 500 599))
 
+(defn ^:private handle-ui-error [ch]
+  #?(:clj  ch
+     :cljs (async/go
+             (let [[_ _ status :as result] (async/<! ch)]
+               (case status
+                 :http.status/unauthorized (nav/go-to! (nav/path-for :auth/logout))
+                 nil)
+               result))))
+
 (defn ^:private client [request]
   #?(:clj  (let [cs (clj-http.cookies/cookie-store)
                  ch (async/chan)]
@@ -94,9 +105,9 @@
   (async/go
     (let [ch-response (async/<! chan)
           {:keys [body headers status] :as response} (-> (if-let [data (ex-data ch-response)]
-                                                   data
-                                                   ch-response)
-                                                 (update :headers (partial maps/map-keys keyword)))
+                                                           data
+                                                           ch-response)
+                                                         (update :headers (partial maps/map-keys keyword)))
           status (status->kw status status)
           body (case (when (string? body) (:content-type headers))
                  "application/transit+json" (transit/decode body)
@@ -116,7 +127,8 @@
         (content/prepare header-keys (:content-type headers))
         (update :headers merge headers)
         (client)
-        (request*))))
+        (request*)
+        (handle-ui-error))))
 
 (defn get
   ([url]

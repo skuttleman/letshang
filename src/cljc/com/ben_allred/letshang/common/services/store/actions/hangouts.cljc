@@ -56,12 +56,15 @@
                  (http/get)
                  (act/request dispatch :moments)))))
 
-(defn update-hangout [hangout-id hangout]
+(defn lock [lock-type id body]
   (fn [[dispatch]]
     #?(:clj  (ch/resolve)
-       :cljs (-> (nav/path-for :api/hangout {:route-params {:hangout-id hangout-id}})
-                 (http/patch {:body hangout})
-                 (act/request dispatch :hangout)))))
+       :cljs (let [[route param kwd-ns] (case lock-type
+                                          :moment [:api/moment :moment-id :moment]
+                                          :location [:api/location :location-id :location])]
+               (-> (nav/path-for route {:route-params {param id}})
+                   (http/patch {:body body})
+                   (act/request dispatch kwd-ns))))))
 
 (defn save-message [hangout-id body]
   (fn [[dispatch]]
@@ -74,9 +77,9 @@
   (fn [[dispatch]]
     #?(:clj  (ch/resolve)
        :cljs (let [[route param kwd-ns] (case response-type
-                                          :invitation [:api/invitation :invitation-id :response.invitation]
-                                          :moment [:api/moment :moment-id :response.moment]
-                                          :location [:api/location :location-id :response.location])]
+                                          :invitation [:api/invitation.responses :invitation-id :response.invitation]
+                                          :moment [:api/moment.responses :moment-id :response.moment]
+                                          :location [:api/location.responses :location-id :response.location])]
                (-> (nav/path-for route {:route-params {param id}})
                    (http/patch {:body body})
                    (act/request dispatch kwd-ns))))))
@@ -101,3 +104,10 @@
        :cljs (-> (nav/path-for :api/hangout.locations {:route-params {:hangout-id hangout-id}})
                  (http/post {:body suggestion})
                  (act/request dispatch :suggestions.where)))))
+
+(defn update-hangout [hangout-id hangout]
+  (fn [[dispatch]]
+    #?(:clj  (ch/resolve)
+       :cljs (-> (nav/path-for :api/hangout {:route-params {:hangout-id hangout-id}})
+                 (http/patch {:body hangout})
+                 (act/request dispatch :hangout)))))

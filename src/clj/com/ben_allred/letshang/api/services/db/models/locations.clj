@@ -10,6 +10,7 @@
     [com.ben-allred.letshang.api.services.db.repositories.locations :as repo.locations]
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.fns :refer [=>>]]
+    [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]
     [honeysql.core :as sql]))
 
@@ -18,6 +19,12 @@
       (repo.locations/select-by)
       (models/select ::repo.locations/model)
       (repos/exec! db)))
+
+(defn ^:private select-by-hangout-id [db hangout-id]
+  (->> hangout-id
+       (repo.locations/hangout-id-clause)
+       (select* db)
+       (models.location-responses/with-location-responses db)))
 
 (defn select-for-hangout [db hangout-id user-id]
   (let [{:keys [created-by invitee-id]}
@@ -35,10 +42,7 @@
             (repos/exec! db)
             (colls/only!))]
     (when (or (= created-by user-id) (= invitee-id user-id))
-      (->> hangout-id
-           (repo.locations/hangout-id-clause)
-           (select* db)
-           (models.location-responses/with-location-responses db)))))
+      (select-by-hangout-id db hangout-id))))
 
 (defn suggest-location [db hangout-id location user-id]
   (let [location (maps/update-maybe location :name string/trim)
@@ -74,10 +78,27 @@
                                                :user-id     user-id
                                                :response    :positive})
         (->> hangout-id
-             (repo.locations/hangout-id-clause)
-             (select* db)
-             (models.location-responses/with-location-responses db)
+             (select-by-hangout-id db)
              (colls/find (comp #{location-id} :id)))))))
+
+(defn lock-location [db location-id locked? user-id]
+  (when (-> location-id
+            (repo.locations/id-clause)
+            (repo.hangouts/creator-clause user-id)
+            (repo.locations/select-by)
+            (entities/inner-join entities/hangouts [:= :hangouts.id :locations.hangout-id])
+            (repos/exec! db)
+            (seq))
+    (-> location-id
+        (repo.locations/id-clause)
+        (->> (repo.locations/modify {:locked? locked?}))
+        (models/modify entities/locations ::repo.locations/model)
+        (repos/exec! db))
+    (->> location-id
+         (repo.locations/id-clause)
+         (select* db)
+         (models.location-responses/with-location-responses db)
+         (colls/only!))))
 
 (defn set-response [db location-id response user-id]
   (when (-> location-id
