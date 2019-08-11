@@ -2,12 +2,12 @@
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :main com.ben-allred.letshang.api.server
   :aot [com.ben-allred.letshang.api.server]
-  :min-lein-version "2.6.1"
+  :min-lein-version "2.9.1"
 
-  :dependencies [[bidi "2.1.3"]
+  :dependencies [[bidi "2.1.3" :exclusions [[ring/ring-core]]]
                  [c3p0/c3p0 "0.9.1.2"]
                  [clj-http "3.9.1"]
                  [clj-jwt "0.1.1"]
@@ -16,32 +16,34 @@
                  [clojure.jdbc/clojure.jdbc-c3p0 "0.3.3" :exclusions [[org.clojure/java.jdbc]]]
                  [com.andrewmcveigh/cljs-time "0.5.2"]
                  [com.ben-allred/collaj "0.8.0"]
-                 [com.ben-allred/formation "0.5.0"]
+                 [com.ben-allred/formation "0.6.2" :exclusions [[nrepl]]]
+                 [com.ben-allred/ws-client-cljc "0.1.0-SNAPSHOT" :exclusions [[nrepl]
+                                                                              [org.clojure/core.async]]]
                  [com.cognitect/transit-clj "0.8.313"]
                  [com.cognitect/transit-cljs "0.8.256"]
                  [com.taoensso/timbre "4.10.0"]
                  [compojure "1.6.0"]
                  [environ "1.1.0"]
                  [hiccup "1.0.5"]
-                 [honeysql "0.9.2"]
+                 [honeysql "0.9.2" :exclusions [[honeysql]]]
                  [kibu/pushy "0.3.8"]
                  [metosin/jsonista "0.1.1"]
-                 [nilenso/honeysql-postgres "0.2.5"]
+                 [nilenso/honeysql-postgres "0.2.5" :exclusions [[net.cgrand/macrovich]]]
                  [nrepl "0.4.0"]
-                 [org.clojure/clojure "1.10.0"]
+                 [org.clojure/clojure "1.10.1"]
                  [org.clojure/clojurescript "1.10.520"]
                  [org.clojure/core.async "0.4.490"]
                  [org.clojure/core.match "0.3.0-alpha5"]
                  [org.clojure/data.json "0.2.6"]
-                 [org.clojure/java.jdbc "0.7.8"]
-                 [org.immutant/immutant "2.1.10"]
-                 [org.postgresql/postgresql "9.4-1206-jdbc41"]
+                 [org.immutant/immutant "2.1.10" :exclusions [[ring/ring-core]]]
+                 [org.postgresql/postgresql "9.4-1206-jdbc41" :exclusions [[org.clojure/java.jdbc]]]
                  [ragtime "0.7.2"]
                  [reagent "0.8.1"]
                  [ring/ring-core "1.3.2"]
-                 [ring/ring-defaults "0.2.1"]
-                 [ring/ring-devel "1.6.3"]
-                 [ring/ring-json "0.3.1"]]
+                 [ring/ring-defaults "0.2.1" :exclusions [[ring/ring-core]]]
+                 [ring/ring-devel "1.6.3" :exclusions [[ring/ring-core]]]
+                 [ring/ring-json "0.3.1"]
+                 [seancorfield/next.jdbc "1.0.5"]]
 
   :plugins [[com.jakemccrary/lein-test-refresh "0.23.0"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
@@ -87,11 +89,10 @@
 
   :profiles {:dev     {:dependencies  [[binaryage/devtools "0.9.4"]
                                        [cider/piggieback "0.4.0"]
-                                       [figwheel-sidecar "0.5.18"]
-                                       [stylefruits/gniazdo "1.1.1"]]
+                                       [figwheel-sidecar "0.5.18" :exclusions [[ring/ring-core]]]]
                        :main          com.ben-allred.letshang.api.server/-dev
                        :source-paths  ["src/clj" "src/cljs" "src/cljc" "dev"]
-                       :plugins       [[cider/cider-nrepl "0.21.1"]]
+                       :plugins       [[cider/cider-nrepl "0.21.1" :exclusions [[nrepl]]]]
                        :clean-targets ^{:protect false :replace true} ["resources/public/js"
                                                                        "resources/public/css"
                                                                        :target-path]

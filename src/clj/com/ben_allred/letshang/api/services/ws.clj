@@ -20,19 +20,29 @@
     (assoc-in m [k id] chs)
     (update m k dissoc id)))
 
-(defn ^:private handle-unsubscribe [ch-id topic]
+(defn ^:private send! [ch body]
+  (when ch
+    (web.async/send! ch (transit/encode body))))
+
+(defn ^:private handle-unsubscribe [ch ch-id topic]
   (dosync
     (alter subscribers (=> (update-in [:channels ch-id :topics] disj topic)
-                           (cleanup :topics topic ch-id)))))
+                           (cleanup :topics topic ch-id))))
+  (send! ch [:subscriptions/unsubscribed topic]))
 
-(defn ^:private handle-subscribe [ch-id topic user-id]
-  (if (match topic
-        [:hangout hangout-id] (has-hangout? hangout-id user-id)
-        :else true)
+(defn ^:private clean-subscriptions! [ch ch-id topic user-id]
+  (when-not (match topic
+              [:hangout hangout-id] (has-hangout? hangout-id user-id)
+              :else true)
+    (handle-unsubscribe ch ch-id topic)
+    true))
+
+(defn ^:private handle-subscribe [ch ch-id topic user-id]
+  (when-not (clean-subscriptions! ch ch-id topic user-id)
     (dosync
       (alter subscribers (=> (update-in [:topics topic] (fnil conj #{}) ch-id)
                              (update-in [:channels ch-id :topics] conj topic))))
-    (handle-unsubscribe ch-id topic)))
+    (send! ch [:subscriptions/subscribed topic])))
 
 (defn ^:private handle-open [ch-id user-id]
   (fn [ch]
@@ -43,7 +53,7 @@
                                                           :ch      ch}))))))
 
 (defn ^:private handle-close [ch-id user-id]
-  (fn [ch data]
+  (fn [_ch _data]
     (dosync
       (alter subscribers (fn [subs]
                            (let [topics (get-in subs [:channels ch-id :topics])]
@@ -55,8 +65,8 @@
 (defn ^:private handle-message [ch-id user-id]
   (fn [ch body]
     (match (transit/decode body)
-      [:subscriptions/subscribe topic] (handle-subscribe ch-id topic user-id)
-      [:subscriptions/unsubscribe topic] (handle-unsubscribe ch-id topic)
+      [:subscriptions/subscribe topic] (handle-subscribe ch ch-id topic user-id)
+      [:subscriptions/unsubscribe topic] (handle-unsubscribe ch ch-id topic)
       else (log/debug "Unknown message" else))))
 
 (defn connect [{:keys [auth/user] :as req}]
@@ -66,18 +76,14 @@
                                :on-message (handle-message ch-id user-id)
                                :on-close   (handle-close ch-id user-id)})))
 
-(defn ^:private send! [{:keys [ch]} body]
-  (when ch
-    (web.async/send! ch (transit/encode body))))
-
 (defn ^:private publish-dispatch [target _ _] target)
 
 (defmulti publish! #'publish-dispatch)
 
 (defn ^:private publish* [ch-ids body]
   (doseq [ch-id ch-ids
-          :let [ws (get-in @subscribers [:channels ch-id])]]
-    (send! ws body)))
+          :let [ch (get-in @subscribers [:channels ch-id :ch])]]
+    (send! ch body)))
 
 (defmethod publish! :topic
   [_ topic body]
@@ -99,11 +105,11 @@
   (when ch
     (async/close! ch))
   (async/go-loop []
-    (doseq [[ch-id {:keys [user-id topics] :as ws}] (:channels @subscribers)]
-      (send! ws [:ws/ping])
+    (doseq [[ch-id {:keys [ch topics user-id]}] (:channels @subscribers)]
+      (send! ch [:ws/ping])
       (doseq [topic topics]
-        (handle-subscribe ch-id topic user-id)))
-    (async/<! (async/timeout 30000))
+        (clean-subscriptions! ch ch-id topic user-id)))
+    (async/<! (async/timeout 60000))
     (recur)))
 
 (defonce ^:private ping! (pinger! nil))

@@ -1,26 +1,27 @@
 (ns com.ben-allred.letshang.api.services.db.entities
   (:require
-    [clojure.set :as set]))
+    [clojure.set :as set]
+    [com.ben-allred.letshang.common.utils.keywords :as keywords]))
 
-(defn ^:private with-field-alias [fields alias overrides]
-  (let [alias' (name alias)]
+(defn ^:private with-field-alias [fields table-alias field-aliases]
+  (let [table-alias' (name table-alias)]
     (map (fn [field]
-           (let [field' (name field)]
-             [(keyword (str alias' "." field'))
-              (get overrides field (keyword alias' field'))]))
+           (let [field' (name field)
+                 col (keyword (str table-alias' "." field'))]
+             [col (keywords/str (get field-aliases field (str table-alias' "/" field')))]))
          fields)))
 
-(defn ^:private join* [query join entity alias on overrides]
+(defn ^:private join* [query join entity alias on aliases]
   (-> query
       (update join (fnil conj []) [(:table entity) alias] on)
-      (update :select into (with-field-alias (:fields entity) alias overrides))))
+      (update :select into (with-field-alias (:fields entity) alias aliases))))
 
 (defn with-alias
   ([entity alias]
-   (with-alias entity alias nil))
-  ([entity alias overrides]
+   (with-alias entity alias {}))
+  ([entity alias aliases]
    (-> entity
-       (update :select with-field-alias alias overrides)
+       (update :select with-field-alias alias aliases)
        (update :from (comp vector conj) alias))))
 
 (defn insert-into [entity rows]
@@ -32,12 +33,10 @@
   (-> entity
       (insert-into rows)
       (assoc :on-conflict conflict)
-      (cond->
-        keys (assoc :do-update-set keys)
-        (not keys) (assoc :do-nothing []))))
+      (assoc :do-update-set (or keys (take 1 conflict)))))
 
 (defn on-conflict-nothing [query conflict]
-  (assoc query :on-conflict conflict :do-nothing []))
+  (assoc query :on-conflict conflict :do-update-set (take 1 conflict)))
 
 (defn limit [query amt]
   (assoc query :limit amt))
@@ -61,17 +60,17 @@
   ([query entity on]
    (left-join query entity (:table entity) on))
   ([query entity alias on]
-   (left-join query entity alias on nil))
-  ([query entity alias on overrides]
-   (join* query :left-join entity alias on overrides)))
+   (left-join query entity alias on {}))
+  ([query entity alias on aliases]
+   (join* query :left-join entity alias on aliases)))
 
 (defn inner-join
   ([query entity on]
    (inner-join query entity (:table entity) on))
   ([query entity alias on]
-   (inner-join query entity alias on #{}))
-  ([query entity alias on overrides]
-   (join* query :join entity alias on overrides)))
+   (inner-join query entity alias on {}))
+  ([query entity alias on aliases]
+   (join* query :join entity alias on aliases)))
 
 (def hangouts
   {:fields #{:created-at :created-by :id :name :others-invite :when-suggestions :where-suggestions}
@@ -94,7 +93,7 @@
    :table :messages})
 
 (def moments
-  {:fields #{:created-at :created-by :date :hangout-id :id :locked :moment-window}
+  {:fields #{:created-at :created-by :date :hangout-id :id :locked :moment-time :moment-window}
    :table  :moments})
 
 (def moment-responses

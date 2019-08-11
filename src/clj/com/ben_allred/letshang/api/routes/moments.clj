@@ -14,7 +14,7 @@
   {:data {:response res.responses/response-validator}})
 
 (def ^:private lock-spec
-  {:data {:locked? res.locks/lock-validator}})
+  {:data res.locks/lock-validator})
 
 (defroutes routes
   (context "/moments/:moment-id" ^{:transformer transform-spec} _
@@ -28,7 +28,7 @@
     (PATCH "/" ^{:request-spec lock-spec} {{:keys [moment-id]} :params :keys [auth/user body db]}
       (if-let [moment (models.moments/lock-moment db
                                                   moment-id
-                                                  (get-in body [:data :locked?])
+                                                  (:data body)
                                                   (:id user))]
         [:http.status/ok {:data moment}]
         [:http.status/not-found {:message "Invitation not found for user"}]))))

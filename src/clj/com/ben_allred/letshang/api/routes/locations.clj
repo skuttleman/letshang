@@ -14,7 +14,7 @@
   {:data {:response res.responses/response-validator}})
 
 (def ^:private lock-spec
-  {:data {:locked? res.locks/lock-validator}})
+  {:data res.locks/lock-validator})
 
 (defroutes routes
   (context "/locations/:location-id" ^{:transformer transform-spec} _

@@ -14,7 +14,7 @@
       (dates/format :datetime/fs)))
 
 (defn load-config []
-  {:datastore  (rag-db/sql-database (repos/db-cfg))
+  {:datastore  (rag-db/sql-database repos/db-cfg)
    :migrations (rag-db/load-resources "db/migrations")})
 
 (defn migrate! []

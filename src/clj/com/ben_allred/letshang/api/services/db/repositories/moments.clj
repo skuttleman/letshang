@@ -27,6 +27,10 @@
   [_ _ value]
   (prep/date value))
 
+(defmethod repos/->sql-value [:moments :moment-time]
+  [_ _ value]
+  (prep/time value))
+
 (defn select-by [clause]
   (-> entities/moments
       (entities/select)

@@ -26,11 +26,9 @@
 
 (defn select
   ([query model]
-   (select query model identity))
+   (select query model nil))
   ([query model x-form]
-   [query
-    x-form
-    (map (partial repos/->api model))]))
+   [query x-form (map (partial repos/->api model))]))
 
 (defn insert-many [query entity model]
   (update query :values (comp (partial map (comp

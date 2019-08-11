@@ -36,7 +36,7 @@
                                 [:and
                                  [:= :invitations.hangout-id :hangouts.id]
                                  [:= :invitations.user-id user-id]]
-                                {:user-id    :invitee-id
+                                {:user-id    :invitee/invitee-id
                                  :created-by nil})
             (models/select ::repo.hangouts/model)
             (repos/exec! db)
@@ -55,7 +55,7 @@
                                 [:and
                                  [:= :invitations.hangout-id :hangouts.id]
                                  [:= :invitations.user-id user-id]]
-                                {:user-id    :invitee-id
+                                {:user-id    :invitee/invitee-id
                                  :created-by nil})
             (models/select ::repo.hangouts/model)
             (repos/exec! db)

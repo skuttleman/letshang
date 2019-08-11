@@ -6,7 +6,8 @@
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.services.db.repositories.hangouts :as repo.hangouts]
     [com.ben-allred.letshang.common.utils.colls :as colls]
-    [com.ben-allred.letshang.common.utils.logging :as log]))
+    [com.ben-allred.letshang.common.utils.logging :as log]
+    [next.jdbc :as jdbc]))
 
 (defn ^:private select* [db clause]
   (-> clause
@@ -46,5 +47,6 @@
             (models/modify entities/hangouts ::repo.hangouts/model)
             (repos/exec! db)
             (first)
+            (::jdbc/update-count)
             (pos?))
     (find-for-user db hangout-id user-id)))

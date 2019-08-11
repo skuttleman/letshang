@@ -41,7 +41,7 @@
                                 [:and
                                  [:= :invitations.hangout-id :hangouts.id]
                                  [:= :invitations.user-id user-id]]
-                                {:user-id    :invitee-id
+                                {:user-id    :invitee/invitee-id
                                  :created-by nil})
             (models/select ::repo.hangouts/model)
             (repos/exec! db)
@@ -62,24 +62,18 @@
                                 [:and
                                  [:= :invitations.hangout-id :hangouts.id]
                                  [:= :invitations.user-id user-id]]
-                                {:user-id    :invitee-id
+                                {:user-id    :invitee/invitee-id
                                  :created-by nil})
             (models/select ::repo.hangouts/model)
             (repos/exec! db)
             (colls/only!))]
     (when (or (= created-by user-id) (and when-suggestions? (= invitee-id user-id)))
-      (-> moment
-          (assoc :created-by user-id :hangout-id hangout-id)
-          (repo.moments/insert)
-          (models/insert-many entities/moments ::repo.moments/model)
-          (entities/on-conflict-nothing [:hangout-id :date :moment-window])
-          (repos/exec! db)
-          (colls/only!))
       (let [moment-id (-> moment
-                          (assoc :hangout-id hangout-id)
-                          (prepare-all)
-                          (repo.moments/moment-window-clause)
-                          (->> (select* db))
+                          (assoc :created-by user-id :hangout-id hangout-id)
+                          (repo.moments/insert)
+                          (models/insert-many entities/moments ::repo.moments/model)
+                          (entities/on-conflict-nothing [:hangout-id :date :moment-window])
+                          (repos/exec! db)
                           (colls/only!)
                           (:id))]
         (models.moment-responses/respond db {:moment-id moment-id
@@ -91,7 +85,7 @@
              (models.moment-responses/with-moment-responses db)
              (colls/find (comp #{moment-id} :id)))))))
 
-(defn lock-moment [db moment-id locked? user-id]
+(defn lock-moment [db moment-id patch user-id]
   (when (-> moment-id
             (repo.moments/id-clause)
             (repo.hangouts/creator-clause user-id)
@@ -101,7 +95,7 @@
             (seq))
     (-> moment-id
         (repo.moments/id-clause)
-        (->> (repo.moments/modify {:locked? locked?}))
+        (->> (repo.moments/modify (select-keys patch #{:locked? :moment-time})))
         (models/modify entities/moments ::repo.moments/model)
         (repos/exec! db))
     (->> moment-id

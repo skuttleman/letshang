@@ -11,7 +11,7 @@
 
 (defn upsert [user-id]
   (let [session-id (rand/base64 60)]
-    (entities/upsert entities/sessions [{:id session-id :user-id user-id}] [:user-id] nil)))
+    (entities/upsert entities/sessions [{:id session-id :user-id user-id}] [:user-id] [:user-id])))
 
 (defn id-clause
   ([clause id]

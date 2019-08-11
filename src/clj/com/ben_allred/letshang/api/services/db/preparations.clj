@@ -28,4 +28,6 @@
 
 (def moments-window (for-type :moments-window))
 
+(def time (for-type :time))
+
 (def user-response (for-type :user-response))

@@ -39,11 +39,11 @@
         (cond-> (api? request) (content/prepare #{"content-type"} (get headers "accept"))))))
 
 (defn with-jwt [handler]
-  (fn [{:keys [headers uri] :as request}]
+  (fn [{:keys [headers params uri] :as request}]
     (let [{:keys [user sign-up]} (when (or (re-find #"^(/api|/auth|/ws)" uri)
                                            (re-find #"text/html" (str (get headers "accept"))))
                                    (some-> request
-                                           (get-in [:cookies "auth-token" :value])
+                                           (get-in [:cookies "auth-token" :value] (:auth-token params))
                                            (jwt/decode)
                                            (:data)))]
       (-> request
