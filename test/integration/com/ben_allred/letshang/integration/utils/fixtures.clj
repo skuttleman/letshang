@@ -7,22 +7,27 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.integration.utils.helpers :as h]
     [immutant.web :as web]
-    [jdbc.pool.c3p0 :as c3p0])
+    [jdbc.pool.c3p0 :as c3p0]
+    [clojure.string :as string])
   (:import
     (java.io Closeable)))
 
 (defn with-db [test-fn]
-  (repos/exec-raw! repos/db-spec (format "DROP DATABASE IF EXISTS %s" "lets_hang_test") {:transaction? false})
-  (let [current-db-name (env/get :db-name)]
-    (alter-var-root #'env/get assoc :db-name "lets_hang_test")
-    (repos/exec-raw! repos/db-spec (format "CREATE DATABASE %s" "lets_hang_test") {:transaction? false})
-    (with-redefs [repos/db-spec (c3p0/make-datasource-spec (repos/db-cfg))]
+  (let [test-db "lets_hang_test"
+        regex (re-pattern (env/get :db-name))]
+    (repos/exec-raw! (:datasource repos/db-spec) (format "DROP DATABASE IF EXISTS %s" test-db) {:auto-commit true :transaction false})
+    (repos/exec-raw! (:datasource repos/db-spec) (format "CREATE DATABASE %s" test-db) {:auto-commit true :transaction false})
+    (let [cfg repos/db-cfg
+          spec repos/db-spec]
+      (alter-var-root #'repos/db-cfg update :subname string/replace regex test-db)
+      (alter-var-root #'repos/db-spec (fn [_] (c3p0/make-datasource-spec repos/db-cfg)))
       (try
         (migrations/migrate!)
         (test-fn)
         (finally
           (.close ^Closeable repos/db-spec)
-          (alter-var-root #'env/get assoc :db-name current-db-name))))))
+          (alter-var-root #'repos/db-cfg (constantly cfg))
+          (alter-var-root #'repos/db-spec (constantly spec)))))))
 
 (defn with-seed
   ([]
@@ -43,5 +48,7 @@
    (fn [test-fn]
      (with-redefs [env/get (assoc env/get :base-url (str "http://localhost:" port))]
        (let [server (server/-main "PORT" port)]
-         (test-fn)
-         (web/stop server))))))
+         (try
+           (test-fn)
+           (finally
+             (web/stop server))))))))

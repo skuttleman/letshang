@@ -1,7 +1,8 @@
-(ns com.ben-allred.letshang.common.utils.encoders.json
+(ns com.ben-allred.letshang.common.utils.serde.json
   (:require
     #?(:clj [jsonista.core :as jsonista])
-    [com.ben-allred.letshang.common.utils.keywords :as keywords]))
+    [com.ben-allred.letshang.common.utils.keywords :as keywords]
+    [com.ben-allred.letshang.common.utils.serde.core :as serde]))
 
 (def ^:private mapper
   #?(:clj  (jsonista/object-mapper
@@ -16,3 +17,10 @@
 (defn encode [value]
   #?(:clj  (jsonista/write-value-as-string value)
      :cljs (.stringify js/JSON (clj->js value))))
+
+(def serde
+  (reify serde/ISerDe
+    (serialize [_ value]
+      (encode value))
+    (deserialize [_ value]
+      (decode value))))

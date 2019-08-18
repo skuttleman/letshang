@@ -12,7 +12,7 @@
                      (dom/prevent-default e)
                      (when-not disabled
                        (-> form
-                           (forms/persist!)
+                           (forms/save!)
                            (cond->
                              on-saved (ch/then on-saved)
                              on-failed (ch/catch on-failed)))))}]

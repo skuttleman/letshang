@@ -56,16 +56,6 @@
                  (http/get)
                  (act/request dispatch :moments)))))
 
-(defn lock [lock-type id body]
-  (fn [[dispatch]]
-    #?(:clj  (ch/resolve)
-       :cljs (let [[route param kwd-ns] (case lock-type
-                                          :moment [:api/moment :moment-id :moment]
-                                          :location [:api/location :location-id :location])]
-               (-> (nav/path-for route {:route-params {param id}})
-                   (http/patch {:body body})
-                   (act/request dispatch kwd-ns))))))
-
 (defn save-message [hangout-id body]
   (fn [[dispatch]]
     #?(:clj  (ch/resolve)
@@ -81,29 +71,19 @@
                                           :moment [:api/moment.responses :moment-id :response.moment]
                                           :location [:api/location.responses :location-id :response.location])]
                (-> (nav/path-for route {:route-params {param id}})
-                   (http/patch {:body body})
+                   (http/put {:body body})
                    (act/request dispatch kwd-ns))))))
 
-(defn suggest-who [hangout-id suggestion]
+(defn suggest [suggestion-type hangout-id suggestion]
   (fn [[dispatch]]
     #?(:clj  (ch/resolve)
-       :cljs (-> (nav/path-for :api/hangout.invitations {:route-params {:hangout-id hangout-id}})
-                 (http/post {:body suggestion})
-                 (act/request dispatch :suggestions.who)))))
-
-(defn suggest-when [hangout-id suggestion]
-  (fn [[dispatch]]
-    #?(:clj  (ch/resolve)
-       :cljs (-> (nav/path-for :api/hangout.moments {:route-params {:hangout-id hangout-id}})
-                 (http/post {:body suggestion})
-                 (act/request dispatch :suggestions.when)))))
-
-(defn suggest-where [hangout-id suggestion]
-  (fn [[dispatch]]
-    #?(:clj  (ch/resolve)
-       :cljs (-> (nav/path-for :api/hangout.locations {:route-params {:hangout-id hangout-id}})
-                 (http/post {:body suggestion})
-                 (act/request dispatch :suggestions.where)))))
+       :cljs (let [[route kwd-ns] (case suggestion-type
+                                    :who [:api/hangout.invitations :suggestions.who]
+                                    :when [:api/hangout.moments :suggestions.when]
+                                    :where [:api/hangout.locations :suggestions.where])]
+               (-> (nav/path-for route {:route-params {:hangout-id hangout-id}})
+                   (http/put {:body suggestion})
+                   (act/request dispatch kwd-ns))))))
 
 (defn update-hangout [hangout-id hangout]
   (fn [[dispatch]]

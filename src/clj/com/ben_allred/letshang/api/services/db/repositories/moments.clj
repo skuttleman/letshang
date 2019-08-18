@@ -9,15 +9,13 @@
 (defmethod repos/->api ::model
   [_ moment]
   (-> moment
-      (set/rename-keys {:moment-window :window
-                        :locked        :locked?})
+      (set/rename-keys {:moment-window :window})
       (maps/update-maybe :window keyword)))
 
 (defmethod repos/->db ::model
   [_ moment]
   (-> moment
-      (set/rename-keys {:window  :moment-window
-                        :locked? :locked})))
+      (set/rename-keys {:window :moment-window})))
 
 (defmethod repos/->sql-value [:moments :moment-window]
   [_ _ value]

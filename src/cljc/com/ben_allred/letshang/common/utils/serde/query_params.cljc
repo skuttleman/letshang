@@ -1,7 +1,8 @@
-(ns com.ben-allred.letshang.common.utils.encoders.query-params
+(ns com.ben-allred.letshang.common.utils.serde.query-params
   (:require
     [clojure.string :as string]
-    [com.ben-allred.letshang.common.utils.keywords :as keywords])
+    [com.ben-allred.letshang.common.utils.keywords :as keywords]
+    [com.ben-allred.letshang.common.utils.serde.core :as serde])
   #?(:clj
      (:import
        (java.net URLEncoder))))
@@ -62,7 +63,13 @@
        (string/join "&")))
 
 (defn decode [s]
-  (when s
-    (->> (string/split s #"&")
-         (map (comp vec #(string/split % #"=")))
-         (reduce (fn [qp [k v]] (into qp (decodify k v))) {}))))
+  (->> (string/split s #"&")
+       (map (comp vec #(string/split % #"=")))
+       (reduce (fn [qp [k v]] (into qp (decodify k v))) {})))
+
+(def serde
+  (reify serde/ISerDe
+    (serialize [_ value]
+      (encode value))
+    (deserialize [_ value]
+      (decode value))))

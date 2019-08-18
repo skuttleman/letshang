@@ -5,6 +5,7 @@
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.fns #?(:clj :refer :cljs :refer-macros) [=>]]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.strings :as strings]
     [com.ben-allred.letshang.common.views.components.core :as components]))
 
 (defn ^:private modify-coll [xform coll]
@@ -63,6 +64,18 @@
       (fn [attrs & args]
         (into [component (assoc attrs :id id)] args)))))
 
+(defn ^:private with-trim-blur [component]
+  (fn [attrs & args]
+    (-> attrs
+        (update :on-blur (fn [on-blur]
+                           (fn [e]
+                             (when-let [on-change (:on-change attrs)]
+                               (on-change (strings/trim-to-nil (:value attrs))))
+                             (when on-blur
+                               (on-blur e)))))
+        (->> (conj [component]))
+        (into args))))
+
 (def ^{:arglists '([attrs options])} select
   (with-auto-focus
     (with-id
@@ -92,32 +105,34 @@
 (def ^{:arglists '([attrs])} textarea
   (with-auto-focus
     (with-id
-      (fn [{:keys [disabled on-change value] :as attrs}]
-        [form-field
-         attrs
-         [:textarea.textarea
-          (-> {:value    value
-               :disabled #?(:clj true :cljs disabled)
-               #?@(:cljs [:on-change (comp on-change dom/target-value)])}
-              (merge (select-keys attrs #{:class :id :on-blur :ref})))
-          #?(:clj value)]]))))
+      (with-trim-blur
+        (fn [{:keys [disabled on-change value] :as attrs}]
+          [form-field
+           attrs
+           [:textarea.textarea
+            (-> {:value    value
+                 :disabled #?(:clj true :cljs disabled)
+                 #?@(:cljs [:on-change (comp on-change dom/target-value)])}
+                (merge (select-keys attrs #{:class :id :on-blur :ref})))
+            #?(:clj value)]])))))
 
 (def ^{:arglists '([attrs])} input
   (with-auto-focus
     (with-id
-      (fn [{:keys [disabled on-change type] :as attrs}]
-        [form-field
-         attrs
-         [:input.input
-          (-> {:type     (or type :text)
-               :disabled #?(:clj true :cljs disabled)
-               #?@(:cljs [:on-change (comp on-change dom/target-value)])}
-              (merge (select-keys attrs #{:class :id :on-blur :ref :value})))]]))))
+      (with-trim-blur
+        (fn [{:keys [disabled on-change type] :as attrs}]
+          [form-field
+           attrs
+           [:input.input
+            (-> {:type     (or type :text)
+                 :disabled #?(:clj true :cljs disabled)
+                 #?@(:cljs [:on-change (comp on-change dom/target-value)])}
+                (merge (select-keys attrs #{:class :id :on-blur :ref :value})))]])))))
 
 (def ^{:arglists '([attrs])} checkbox
   (with-auto-focus
     (with-id
-      (fn [{:keys [disabled id on-change value] :as attrs}]
+      (fn [{:keys [disabled on-change value] :as attrs}]
         [form-field
          attrs
          [:input.checkbox
@@ -127,10 +142,25 @@
                #?@(:cljs [:on-change #(on-change (not value))])}
               (merge (select-keys attrs #{:class :id :on-blur :ref})))]]))))
 
-(defn phone-number [attrs]
-  [input (-> attrs
-             (update :value transformers/phone->view)
-             (update :on-change comp transformers/phone->model))])
+(def ^{:arglists '([attrs])} button
+  (with-auto-focus
+    (with-id
+      (fn [{:keys [disabled on-change value] :as attrs} true-display false-display]
+        [form-field
+         attrs
+         [:button.button
+          (-> {:type     :button
+               :disabled #?(:clj true :cljs disabled)
+               #?@(:cljs [:on-click #(on-change (not value))])}
+              (merge (select-keys attrs #{:class :id :on-blur :ref})))
+          (if value true-display false-display)]]))))
+
+(def phone-number
+  (with-trim-blur
+    (fn [attrs]
+      [input (-> attrs
+                 (update :value transformers/phone->view)
+                 (update :on-change comp transformers/phone->model))])))
 
 (defn button-group [{:keys [class disabled on-change value] :as attrs} options]
   [form-field

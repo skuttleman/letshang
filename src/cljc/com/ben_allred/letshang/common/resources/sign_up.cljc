@@ -11,25 +11,28 @@
     [com.ben-allred.letshang.common.services.store.actions.users :as act.users]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.services.validators :as validators]
+    [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.chans :as ch]))
 
 (def ^:private model->source
   (partial hash-map :data))
 
-(defn ^:private api [user]
-  (reify
-    forms/IFetch
-    (fetch [_]
-      (ch/resolve user))
-    forms/ISave
-    (save! [_ model]
-      (-> model
-          (model->source)
-          (act.users/register-user)
-          (store/dispatch)
-          (ch/peek (fn [_]
-                     (nav/go-to! (nav/path-for :auth/login {:query-params (select-keys model #{:email})})))
-                   (res/toast-error "Something went wrong."))))))
+(defn ^:private api []
+  (let [ready? (r/atom true)]
+    (reify
+      forms/ISync
+      (save! [_ {:keys [model]}]
+        (reset! ready? false)
+        (-> model
+            (model->source)
+            (act.users/register-user)
+            (store/dispatch)
+            (ch/peek (fn [_] (reset! ready? true)))
+            (ch/peek (fn [_]
+                       (nav/go-to! (nav/path-for :auth/login {:query-params (select-keys model #{:email})})))
+                     (res/toast-error "Something went wrong."))))
+      (ready? [_]
+        @ready?))))
 
 (def validator
   (f/validator
@@ -55,5 +58,5 @@
   (forms/with-attrs attrs form path nil view->model))
 
 (defn form [new-user]
-  #?(:cljs    (forms.std/create (api new-user) validator)
+  #?(:cljs    (forms.std/create new-user (api) validator)
      :default (forms.noop/create new-user)))

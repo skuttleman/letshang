@@ -7,6 +7,7 @@
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.services.store.actions.hangouts :as act.hangouts]
     [com.ben-allred.letshang.common.services.store.core :as store]
+    [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.dates :as dates]
     [com.ben-allred.letshang.common.utils.logging :as log]))
@@ -35,19 +36,21 @@
           {:date dates/->inst})))
 
 (defn ^:private suggest-api [initial action-fn]
-  (reify
-    forms/IFetch
-    (fetch [_]
-      (ch/resolve initial))
-    forms/ISave
-    (save! [_ model]
-      (-> model
-          (model->source)
-          (action-fn)
-          (store/dispatch)
-          (ch/peek (constantly nil)
-                   (res/toast-error "Something went wrong."))
-          (ch/then (constantly initial))))))
+  (let [ready? (r/atom true)]
+    (reify
+      forms/ISync
+      (save! [_ {:keys [model]}]
+        (reset! ready? false)
+        (-> model
+            (model->source)
+            (action-fn)
+            (store/dispatch)
+            (ch/peek (fn [_] (reset! ready? true)))
+            (ch/peek (constantly nil)
+                     (res/toast-error "Something went wrong."))
+            (ch/then (constantly initial))))
+      (ready? [_]
+        @ready?))))
 
 (defn ^:private sorter* [k]
   (fn [{response-counts-1 :response-counts value-1 k} {response-counts-2 :response-counts value-2 k}]
@@ -64,16 +67,19 @@
 
 (def location-sorter (sorter* :name))
 
+(def ^:private default-when
+  {:window :any-time})
+
 (defn who-form [hangout-id]
-  #?(:cljs (forms.std/create (suggest-api nil (partial act.hangouts/suggest-who hangout-id)) who-validator)
+  #?(:cljs (forms.std/create nil (suggest-api nil (partial act.hangouts/suggest :who hangout-id)) who-validator)
      :default (forms.noop/create nil)))
 
 (defn when-form [hangout-id]
-  #?(:cljs (forms.std/create (suggest-api {:window :any-time} (partial act.hangouts/suggest-when hangout-id)) when-validator)
+  #?(:cljs (forms.std/create default-when (suggest-api default-when (partial act.hangouts/suggest :when hangout-id)) when-validator)
      :default (forms.noop/create nil)))
 
 (defn where-form [hangout-id]
-  #?(:cljs (forms.std/create (suggest-api nil (partial act.hangouts/suggest-where hangout-id)) where-validator)
+  #?(:cljs (forms.std/create nil (suggest-api nil (partial act.hangouts/suggest :where hangout-id)) where-validator)
      :default (forms.noop/create nil)))
 
 (defn with-attrs

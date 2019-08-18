@@ -6,17 +6,12 @@
     [com.ben-allred.letshang.ui.services.forms.shared :as forms.shared]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(defn create [api validator]
-  (let [state (r/atom nil)
+(defn create [model sync validator]
+  (let [state (r/atom (forms.shared/init validator model))
         validator (or validator (constantly nil))]
-    (-> api
-        (forms/fetch)
-        (forms.shared/request* state validator))
     (reify
-      forms/IPersist
-      (attempted? [_]
-        (:persist-attempted? @state))
-      (persist! [this]
+      forms/ISync
+      (save! [this]
         (swap! state assoc :persist-attempted? true)
         (-> (cond
               (not (forms/ready? this))
@@ -31,11 +26,9 @@
               :else
               (let [model @this]
                 (swap! state assoc :status :pending)
-                (-> api
-                    (forms/save! model)
+                (-> sync
+                    (forms/save! {:model model})
                     (forms.shared/request* state validator))))))
-
-      forms/ISync
       (ready? [_]
         (= :ready (:status @state)))
 
@@ -47,11 +40,15 @@
           (not= current initial)))
 
       forms/ITrack
+      (attempted? [_]
+        (:persist-attempted? @state))
       (visit! [_ path]
         (swap! state assoc-in [:working path :visited?] true)
         nil)
       (visited? [_ path]
-        (get-in @state [:working path :visited?]))
+        (let [{:keys [working persist-attempted?]} @state]
+          (or persist-attempted?
+              (get-in working [path :visited?]))))
 
       forms/IValidate
       (errors [this]
@@ -62,17 +59,10 @@
                        :when (= value (get-in model path))]
                    [path errors'])
                  (reduce (fn [m [path e]] (update-in m path concat e)) errors)))))
-      (valid? [this]
-        (empty? (forms/errors this)))
 
       IDeref
       (-deref [_]
         (:model @state))
-
-      IReset
-      (-reset! [_ model]
-        (reset! state (forms.shared/init validator model))
-        nil)
 
       ISwap
       (-swap! [_ f]

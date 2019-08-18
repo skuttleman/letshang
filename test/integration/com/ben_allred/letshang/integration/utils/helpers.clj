@@ -1,19 +1,16 @@
 (ns com.ben-allred.letshang.integration.utils.helpers
   (:require
     [clojure.core.async :as async]
-    [clojure.core.async.impl.protocols :as async.protocols]
     [clojure.string :as string]
     [com.ben-allred.letshang.api.services.db.migrations :as migrations]
     [com.ben-allred.letshang.api.services.navigation :as nav]
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.services.http :as http]
-    [com.ben-allred.letshang.common.utils.encoders.edn :as edn]
-    [com.ben-allred.letshang.common.utils.encoders.transit :as transit]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.serde.edn :as edn]
+    [com.ben-allred.letshang.common.utils.serde.transit :as transit]
     [com.ben-allred.letshang.integration.utils.http :as test.http]
-    [gniazdo.core :as gniazdo])
-  (:import
-    (java.net URI)))
+    [ws-client-cljc.core :as ws*]))
 
 (defn with-timeout
   ([chan]
@@ -35,9 +32,9 @@
   (let [token (-> (test.http/request* http/get
                                       nil
                                       (nav/path-for :auth/login {:query-params {:email email}})
-                                      nil
+                                      {:response? true}
                                       false)
-                  (get-in [3 :cookies "auth-token" :value]))]
+                  (get-in [1 :cookies "auth-token" :value]))]
     (-> (test.http/request* http/get
                             [token]
                             (nav/path-for :ui/home)
@@ -101,56 +98,26 @@
 
 (defn suggest-who [token hangout-id user-ids]
   (-> (nav/path-for :api/hangout.invitations {:route-params {:hangout-id hangout-id}})
-      (test.http/post token {:body {:data {:invitation-ids user-ids}}})
+      (test.http/put token {:body {:data {:invitation-ids user-ids}}})
       (http*)))
 
 (defn suggest-when [token hangout-id data]
   (-> (nav/path-for :api/hangout.moments {:route-params {:hangout-id hangout-id}})
-      (test.http/post token {:body {:data data}})
+      (test.http/put token {:body {:data data}})
       (http*)))
 
 (defn suggest-where [token hangout-id data]
   (-> (nav/path-for :api/hangout.locations {:route-params {:hangout-id hangout-id}})
-      (test.http/post token {:body {:data data}})
+      (test.http/put token {:body {:data data}})
       (http*)))
 
 (defn ws-connect [[auth-token csrf-token]]
   (let [url (-> (env/get :base-url)
                 (string/replace #"http" "ws")
-                (str (nav/path-for :api/events {:query-params {:x-csrf-token csrf-token}})))
-        uri (URI. url)
-        ch (async/chan 64)
-        open-ch (async/chan)
-        client (doto (gniazdo/client uri)
-                 (.start))
-        ws (gniazdo/connect url
-                            :client client
-                            :headers {"cookie" (str "auth-token=" auth-token)}
-                            :on-receive (fn [s]
-                                          (let [msg (transit/decode s)]
-                                            (when (not= [:ws/ping] msg)
-                                              (async/put! ch msg))))
-                            :on-connect (partial async/put! open-ch))]
-    (async/<!! open-ch)
-    (async/close! open-ch)
-    (reify
-      async.protocols/ReadPort
-      (take! [_ handler]
-        (async.protocols/take! (with-timeout ch) handler))
-
-      async.protocols/WritePort
-      (put! [_ msg _]
-        (gniazdo/send-msg ws (transit/encode msg))
-        (future
-          (Thread/sleep 10)
-          true))
-
-      async.protocols/Channel
-      (close! [this]
-        (when-not (async.protocols/closed? this)
-          (.stop client)
-          (gniazdo/close ws)))
-      (closed? [_]
-        (and (not (.isRunning client))
-             (not (.isStarted client))
-             (not (.isStarting client)))))))
+                (str (nav/path-for :api/events {:query-params {:x-csrf-token csrf-token
+                                                               :auth-token   auth-token}})))]
+    (ws*/connect! url {:in-buf-or-n  100
+                       :out-buf-or-n 100
+                       :in-xform     (comp (map transit/decode)
+                                           (remove #{[:ws/ping]}))
+                       :out-xform    (map transit/encode)})))

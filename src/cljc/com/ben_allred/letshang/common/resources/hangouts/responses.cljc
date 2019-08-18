@@ -7,23 +7,27 @@
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.services.store.actions.hangouts :as act.hangouts]
     [com.ben-allred.letshang.common.services.store.core :as store]
+    [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(defn ^:private response-api [response-type model]
-  (reify
-    forms/IFetch
-    (fetch [_]
-      (ch/resolve model))
-    forms/ISave
-    (save! [_ {:keys [response]}]
-      (-> {:data {:response response}}
-          (->> (act.hangouts/set-response response-type (:id model)))
-          (store/dispatch)
-          (ch/peek (constantly nil)
-                   (res/toast-error "Something went wrong."))))))
+(defn ^:private response-api [response-type {model-id :id}]
+  (let [ready? (r/atom true)]
+    (reify
+      forms/ISync
+      (save! [_ {:keys [model]}]
+        (reset! ready? false)
+        (-> {:data (select-keys model #{:response})}
+            (->> (act.hangouts/set-response response-type model-id))
+            (store/dispatch)
+            (ch/peek #(log/spy %))
+            (ch/peek (fn [_] (reset! ready? true)))
+            (ch/peek (constantly nil)
+                     (res/toast-error "Something went wrong."))))
+      (ready? [_]
+        @ready?))))
 
 (def response-validator
   (f/validator
@@ -72,7 +76,7 @@
 
 (defn form [response-type model]
   #?(:clj  (forms.noop/create nil)
-     :cljs (forms.live/create (response-api response-type model) nil)))
+     :cljs (forms.live/create model (response-api response-type model) (constantly nil))))
 
 (defn with-attrs
   ([form path]

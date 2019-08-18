@@ -13,7 +13,7 @@
 
 (defn parse-int [value]
   #?(:clj  (try (Long/parseLong (str value))
-                (catch Throwable ex
+                (catch Throwable _
                   Double/NaN))
      :cljs (js/parseInt value)))
 

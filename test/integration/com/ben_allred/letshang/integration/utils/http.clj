@@ -27,6 +27,9 @@
 (defn post [path auth-token & [request]]
   (request* http/post auth-token path request false))
 
+(defn put [path auth-token & [request]]
+  (request* http/put auth-token path request false))
+
 (defn get! [path auth-token & [request]]
   (second (request* http/get auth-token path request true)))
 
@@ -35,3 +38,6 @@
 
 (defn post! [path auth-token & [request]]
   (second (request* http/post auth-token path request true)))
+
+(defn put! [path auth-token & [request]]
+  (second (request* http/put auth-token path request true)))

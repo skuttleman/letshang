@@ -4,19 +4,16 @@
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log :include-macros true]
     [com.ben-allred.letshang.common.views.core :as views]
-    [com.ben-allred.letshang.ui.services.ws :as ws]
     [reagent.core :as r]
-    com.ben-allred.letshang.ui.services.navigation))
+    com.ben-allred.letshang.ui.services.navigation
+    com.ben-allred.letshang.ui.services.ws))
 
 (enable-console-print!)
-
-(defonce ^:private init (delay (ws/connect! store/dispatch)))
 
 (defn ^:private app []
   [views/app (store/get-state)])
 
 (defn ^:export mount! []
-  @init
   (r/render
     [app]
     (.getElementById dom/document "app")))

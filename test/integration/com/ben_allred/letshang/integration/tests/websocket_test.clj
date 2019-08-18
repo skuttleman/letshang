@@ -24,12 +24,13 @@
                             (colls/find (comp #{"user1@example.test"} :email :creator))
                             (:id))]
         (async/>!! ws [:subscriptions/subscribe [:hangout hangout-id]])
+        (is (= [:subscriptions/subscribed [:hangout hangout-id]] (async/<!! (h/with-timeout ws))))
 
         (testing "and when creating a message"
           (let [message (h/create-message token hangout-id {:body "This is a message"})]
 
             (testing "receives the message via websocket"
-              (let [msg (async/<!! ws)]
+              (let [msg (async/<!! (h/with-timeout ws))]
                 (is (= [:ws/message {:topic [:hangout hangout-id] :body [:messages/new message]}]
                        msg))))))
 
@@ -43,12 +44,13 @@
                             (colls/find (comp not #{"user1@example.test"} :email :creator))
                             (:id))]
         (async/>!! ws [:subscriptions/subscribe [:hangout hangout-id]])
+        (is (= [:subscriptions/subscribed [:hangout hangout-id]] (async/<!! (h/with-timeout ws))))
 
         (testing "and when creating a message"
           (let [message (h/create-message token hangout-id {:body "This is a message"})]
 
             (testing "receives the message via websocket"
-              (let [msg (async/<!! ws)]
+              (let [msg (async/<!! (h/with-timeout ws))]
                 (is (= [:ws/message {:topic [:hangout hangout-id] :body [:messages/new message]}]
                        msg))))))
 
@@ -63,6 +65,7 @@
                             (colls/find (comp #{"User 1 hangout 1"} :name))
                             (:id))]
         (async/>!! ws [:subscriptions/subscribe [:hangout hangout-id]])
+        (is (= [:subscriptions/unsubscribed [:hangout hangout-id]] (async/<!! (h/with-timeout ws))))
 
         (testing "and when creating a message"
           (h/create-message user-4-token hangout-id {:body "This is a message"})

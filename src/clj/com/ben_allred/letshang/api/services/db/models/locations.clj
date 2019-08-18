@@ -81,25 +81,6 @@
              (select-by-hangout-id db)
              (colls/find (comp #{location-id} :id)))))))
 
-(defn lock-location [db location-id locked? user-id]
-  (when (-> location-id
-            (repo.locations/id-clause)
-            (repo.hangouts/creator-clause user-id)
-            (repo.locations/select-by)
-            (entities/inner-join entities/hangouts [:= :hangouts.id :locations.hangout-id])
-            (repos/exec! db)
-            (seq))
-    (-> location-id
-        (repo.locations/id-clause)
-        (->> (repo.locations/modify {:locked? locked?}))
-        (models/modify entities/locations ::repo.locations/model)
-        (repos/exec! db))
-    (->> location-id
-         (repo.locations/id-clause)
-         (select* db)
-         (models.location-responses/with-location-responses db)
-         (colls/only!))))
-
 (defn set-response [db location-id response user-id]
   (when (-> location-id
             (repo.locations/id-clause)

@@ -8,12 +8,14 @@
     [clojure.set :as set]
     [com.ben-allred.letshang.common.services.content :as content]
     [com.ben-allred.letshang.common.services.env :as env]
-    [com.ben-allred.letshang.common.utils.encoders.edn :as edn]
-    [com.ben-allred.letshang.common.utils.encoders.json :as json]
-    [com.ben-allred.letshang.common.utils.encoders.transit :as transit]
+    [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log #?@(:cljs [:include-macros true])]
-    [com.ben-allred.letshang.common.utils.maps :as maps]))
+    [com.ben-allred.letshang.common.utils.maps :as maps]
+    [com.ben-allred.letshang.common.utils.serde.core :as serde]
+    [com.ben-allred.letshang.common.utils.serde.edn :as edn]
+    [com.ben-allred.letshang.common.utils.serde.json :as json]
+    [com.ben-allred.letshang.common.utils.serde.transit :as transit]))
 
 (def ^:private header-keys #{:content-type :accept})
 
@@ -76,14 +78,13 @@
 (def ^{:arglists '([response])} server-error?
   (partial check-status 500 599))
 
-(defn ^:private handle-ui-error [ch]
+(defn ^:private handle-ui-error! [ch]
   #?(:clj  ch
      :cljs (async/go
-             (let [[_ _ status :as result] (async/<! ch)]
+             (let [[_ {:keys [status]} :as result] (async/<! ch)]
                (case status
                  :http.status/unauthorized (nav/go-to! (nav/path-for :auth/logout))
-                 nil)
-               result))))
+                 result)))))
 
 (defn ^:private client [request]
   #?(:clj  (let [cs (clj-http.cookies/cookie-store)
@@ -104,21 +105,23 @@
 (defn ^:private request* [chan]
   (async/go
     (let [ch-response (async/<! chan)
-          {:keys [body headers status] :as response} (-> (if-let [data (ex-data ch-response)]
-                                                           data
-                                                           ch-response)
-                                                         (update :headers (partial maps/map-keys keyword)))
-          status (status->kw status status)
-          body (case (when (string? body) (:content-type headers))
-                 "application/transit+json" (transit/decode body)
-                 "application/edn" (edn/decode body)
-                 "application/json" (json/decode body)
-                 body)]
-      (if (success? response)
-        [:success body status response]
-        [:error body status response]))))
+          {:keys [headers] :as response} (-> (if-let [data (ex-data ch-response)]
+                                               data
+                                               ch-response)
+                                             (update :headers (partial maps/map-keys keyword)))
+          serde (case (:content-type headers)
+                  "application/transit+json" transit/serde
+                  "application/edn" edn/serde
+                  "application/json" json/serde
+                  nil)]
+      (-> response
+          (update :status #(status->kw % %))
+          (update :body #(cond->> %
+                           (and serde (string? %)) (serde/deserialize serde)))
+          (->> (conj [(if (success? response) :success :error)]))))))
 
-(defn ^:private go [method url request]
+(defn ^:private go [method url {:keys [response?] :as request}]
+  (assert url "Cannot make http request without specifying URI")
   (let [content-type (if (env/get :dev?) "application/edn" "application/transit+json")
         headers (merge {:content-type content-type :accept content-type}
                        (:headers request))]
@@ -128,12 +131,14 @@
         (update :headers merge headers)
         (client)
         (request*)
-        (handle-ui-error))))
+        (handle-ui-error!)
+        (cond->
+          (not response?) (ch/then :body)))))
 
 (defn get
   ([url]
    (get url nil))
-  ([url & [request]]
+  ([url request]
    (go :get url request)))
 
 (defn post [url request]

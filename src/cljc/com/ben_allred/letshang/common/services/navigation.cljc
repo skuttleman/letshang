@@ -2,12 +2,12 @@
   (:require
     [bidi.bidi :as bidi]
     [clojure.string :as string]
+    [com.ben-allred.letshang.common.utils.fns #?(:clj :refer :cljs :refer-macros) [=>]]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.encoders.query-params :as qp]
-    [com.ben-allred.letshang.common.utils.fns #?(:clj :refer :cljs :refer-macros) [=>]]
-    [com.ben-allred.letshang.common.utils.uuids :as uuids]
-    [com.ben-allred.letshang.common.utils.maps :as maps]))
+    [com.ben-allred.letshang.common.utils.maps :as maps]
+    [com.ben-allred.letshang.common.utils.serde.query-params :as qp]
+    [com.ben-allred.letshang.common.utils.uuids :as uuids]))
 
 (def app-routes
   [""
@@ -30,11 +30,17 @@
           ["/messages" :api/hangout.messages]
           ["/moments" :api/hangout.moments]]]]]
       ["/invitations"
-       [[["/" [uuids/regex :invitation-id]] :api/invitation]]]
+       [[["/" [uuids/regex :invitation-id]]
+         [["" :api/invitation]
+          ["/responses" :api/invitation.responses]]]]]
       ["/locations"
-       [[["/" [uuids/regex :location-id]] :api/location]]]
+       [[["/" [uuids/regex :location-id]]
+         [["" :api/location]
+          ["/responses" :api/location.responses]]]]]
       ["/moments"
-       [[["/" [uuids/regex :moment-id]] :api/moment]]]
+       [[["/" [uuids/regex :moment-id]]
+         [["" :api/moment]
+          ["/responses" :api/moment.responses]]]]]
       ["/users"
        [["/associates" :api/associates]]]]]
 
@@ -55,7 +61,7 @@
                                            (maps/update-maybe :section keyword)))))
 
 (defn match-route [routes path]
-  (let [qp (qp/decode (second (string/split path #"\?")))]
+  (let [qp (some->> (string/split path #"\?") (second) (qp/decode))]
     (-> routes
         (bidi/match-route path)
         (cond-> (seq qp) (assoc :query-params qp))

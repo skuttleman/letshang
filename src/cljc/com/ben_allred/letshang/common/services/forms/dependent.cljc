@@ -8,15 +8,11 @@
 
 (defn create [form isync]
   (reify
-    forms/IPersist
-    (attempted? [_]
-      (forms/attempted? form))
-    (persist! [_]
-      (if (forms/ready? isync)
-        (forms/persist! form)
-        (ch/reject)))
-
     forms/ISync
+    (save! [_]
+      (if (forms/ready? isync)
+        (forms/save! form)
+        (ch/reject)))
     (ready? [_]
       (and (forms/ready? isync)
            (forms/ready? form)))
@@ -28,6 +24,8 @@
       (forms/changed? form path))
 
     forms/ITrack
+    (attempted? [_]
+      (forms/attempted? form))
     (visit! [_ path]
       (forms/visit! form path))
     (visited? [_ path]
@@ -37,16 +35,12 @@
     (errors [_]
       (when (forms/ready? isync)
         (forms/errors form)))
-    (valid? [_]
-      (and (forms/ready? isync)
-           (forms/valid? form)))
 
     IDeref
     #?(:clj  (deref [_] @form)
        :cljs (-deref [_] @form))
 
     #?@(:clj  [IAtom
-               (reset [_ model] (reset! form model))
                (swap [_ f]
                  (swap! form f)
                  nil)
@@ -59,12 +53,7 @@
                (swap [_ f a b xs]
                  (apply swap! form f a b xs)
                  nil)]
-        :cljs [IReset
-               (-reset! [_ model]
-                  (reset! form model)
-                  nil)
-
-               ISwap
+        :cljs [ISwap
                (-swap! [_ f]
                  (swap! form f)
                  nil)

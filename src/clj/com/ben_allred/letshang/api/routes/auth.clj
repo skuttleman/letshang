@@ -6,7 +6,7 @@
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.resources.sign-up :as sign-up.res]
     [com.ben-allred.letshang.common.services.env :as env]
-    [com.ben-allred.letshang.common.utils.encoders.jwt :as jwt]
+    [com.ben-allred.letshang.common.utils.serde.jwt :as jwt]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [compojure.core :refer [defroutes]]
     [ring.util.response :as resp]))

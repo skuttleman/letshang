@@ -6,9 +6,9 @@
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.content :as content]
-    [com.ben-allred.letshang.common.utils.encoders.jwt :as jwt]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.maps :as maps])
+    [com.ben-allred.letshang.common.utils.maps :as maps]
+    [com.ben-allred.letshang.common.utils.serde.jwt :as jwt])
   (:import
     (clojure.lang ExceptionInfo)
     (java.util Date)))

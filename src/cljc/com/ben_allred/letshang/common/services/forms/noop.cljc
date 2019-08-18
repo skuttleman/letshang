@@ -8,29 +8,23 @@
 
 (defn create [model]
   (reify
-    forms/IPersist
-    (attempted? [_] false)
-    (persist! [_] (async/go [:success model]))
-
     forms/ISync
-    (ready? [_])
-    (status [_])
+    (save! [_] (async/go [:success model]))
+    (ready? [_] false)
 
     forms/IChange
     (changed? [_] false)
     (changed? [_ _] false)
 
     forms/ITrack
+    (attempted? [_] false)
     (visit! [_ _])
     (visited? [_ _] false)
 
-
     forms/IValidate
     (errors [_] nil)
-    (valid? [_] true)
 
     #?@(:clj  [IAtom
-               (reset [_ _])
                (swap [_ _])
                (swap [_ _ _])
                (swap [_ _ _ _])
@@ -38,9 +32,7 @@
                IDeref
                (deref [_]
                  model)]
-        :cljs [IReset
-               (-reset! [_ _])
-               ISwap
+        :cljs [ISwap
                (-swap! [_ _])
                (-swap! [_ _ _])
                (-swap! [_ _ _ _])

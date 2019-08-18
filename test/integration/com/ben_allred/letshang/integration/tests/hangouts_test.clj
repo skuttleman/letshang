@@ -202,8 +202,7 @@
               (testing "the invited user can invite another user"
                 (h/suggest-who (h/login "user2@example.test") hangout-id [user-3-id])
 
-                (is (->> (fetch-invitees token hangout-id)
-                         (= #{user-2-id user-3-id}))))))))
+                (is (= #{user-2-id user-3-id} (fetch-invitees token hangout-id))))))))
 
       (testing "when creating a hangout with closed invitations"
         (let [hangout-id (->> {:name "A brand new hangout" :others-invite? false}
@@ -216,8 +215,7 @@
               (testing "the invited user cannot invite another user"
                 (h/suggest-who (h/login "user2@example.test") hangout-id [user-3-id])
 
-                (is (->> (fetch-invitees token hangout-id)
-                         (= #{user-2-id})))))))))))
+                (is (= #{user-2-id} (fetch-invitees token hangout-id)))))))))))
 
 (deftest ^:integration moments-test
   (testing "moments"
@@ -249,8 +247,7 @@
           (testing "the creator can suggest a moment"
             (h/suggest-when token hangout-id {:window :morning :date (dates/->inst (dates/today))})
 
-            (is (-> (fetch-moment token hangout-id #{:morning})
-                    (= {:window :morning :date (dates/today)}))))
+            (is (= {:window :morning :date (dates/today)} (fetch-moment token hangout-id #{:morning}))))
 
           (testing "and when inviting a user"
             (let [[user-2-id] (fetch-associates token #{"user2@example.test"})]

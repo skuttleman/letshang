@@ -1,7 +1,12 @@
 (ns com.ben-allred.letshang.common.utils.keywords
-  (:refer-clojure :exclude [replace])
+  (:refer-clojure :exclude [replace str])
   (:require
     [clojure.string :as string]))
+
+(defn str [v]
+  (if (keyword? v)
+    (subs (clojure.core/str v) 1)
+    v))
 
 (defn safe-name [v]
   (if (keyword? v)
@@ -12,7 +17,7 @@
   ([kwds] (join "" kwds))
   ([separator kwds]
    (->> kwds
-        (map (comp str safe-name))
+        (map (comp clojure.core/str safe-name))
         (string/join (safe-name separator))
         (keyword))))
 

@@ -1,6 +1,7 @@
-(ns com.ben-allred.letshang.common.utils.encoders.transit
+(ns com.ben-allred.letshang.common.utils.serde.transit
   (:require
-    [cognitect.transit :as trans])
+    [cognitect.transit :as trans]
+    [com.ben-allred.letshang.common.utils.serde.core :as serde])
   #?(:clj
      (:import
        (java.io ByteArrayInputStream ByteArrayOutputStream InputStream))))
@@ -30,3 +31,10 @@
              (trans/write (trans/writer out :json) value)
              (.toString out))
      :cljs (trans/write writer value)))
+
+(def serde
+  (reify serde/ISerDe
+    (serialize [_ value]
+      (encode value))
+    (deserialize [_ value]
+      (decode value))))

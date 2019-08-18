@@ -12,6 +12,7 @@
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.services.store.actions.hangouts :as act.hangouts]
     [com.ben-allred.letshang.common.services.store.core :as store]
+    [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.strings :as strings]))
@@ -24,35 +25,39 @@
           {:name strings/trim-to-nil})
         #(select-keys % #{:name :invitation-ids :others-invite? :when-suggestions? :where-suggestions?})))
 
-(def ^:private create-api
-  (reify
-    forms/IFetch
-    (fetch [_]
-      (ch/resolve nil))
-    forms/ISave
-    (save! [_ model]
-      (-> model
-          (model->source)
-          (act.hangouts/create-hangout)
-          (store/dispatch)
-          (ch/then source->model)
-          (ch/peek (res/toast-success "Your hangout has been created.")
-                   (res/toast-error "Something went wrong."))))))
+(defn ^:private create-api []
+  (let [ready? (r/atom true)]
+    (reify
+      forms/ISync
+      (save! [_ {:keys [model]}]
+        (reset! ready? false)
+        (-> model
+            (model->source)
+            (act.hangouts/create-hangout)
+            (store/dispatch)
+            (ch/then source->model)
+            (ch/peek (fn [_] (reset! ready? true)))
+            (ch/peek (res/toast-success "Your hangout has been created.")
+                     (res/toast-error "Something went wrong."))))
+      (ready? [_]
+        @ready?))))
 
 (defn ^:private edit-api [hangout]
-  (reify
-    forms/IFetch
-    (fetch [_]
-      (ch/resolve hangout))
-    forms/ISave
-    (save! [_ model]
-      (-> model
-          (model->source)
-          (->> (act.hangouts/update-hangout (:id hangout)))
-          (store/dispatch)
-          (ch/then source->model)
-          (ch/peek (res/toast-success "Your hangout has been saved.")
-                   (res/toast-error "Something went wrong."))))))
+  (let [ready? (r/atom true)]
+    (reify
+      forms/ISync
+      (save! [_ {:keys [model]}]
+        (reset! ready? false)
+        (-> model
+            (model->source)
+            (->> (act.hangouts/update-hangout (:id hangout)))
+            (store/dispatch)
+            (ch/then source->model)
+            (ch/peek (fn [_] (reset! ready? true)))
+            (ch/peek (res/toast-success "Your hangout has been saved.")
+                     (res/toast-error "Something went wrong."))))
+      (ready? [_]
+        @ready?))))
 
 (def ^:private view->model
   {:name not-empty})
@@ -67,7 +72,9 @@
    (form nil))
   ([hangout]
     #?(:clj  (forms.noop/create nil)
-       :cljs (forms.std/create (if hangout (edit-api hangout) create-api) validator))))
+       :cljs (forms.std/create (or hangout {:where-suggestions? true :when-suggestions? true :others-invite? false})
+                               (if hangout (edit-api hangout) (create-api))
+                               validator))))
 
 (defn create->modify [response]
   (nav/nav-and-replace! :ui/hangout {:route-params {:hangout-id (:id response)

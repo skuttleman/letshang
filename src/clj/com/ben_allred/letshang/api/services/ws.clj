@@ -4,9 +4,9 @@
     [clojure.core.match :refer [match]]
     [com.ben-allred.letshang.api.services.db.models.hangouts :as models.hangouts]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
-    [com.ben-allred.letshang.common.utils.encoders.transit :as transit]
     [com.ben-allred.letshang.common.utils.fns :refer [=>]]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.serde.transit :as transit]
     [com.ben-allred.letshang.common.utils.uuids :as uuids]
     [immutant.web.async :as web.async]))
 

@@ -3,7 +3,6 @@
     #?@(:cljs [[com.ben-allred.letshang.ui.services.forms.remote :as remote]
                [com.ben-allred.letshang.ui.services.forms.standard :as forms.std]])
     [com.ben-allred.letshang.common.resources.hangouts.suggestions :as res.suggestions]
-    [com.ben-allred.letshang.common.resources.hangouts.locks :as res.locks]
     [com.ben-allred.letshang.common.services.forms.dependent :as forms.dep]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.services.store.actions.users :as act.users]
@@ -19,10 +18,7 @@
     [com.ben-allred.letshang.common.views.components.dropdown :as dropdown]
     [com.ben-allred.letshang.common.views.components.fields :as fields]
     [com.ben-allred.letshang.common.views.components.form-view :as form-view]
-    [com.ben-allred.letshang.common.views.pages.hangouts.responses :as responses]
-    [com.ben-allred.letshang.common.stubs.reagent :as r]
-    [com.ben-allred.letshang.common.services.forms.core :as forms]
-    [com.ben-allred.letshang.common.views.components.loading :as loading]))
+    [com.ben-allred.letshang.common.views.pages.hangouts.responses :as responses]))
 
 (defn ^:private suggestion* [header & more]
   (into [:<>
@@ -42,19 +38,6 @@
                                      (colls/find (comp #{user-id} :user-id))
                                      (:response)
                                      (assoc {:id id :user-id user-id} :response))])
-
-(defn ^:private lock-form [response-type id locked?]
-  (let [form (res.locks/form response-type id {:locked? locked?})]
-    (fn [_response-type _id _locked?]
-      [:div.layout--space-between.layout--align-center
-       [fields/button-group
-        (-> {:class        ["is-small"]
-             :label        (res.locks/response->label response-type)
-             :label-small? true}
-            (res.locks/with-attrs form [:locked?]))
-        [[true "Lock"] [false "Unlock"]]]
-       (when-not (forms/ready? form)
-         [loading/spinner])])))
 
 (defn window-button [{:keys [options-by-id value] :as attrs}]
   [:button.button
@@ -98,22 +81,18 @@
                    :default (forms.noop/create nil))
         form (forms.dep/create moment-form moments)]
     (fn [_hangout-id]
-      (let [disabled (colls/find :locked? @moments)]
-        [form-view/form
-         {:disabled  disabled
-          :form      form
-          :inline?   true
-          :save-text "Suggest"}
-         [calendar/picker
-          (-> {:button-text "Pick a day…"
-               :disabled    disabled}
-              (res.suggestions/with-attrs form [:date]))]
-         [dropdown/dropdown
-          (-> {:button-control window-button
-               :disabled       disabled
-               :options        (map (juxt identity (comp #(strings/titlize % " ") name)) res.suggestions/windows)}
-              (res.suggestions/with-attrs form [:window])
-              (dropdown/oneable))]]))))
+      [form-view/form
+       {:form      form
+        :inline?   true
+        :save-text "Suggest"}
+       [calendar/picker
+        (-> {:button-text "Pick a day…"}
+            (res.suggestions/with-attrs form [:date]))]
+       [dropdown/dropdown
+        (-> {:button-control window-button
+             :options        (map (juxt identity (comp #(strings/titlize % " ") name)) res.suggestions/windows)}
+            (res.suggestions/with-attrs form [:window])
+            (dropdown/oneable))]])))
 
 (defn location-form [hangout-id]
   (let [location-form (res.suggestions/where-form hangout-id)
@@ -121,33 +100,24 @@
                      :default (forms.noop/create nil))
         form (forms.dep/create location-form locations)]
     (fn [_hangout-id]
-      (let [disabled (colls/find :locked? @locations)]
-        [form-view/form
-         {:disabled  disabled
-          :form      form
-          :inline?   true
-          :save-text "Suggest"}
-         [fields/input
-          (-> {:disabled disabled
-               :label    "Name of the place"}
-              (res.suggestions/with-attrs form [:name]))]]))))
+      [form-view/form
+       {:form      form
+        :inline?   true
+        :save-text "Suggest"}
+       [fields/input
+        (-> {:label    "Name of the place"}
+            (res.suggestions/with-attrs form [:name]))]])))
 
-(defn location-suggestion [{location-id :id :keys [name response-counts responses]} user-id locked? can-lock?]
+(defn location-suggestion [{location-id :id :keys [name response-counts responses]} user-id]
   [suggestion*
    name
    [suggestion-responses response-counts]
-   (when-not locked?
-     [response-form :location location-id user-id responses])
-   (when can-lock?
-     [lock-form :location location-id locked?])])
+   [response-form :location location-id user-id responses]])
 
-(defn moment-suggestion [{moment-id :id :keys [date response-counts responses window]} user-id locked? can-lock?]
+(defn moment-suggestion [{moment-id :id :keys [date response-counts responses window]} user-id]
   [suggestion*
    [components/tooltip
     {:text (str (dates/format date :date/view) ": " (strings/titlize (keywords/safe-name window) " "))}
     (dates/relative date)]
    [suggestion-responses response-counts]
-   (when-not locked?
-     [response-form :moment moment-id user-id responses])
-   (when can-lock?
-     [lock-form :moment moment-id locked?])])
+   [response-form :moment moment-id user-id responses]])

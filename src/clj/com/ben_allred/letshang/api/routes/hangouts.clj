@@ -5,7 +5,7 @@
     [com.ben-allred.letshang.api.services.db.models.locations :as models.locations]
     [com.ben-allred.letshang.api.services.db.models.messages :as models.messages]
     [com.ben-allred.letshang.api.services.db.models.moments :as models.moments]
-    [com.ben-allred.letshang.api.services.handlers :refer [GET PATCH POST context]]
+    [com.ben-allred.letshang.api.services.handlers :refer [GET PATCH POST PUT context]]
     [com.ben-allred.letshang.api.services.ws :as ws]
     [com.ben-allred.letshang.common.resources.hangouts :as res.hangouts]
     [com.ben-allred.letshang.common.resources.hangouts.conversations :as res.conversations]
@@ -63,7 +63,7 @@
           [:http.status/not-found {:message "Hangout not found for user"}]))
 
       (context "/invitations" _
-        (POST "/" ^{:request-spec who-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
+        (PUT "/" ^{:request-spec who-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
           (if-let [suggestion (models.invitations/suggest-invitees db hangout-id (:data body) (:id user))]
             [:http.status/created {:data suggestion}]
             [:http.status/not-found {:message "Cannot suggest who for this hangout"}]))
@@ -74,7 +74,7 @@
             [:http.status/not-found {:message "Hangout not found for user"}])))
 
       (context "/locations" _
-        (POST "/" ^{:request-spec where-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
+        (PUT "/" ^{:request-spec where-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
           (if-let [suggestion (models.locations/suggest-location db hangout-id (:data body) (:id user))]
             [:http.status/created {:data suggestion}]
             [:http.status/not-found {:message "Cannot suggest where for this hangout"}]))
@@ -98,7 +98,7 @@
             [:http.status/not-found {:message "Cannot suggests when for this hangout"}])))
 
       (context "/moments" _
-        (POST "/" ^{:request-spec when-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
+        (PUT "/" ^{:request-spec when-spec} {{:keys [hangout-id]} :params :keys [auth/user body db]}
           (if-let [suggestion (models.moments/suggest-moment db hangout-id (:data body) (:id user))]
             [:http.status/created {:data suggestion}]
             [:http.status/not-found {:message "Cannot suggest when for this hangout"}]))

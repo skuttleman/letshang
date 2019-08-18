@@ -93,23 +93,19 @@
                :on-click #(change-state nil)}
            label]])]]]))
 
-(defn ^:private hangout-items* [{:keys [created-by]} suggestion items]
-  (let [user-id (:id @store/user)
-        {locked true unlocked false} (group-by :locked? items)
-        can-lock? (= user-id created-by)]
+(defn ^:private hangout-items* [suggestion items]
+  (let [user-id (:id @store/user)]
     [:div.layout--inset
      [:ul.layout--stack-between
       [flip-move/flip-move
        {:enter-animation :none
         :leave-animation :none}
-       (if-let [item (first locked)]
-         [suggestion item user-id true can-lock?]
-         (for [item unlocked]
-           ^{:key (:id item)}
-           [:li
-            {:style {:background-color :white}}
-            [:div.layout--space-between
-             [suggestion item user-id false can-lock?]]]))]]]))
+       (for [item items]
+         ^{:key (:id item)}
+         [:li
+          {:style {:background-color :white}}
+          [:div.layout--space-between
+           [suggestion item user-id]]])]]]))
 
 (defn ^:private hangout-who* [{:keys [creator?]} {:keys [hangout invitations]}]
   (let [creator (:creator hangout)
@@ -122,15 +118,13 @@
         ^{:key (:id invitation)}
         [invitation-item invitation (= auth-id (:user-id invitation))])]]))
 
-(defn ^:private hangout-when* [{:keys [hangout moments]}]
+(defn ^:private hangout-when* [{:keys [moments]}]
   [hangout-items*
-   hangout
    suggestions/moment-suggestion
    (sort res.suggestions/moment-sorter moments)])
 
-(defn ^:private hangout-where* [{:keys [hangout locations]}]
+(defn ^:private hangout-where* [{:keys [locations]}]
   [hangout-items*
-   hangout
    suggestions/location-suggestion
    (sort res.suggestions/location-sorter locations)])
 
