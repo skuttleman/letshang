@@ -21,15 +21,19 @@
 (defn with-logging [handler]
   (fn [request]
     (let [start (Date.)
-          response (handler request)
+          [response ex] (try [(handler request)]
+                             (catch Throwable ex
+                               [nil ex]))
           end (Date.)]
       (when (api? request)
         (log/info (format "[%d](%dms) %s: %s"
-                          (or (:status response) 404)
+                          (if response (:status response 404) 500)
                           (- (.getTime end) (.getTime start))
                           (string/upper-case (name (:request-method request)))
                           (:uri request))))
-      response)))
+      (if ex
+        (throw ex)
+        response))))
 
 (defn with-content-type [handler]
   (fn [{:keys [headers] :as request}]
