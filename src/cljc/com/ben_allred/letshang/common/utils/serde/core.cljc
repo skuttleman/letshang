@@ -1,4 +1,5 @@
-(ns com.ben-allred.letshang.common.utils.serde.core)
+(ns com.ben-allred.letshang.common.utils.serde.core
+  #?(:clj (:gen-class)))
 
 (defprotocol ISerDe
   (serialize [this value])

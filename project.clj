@@ -4,7 +4,8 @@
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :main com.ben-allred.letshang.api.server
-  :aot [com.ben-allred.letshang.api.server]
+  :aot [com.ben-allred.letshang.common.utils.serde.core
+        com.ben-allred.letshang.api.server]
   :min-lein-version "2.9.1"
 
   :dependencies [[bidi "2.1.3" :exclusions [[ring/ring-core]]]
