@@ -48,6 +48,7 @@
      :invitations/request [:requesting]
      :invitations/success [:success (:data response)]
      :invitations/error [:error response]
+     :response.invitation/success [:success (colls/assoc-by :id (:data response) (second state))]
      :suggestions.who/success [:success (reduce add-or-replace-respondables (second state) (:data response))]
      state)))
 

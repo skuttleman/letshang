@@ -15,6 +15,9 @@
 (defroutes routes
   (context "/invitations/:invitation-id" ^{:transformer transform-spec} _
     (PUT "/responses" ^{:request-spec save-spec} {{:keys [invitation-id]} :params :keys [auth/user body db]}
-      (if (models.invitations/set-response db invitation-id (get-in body [:data :response]) (:id user))
-        [:http.status/no-content]
+      (if-let [invitation-response (models.invitations/set-response db
+                                                                    invitation-id
+                                                                    (get-in body [:data :response])
+                                                                    (:id user))]
+        [:http.status/ok {:data invitation-response}]
         [:http.status/not-found {:message "Invitation not found for user"}]))))

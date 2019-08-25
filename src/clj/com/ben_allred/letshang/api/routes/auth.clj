@@ -31,7 +31,7 @@
   ([route value cookie]
    (let [path (cond
                 (keyword? route) (nav/path-for route)
-                (.isAbsolute (URI. route)) (nav/path-for :ui/home)
+                (or (nil? route) (.isAbsolute (URI. route))) (nav/path-for :ui/home)
                 :else route)]
      (-> (env/get :base-url)
          (str path)

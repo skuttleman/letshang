@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.integration.utils.fixtures
   (:require
+    [clojure.string :as string]
     [com.ben-allred.letshang.api.server :as server]
     [com.ben-allred.letshang.api.services.db.migrations :as migrations]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
@@ -7,8 +8,7 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.integration.utils.helpers :as h]
     [immutant.web :as web]
-    [jdbc.pool.c3p0 :as c3p0]
-    [clojure.string :as string])
+    [jdbc.pool.c3p0 :as c3p0])
   (:import
     (java.io Closeable)))
 

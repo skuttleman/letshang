@@ -15,16 +15,22 @@
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (defn ^:private response-api [response-type user-id model-id]
-  (let [ready? (r/atom false)]
+  (let [ready? (r/atom false)
+        resource (case response-type
+                   :moment :moments
+                   :location :locations
+                   :invitation :invitations)]
     (reify
       forms/IResource
       (fetch [_]
-        (-> (store/reaction [:moments])
+        (-> (store/reaction [resource])
             (ch/from-reaction)
-            (ch/then (=>> (filter (comp #{model-id} :id))
-                          (first)
-                          (:responses)
-                          (filter (comp #{user-id} :user-id))
+            (cond->
+              (not= :invitation response-type)
+              (ch/then (=>> (filter (comp #{model-id} :id))
+                            (first)
+                            (:responses))))
+            (ch/then (=>> (filter (comp #{user-id} :user-id))
                           (first)))
             (ch/then (=> (select-keys #{:user-id :response})
                          (assoc :id model-id)))

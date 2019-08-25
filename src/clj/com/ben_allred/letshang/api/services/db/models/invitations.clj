@@ -58,7 +58,11 @@
     (-> {:response response}
         (repo.invitations/modify (repo.invitations/id-clause invitation-id))
         (models/modify entities/invitations ::repo.invitations/model)
-        (repos/exec! db))))
+        (repos/exec! db))
+    (->> invitation-id
+         (repo.invitations/id-clause)
+         (select* db)
+         (colls/only!))))
 
 (defn suggest-invitees [db hangout-id invitation user-id]
   (let [{:keys [created-by others-invite? invitee-id]}
