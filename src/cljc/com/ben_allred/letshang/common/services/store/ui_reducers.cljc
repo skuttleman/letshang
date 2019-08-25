@@ -45,7 +45,7 @@
   ([] [:init])
   ([state [type response]]
    (case type
-     :invitations/request [:requesting (when (not= [:init] state) state)]
+     :invitations/request [:requesting]
      :invitations/success [:success (:data response)]
      :invitations/error [:error response]
      :suggestions.who/success [:success (reduce add-or-replace-respondables (second state) (:data response))]
@@ -55,7 +55,7 @@
   ([] [:init])
   ([state [type response]]
    (case type
-     :locations/request [:requesting (when (not= [:init] state) state)]
+     :locations/request [:requesting]
      :locations/success [:success (map count-respondable (:data response))]
      :locations/error [:error response]
      :location/success [:success (add-or-replace-respondables (second state) (:data response))]

@@ -10,7 +10,8 @@
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.dates :as dates]
-    [com.ben-allred.letshang.common.utils.logging :as log]))
+    [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.maps :as maps]))
 
 (def windows [:any-time :morning :mid-day :afternoon :after-work :evening :night :twilight])
 
@@ -33,12 +34,16 @@
 (def ^:private model->source
   (partial hash-map :data))
 
-(defn ^:private suggest-api [initial action-fn]
-  (let [ready? (r/atom true)]
+(defn ^:private suggest-api [initial action-fn resources]
+  (let [ready? (r/atom false)]
     (reify
       forms/IResource
       (fetch [_]
-        (ch/resolve initial))
+        (-> resources
+            (->> (maps/map-vals ch/from-reaction))
+            (ch/all)
+            (ch/peek (fn [_] (reset! ready? true)))
+            (ch/then (constantly initial))))
       (persist! [_ model]
         (reset! ready? false)
         (-> model
@@ -72,16 +77,16 @@
 (def ^:private default-when
   {:window :any-time})
 
-(defn who-form [hangout-id]
-  #?(:cljs (forms.std/create (suggest-api nil (partial act.hangouts/suggest :who hangout-id)) who-validator)
+(defn who-form [hangout-id resources]
+  #?(:cljs    (forms.std/create (suggest-api nil (partial act.hangouts/suggest :who hangout-id) resources) who-validator)
      :default (forms.noop/create nil)))
 
-(defn when-form [hangout-id]
-  #?(:cljs (forms.std/create (suggest-api default-when (partial act.hangouts/suggest :when hangout-id)) when-validator)
+(defn when-form [hangout-id resources]
+  #?(:cljs    (forms.std/create (suggest-api default-when (partial act.hangouts/suggest :when hangout-id) resources) when-validator)
      :default (forms.noop/create nil)))
 
-(defn where-form [hangout-id]
-  #?(:cljs (forms.std/create (suggest-api nil (partial act.hangouts/suggest :where hangout-id)) where-validator)
+(defn where-form [hangout-id resources]
+  #?(:cljs    (forms.std/create (suggest-api nil (partial act.hangouts/suggest :where hangout-id) resources) where-validator)
      :default (forms.noop/create nil)))
 
 (defn with-attrs

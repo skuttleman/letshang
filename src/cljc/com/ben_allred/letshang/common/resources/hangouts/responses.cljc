@@ -10,26 +10,25 @@
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.colls :as colls]
+    [com.ben-allred.letshang.common.utils.fns #?(:clj :refer :cljs :refer-macros) [=> =>>]]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (defn ^:private response-api [response-type user-id model-id]
-  (let [ready? (r/atom true)]
+  (let [ready? (r/atom false)]
     (reify
       forms/IResource
       (fetch [_]
-        (let [initial (->> (store/get-state)
-                           (:moments)
-                           (second)
-                           (filter (comp #{model-id} :id))
-                           (first)
-                           (:responses)
-                           (filter (comp #{user-id} :user-id))
-                           (first))]
-          (-> initial
-              (select-keys #{:user-id :response})
-              (assoc :id model-id)
-              (ch/resolve))))
+        (-> (store/reaction [:moments])
+            (ch/from-reaction)
+            (ch/then (=>> (filter (comp #{model-id} :id))
+                          (first)
+                          (:responses)
+                          (filter (comp #{user-id} :user-id))
+                          (first)))
+            (ch/then (=> (select-keys #{:user-id :response})
+                         (assoc :id model-id)))
+            (ch/peek (fn [_] (reset! ready? true)))))
       (persist! [_ model]
         (reset! ready? false)
         (-> {:data (select-keys model #{:response})}

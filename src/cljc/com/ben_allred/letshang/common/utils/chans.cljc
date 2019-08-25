@@ -75,8 +75,21 @@
     next-ch))
 
 (defn all [chs]
-  (reduce (fn [result-ch ch]
+  (reduce (fn [result-ch [k ch]]
             (then result-ch (fn [results]
-                              (then ch #(conj results %)))))
-          (resolve [])
-          chs))
+                              (then ch #(assoc results k %)))))
+          (resolve (if (map? chs) {} []))
+          (cond->> chs
+            (not (map? chs)) (map-indexed vector))))
+
+(defn from-reaction [reaction]
+  (let [ch (async/chan 10)
+        [status :as result] @reaction
+        k (gensym)]
+    (if (#{:success :error} status)
+      (async/onto-chan ch (repeat result))
+      (add-watch reaction k (fn [_ _ _ [status :as result]]
+                              (when (#{:success :error} status)
+                                (async/onto-chan ch (repeat result))
+                                (remove-watch reaction k)))))
+    ch))

@@ -27,3 +27,6 @@
 (defonce user (delay (:auth/user (get-state))))
 
 (defonce sign-up (delay (:auth/sign-up (get-state))))
+
+(defn reaction [path]
+  (r/make-reaction (comp #(get-in % path) get-state)))
