@@ -4,7 +4,7 @@
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(defn scroller [component ideas size ms]
+(defn scroller [component ideas size ms & _args]
   (let [idea-items (r/atom [0 (cycle ideas)])
         mounted? (volatile! true)]
     #?(:cljs
@@ -21,9 +21,10 @@
        (fn [_]
          (vreset! mounted? false))
        :reagent-render
-       (fn [_component _ideas _size _ms]
+       (fn [_component _ideas _size _ms & args]
          (let [[length items] @idea-items]
-           [component (sequence (comp (take length)
-                                      (map-indexed (fn [idx item]
-                                                     [[(when (= idx (dec length)) "squish")] item])))
-                                items)]))})))
+           (into [component (sequence (comp (take length)
+                                            (map-indexed (fn [idx item]
+                                                           [[(when (= idx (dec length)) "squish")] item])))
+                                      items)]
+                 args)))})))

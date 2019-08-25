@@ -10,6 +10,12 @@
     (apply update m k f f-args)
     m))
 
+(defn update-in-maybe [m [k :as ks] f & f-args]
+  (cond
+    (and (empty? ks) (some? m)) (apply f m f-args)
+    (and (seq ks) (some? (get m k))) (update m k (partial apply update-in-maybe) (rest ks) f f-args)
+    :else m))
+
 (defn assoc-maybe [m & kvs]
   (into m (comp (partition-all 2) (filter (comp some? second))) kvs))
 

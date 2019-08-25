@@ -6,13 +6,18 @@
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.resources.sign-up :as sign-up.res]
     [com.ben-allred.letshang.common.services.env :as env]
-    [com.ben-allred.letshang.common.utils.serde.jwt :as jwt]
     [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.serde.jwt :as jwt]
+    [com.ben-allred.letshang.common.utils.serde.query-params :as qp]
     [compojure.core :refer [defroutes]]
-    [ring.util.response :as resp]))
+    [ring.util.response :as resp])
+  (:import (java.net URI)))
 
 (def ^:private sign-up-spec
   {:data sign-up.res/validator})
+
+(def ^:private transform-spec
+  {:redirect-uri qp/decode-param})
 
 (defn ^:private token->cookie [resp cookie value]
   (->> value
@@ -21,28 +26,32 @@
        (assoc-in resp [:cookies "auth-token"])))
 
 (defn ^:private redirect
-  ([cookie value]
-   (redirect :ui/home cookie value))
-  ([route cookie value]
-   (-> (env/get :base-url)
-       (str (nav/path-for route))
-       (resp/redirect)
-       (token->cookie cookie value))))
+  ([route value]
+   (redirect route value nil))
+  ([route value cookie]
+   (let [path (cond
+                (keyword? route) (nav/path-for route)
+                (.isAbsolute (URI. route)) (nav/path-for :ui/home)
+                :else route)]
+     (-> (env/get :base-url)
+         (str path)
+         (resp/redirect)
+         (token->cookie cookie value)))))
 
 (defn ^:private logout []
-  (redirect {:max-age 0} ""))
+  (redirect :ui/home "" {:max-age 0}))
 
-(defn ^:private login [user sign-up-user]
+(defn ^:private login [user sign-up-user redirect-uri]
   (cond
     (seq user)
-    (redirect nil (jwt/encode {:user user}))
+    (redirect redirect-uri (jwt/encode {:user user}))
 
     (and (seq sign-up-user)
          (-> sign-up-user
              (sign-up.res/validator)
              (select-keys (keys sign-up-user))
              (empty?)))
-    (redirect nil (jwt/encode {:sign-up sign-up-user}))
+    (redirect redirect-uri (jwt/encode {:sign-up sign-up-user}))
 
     :else
     (logout)))
@@ -64,7 +73,7 @@
     user))
 
 (defroutes routes
-  (context "/auth" []
+  (context "/auth" ^{:transformer transform-spec} _
     (POST "/register"
           ^{:request-spec sign-up-spec}
           {{:keys [data]} :body :keys [db auth/sign-up]}
@@ -75,12 +84,12 @@
            (conj [:http.status/created])))
     (GET "/login" {:keys [params]}
       (-> (env/get :base-url)
-          (str (nav/path-for :auth/callback {:query-params (select-keys params #{:email})}))
+          (str (nav/path-for :auth/callback {:query-params (select-keys params #{:email :redirect-uri})}))
           (resp/redirect)))
-    (GET "/callback" {{:keys [email]} :params :keys [db]}
+    (GET "/callback" {{:keys [email redirect-uri]} :params :keys [db]}
       (-> email
           (->> (models.users/find-by-email db))
           (some-> (select-keys #{:first-name :last-name :id :handle}))
-          (login {:email email})))
+          (login {:email email} redirect-uri)))
     (GET "/logout" []
       (logout))))

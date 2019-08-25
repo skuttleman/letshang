@@ -41,7 +41,7 @@
    "Car Wash Fund Raiser"
    "Juggling Competition"])
 
-(defn ^:private tiles []
+(defn ^:private tiles [redirect-uri]
   [:div.gutters.layout--xl.layout--xxl
    [:div.tile.is-parent
     [:div.tile.is-parent
@@ -55,7 +55,7 @@
           final say in who can come. No problem. The only rule is: there are no rules (with the exception of a few
           rules)."]]
        [:div.get-started
-        [:div [auth/login "get started" "skuttleman@gmail.com"]]]]]]
+        [:div [auth/login "get started" "skuttleman@gmail.com" redirect-uri]]]]]]
     [:div.tile.is-parent
      [:article.tile.is-child.notification
       [:div.dashboard-tile
@@ -66,7 +66,7 @@
           works best for them. Decide democratically, or limit it to the guest of honor's availability. Plans change.
           People accidentally double-book. Adapt as necessary."]]
        [:div.get-started
-        [:div [auth/login "get started" "skuttleman@gmail.com"]]]]]]
+        [:div [auth/login "get started" "skuttleman@gmail.com" redirect-uri]]]]]]
     [:div.tile.is-parent
      [:article.tile.is-child.notification
       [:div.dashboard-tile
@@ -78,9 +78,9 @@
           suggestions. Then see where people prefer. Or just pick your favorite place. It's your shindig. It's your
           choice."]]
        [:div.get-started
-        [:div [auth/login "get started" "skuttleman@gmail.com"]]]]]]]])
+        [:div [auth/login "get started" "skuttleman@gmail.com" redirect-uri]]]]]]]])
 
-(defn ^:private event-types [items]
+(defn ^:private event-types [items redirect-uri]
   [:div.gutters.layout--xl.layout--xxl.layout--space-below
    [:div.layout--inset
     [:div.layout--inset
@@ -97,9 +97,9 @@
                            {:class classes}
                            idea]])]]]
        [:div.get-started
-        [:div [auth/login-as "login to get started"]]]]]]]])
+        [:div [auth/login-as "login to get started" redirect-uri]]]]]]]])
 
-(defn jumbotron [login?]
+(defn jumbotron [redirect-uri login?]
   [:div.jumbotron
    [:div.background-image]
    [:div.logo-wrapper
@@ -109,16 +109,17 @@
     [:p "Organizing a get together"]
     [:p "shouldn't be a chore."]
     (when login?
-      [auth/login "login to get started" "skuttleman@gmail.com"])]])
+      [auth/login "login to get started" "skuttleman@gmail.com" redirect-uri])]])
 
 (defn footer []
   [:footer.footer
    [:div.content.has-text-centered
     "Copyright " [components/unicode :©] (dates/year (dates/now))]])
 
-(defn root [_state]
-  [:div.page-dashboard
-   [jumbotron true]
-   [tiles]
-   [auto-scroll/scroller event-types ideas 8 1000]
-   [footer]])
+(defn root [state]
+  (let [redirect-uri (get-in state [:page :query-params :redirect-uri])]
+    [:div.page-dashboard
+     [jumbotron redirect-uri true]
+     [tiles redirect-uri]
+     [auto-scroll/scroller event-types ideas 8 1000 redirect-uri]
+     [footer]]))

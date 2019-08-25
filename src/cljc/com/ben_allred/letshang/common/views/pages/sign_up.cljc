@@ -46,7 +46,7 @@
 
 (defn root [state new-user]
   [:div.page-dashboard.page-sign-up
-   [dashboard/jumbotron false]
+   [dashboard/jumbotron (get-in state [:page :query-params :redirect-uri]) false]
    [sign-up-form new-user]
    [dashboard/footer]
    [toast/toasts (:toasts state)]])

@@ -5,7 +5,7 @@
     [com.ben-allred.letshang.common.utils.serde.core :as serde])
   #?(:clj
      (:import
-       (java.net URLEncoder))))
+       (java.net URLDecoder URLEncoder))))
 
 (defn ^:private encode-type [_ value]
   (cond
@@ -66,6 +66,10 @@
   (->> (string/split s #"&")
        (map (comp vec #(string/split % #"=")))
        (reduce (fn [qp [k v]] (into qp (decodify k v))) {})))
+
+(defn decode-param [s]
+  #?(:clj  (URLDecoder/decode s)
+     :cljs (js/decodeURIComponent s)))
 
 (def serde
   (reify serde/ISerDe

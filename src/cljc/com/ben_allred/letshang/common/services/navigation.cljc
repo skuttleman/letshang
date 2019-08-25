@@ -58,7 +58,8 @@
 (defn ^:private re-format [route]
   (-> route
       (maps/update-maybe :route-params (=> (maps/update-maybe :hangout-id uuids/->uuid)
-                                           (maps/update-maybe :section keyword)))))
+                                           (maps/update-maybe :section keyword)))
+      (maps/update-in-maybe [:query-params :uri] qp/decode-param)))
 
 (defn match-route [routes path]
   (let [qp (some->> (string/split path #"\?") (second) (qp/decode))]
