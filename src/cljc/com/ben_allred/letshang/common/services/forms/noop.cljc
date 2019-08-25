@@ -10,6 +10,8 @@
   (reify
     forms/ISync
     (save! [_] (async/go [:success model]))
+
+    forms/IBlock
     (ready? [_] false)
 
     forms/IChange

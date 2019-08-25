@@ -25,11 +25,13 @@
           {:name strings/trim-to-nil})
         #(select-keys % #{:name :invitation-ids :others-invite? :when-suggestions? :where-suggestions?})))
 
-(defn ^:private create-api []
+(defn ^:private create-api [init]
   (let [ready? (r/atom true)]
     (reify
-      forms/ISync
-      (save! [_ {:keys [model]}]
+      forms/IResource
+      (fetch [_]
+        (ch/resolve init))
+      (persist! [_ model]
         (reset! ready? false)
         (-> model
             (model->source)
@@ -39,14 +41,18 @@
             (ch/peek (fn [_] (reset! ready? true)))
             (ch/peek (res/toast-success "Your hangout has been created.")
                      (res/toast-error "Something went wrong."))))
+
+      forms/IBlock
       (ready? [_]
         @ready?))))
 
 (defn ^:private edit-api [hangout]
   (let [ready? (r/atom true)]
     (reify
-      forms/ISync
-      (save! [_ {:keys [model]}]
+      forms/IResource
+      (fetch [_]
+        (ch/resolve hangout))
+      (persist! [_ model]
         (reset! ready? false)
         (-> model
             (model->source)
@@ -56,6 +62,8 @@
             (ch/peek (fn [_] (reset! ready? true)))
             (ch/peek (res/toast-success "Your hangout has been saved.")
                      (res/toast-error "Something went wrong."))))
+
+      forms/IBlock
       (ready? [_]
         @ready?))))
 
@@ -72,8 +80,9 @@
    (form nil))
   ([hangout]
     #?(:clj  (forms.noop/create nil)
-       :cljs (forms.std/create (or hangout {:where-suggestions? true :when-suggestions? true :others-invite? false})
-                               (if hangout (edit-api hangout) (create-api))
+       :cljs (forms.std/create (if hangout
+                                 (edit-api hangout)
+                                 (create-api {:where-suggestions? true :when-suggestions? true :others-invite? false}))
                                validator))))
 
 (defn create->modify [response]

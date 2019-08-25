@@ -4,7 +4,7 @@
 
 (defn create [f]
   (reify
-    forms/ISync
+    forms/IBlock
     (ready? [_]
       (boolean (#{:success :error} (first (f)))))
 
@@ -22,7 +22,7 @@
 
 (defn combine [& remotes]
   (reify
-    forms/ISync
+    forms/IBlock
     (ready? [_]
       (every? forms/ready? remotes))
 

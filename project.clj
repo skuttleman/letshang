@@ -15,7 +15,6 @@
                  [cljs-http "0.1.46"]
                  [cljsjs/react-flip-move "3.0.1-1"]
                  [clojure.jdbc/clojure.jdbc-c3p0 "0.3.3" :exclusions [[org.clojure/java.jdbc]]]
-                 [com.andrewmcveigh/cljs-time "0.5.2"]
                  [com.ben-allred/collaj "0.8.0"]
                  [com.ben-allred/formation "0.6.2" :exclusions [[nrepl]]]
                  [com.ben-allred/ws-client-cljc "0.1.0-SNAPSHOT" :exclusions [[nrepl]
@@ -44,7 +43,8 @@
                  [ring/ring-defaults "0.2.1" :exclusions [[ring/ring-core]]]
                  [ring/ring-devel "1.6.3" :exclusions [[ring/ring-core]]]
                  [ring/ring-json "0.3.1"]
-                 [seancorfield/next.jdbc "1.0.5"]]
+                 [seancorfield/next.jdbc "1.0.5"]
+                 [tick "0.4.19-alpha"]]
 
   :plugins [[com.jakemccrary/lein-test-refresh "0.23.0"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
@@ -53,6 +53,7 @@
             [lein-sass "0.5.0"]]
 
   :jar-name "letshang.jar"
+  :jvm-opts ["-Duser.timezone=UTC"]
   :uberjar-name "letshang-standalone.jar"
   :source-paths ["src/clj" "src/cljs" "src/cljc"]
   :test-paths ["test/clj" "test/cljs" "test/cljc" "test/integration" "test/common"]
@@ -78,6 +79,7 @@
                                        :pretty-print  false
                                        :language-in   :ecmascript6
                                        :language-out  :ecmascript5}}]}
+
   :figwheel {:css-dirs   ["resources/public/css"]
              :nrepl-port 7888}
   :sass {:src              "src/scss"

@@ -6,9 +6,12 @@
     [com.ben-allred.letshang.ui.services.forms.shared :as forms.shared]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(defn create [model sync validator]
-  (let [state (r/atom (forms.shared/init validator model))
+(defn create [api validator]
+  (let [state (r/atom nil)
         validator (or validator (constantly nil))]
+    (-> api
+        (forms/fetch)
+        (ch/then (comp (partial reset! state) (partial forms.shared/init validator))))
     (reify
       forms/ISync
       (save! [this]
@@ -26,9 +29,12 @@
               :else
               (let [model @this]
                 (swap! state assoc :status :pending)
-                (-> sync
-                    (forms/save! {:model model})
+                (-> api
+                    (forms/persist! model)
+                    (ch/then (fn [_] (forms/fetch api)))
                     (forms.shared/request* state validator))))))
+
+      forms/IBlock
       (ready? [_]
         (= :ready (:status @state)))
 

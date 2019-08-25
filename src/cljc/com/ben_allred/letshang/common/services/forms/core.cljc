@@ -13,10 +13,15 @@
   #?(:clj  (instance? IAtom value)
      :cljs (satisfies? ISwap value)))
 
-;; FORM
-(defprotocol ISync
-  (save! [this] [this opts])
+(defprotocol IResource
+  (fetch [this])
+  (persist! [this model]))
+
+(defprotocol IBlock
   (ready? [this]))
+
+(defprotocol ISync
+  (save! [this]))
 
 (defprotocol IChange
   (changed? [this] [this path]))

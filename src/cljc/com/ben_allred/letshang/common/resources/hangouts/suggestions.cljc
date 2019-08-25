@@ -31,15 +31,15 @@
             (f/pred string? "Must be a string")]}))
 
 (def ^:private model->source
-  (comp (partial hash-map :data)
-        (f/transformer
-          {:date dates/->inst})))
+  (partial hash-map :data))
 
 (defn ^:private suggest-api [initial action-fn]
   (let [ready? (r/atom true)]
     (reify
-      forms/ISync
-      (save! [_ {:keys [model]}]
+      forms/IResource
+      (fetch [_]
+        (ch/resolve initial))
+      (persist! [_ model]
         (reset! ready? false)
         (-> model
             (model->source)
@@ -49,6 +49,8 @@
             (ch/peek (constantly nil)
                      (res/toast-error "Something went wrong."))
             (ch/then (constantly initial))))
+
+      forms/IBlock
       (ready? [_]
         @ready?))))
 
@@ -71,15 +73,15 @@
   {:window :any-time})
 
 (defn who-form [hangout-id]
-  #?(:cljs (forms.std/create nil (suggest-api nil (partial act.hangouts/suggest :who hangout-id)) who-validator)
+  #?(:cljs (forms.std/create (suggest-api nil (partial act.hangouts/suggest :who hangout-id)) who-validator)
      :default (forms.noop/create nil)))
 
 (defn when-form [hangout-id]
-  #?(:cljs (forms.std/create default-when (suggest-api default-when (partial act.hangouts/suggest :when hangout-id)) when-validator)
+  #?(:cljs (forms.std/create (suggest-api default-when (partial act.hangouts/suggest :when hangout-id)) when-validator)
      :default (forms.noop/create nil)))
 
 (defn where-form [hangout-id]
-  #?(:cljs (forms.std/create nil (suggest-api nil (partial act.hangouts/suggest :where hangout-id)) where-validator)
+  #?(:cljs (forms.std/create (suggest-api nil (partial act.hangouts/suggest :where hangout-id)) where-validator)
      :default (forms.noop/create nil)))
 
 (defn with-attrs

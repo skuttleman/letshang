@@ -13,19 +13,33 @@
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(defn ^:private response-api [response-type {model-id :id}]
+(defn ^:private response-api [response-type user-id model-id]
   (let [ready? (r/atom true)]
     (reify
-      forms/ISync
-      (save! [_ {:keys [model]}]
+      forms/IResource
+      (fetch [_]
+        (let [initial (->> (store/get-state)
+                           (:moments)
+                           (second)
+                           (filter (comp #{model-id} :id))
+                           (first)
+                           (:responses)
+                           (filter (comp #{user-id} :user-id))
+                           (first))]
+          (-> initial
+              (select-keys #{:user-id :response})
+              (assoc :id model-id)
+              (ch/resolve))))
+      (persist! [_ model]
         (reset! ready? false)
         (-> {:data (select-keys model #{:response})}
             (->> (act.hangouts/set-response response-type model-id))
             (store/dispatch)
-            (ch/peek #(log/spy %))
             (ch/peek (fn [_] (reset! ready? true)))
             (ch/peek (constantly nil)
                      (res/toast-error "Something went wrong."))))
+
+      forms/IBlock
       (ready? [_]
         @ready?))))
 
@@ -74,9 +88,9 @@
                  (:response)
                  (swap! form assoc :response))))))
 
-(defn form [response-type model]
+(defn form [response-type user-id model-id]
   #?(:clj  (forms.noop/create nil)
-     :cljs (forms.live/create model (response-api response-type model) (constantly nil))))
+     :cljs (forms.live/create (response-api response-type user-id model-id) (constantly nil))))
 
 (defn with-attrs
   ([form path]

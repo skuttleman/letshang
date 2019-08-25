@@ -1,40 +1,49 @@
 (ns com.ben-allred.letshang.common.utils.dates
   (:refer-clojure :exclude [format])
   (:require
-    #?@(:cljs [[cljs-time.core :as time]
-               [cljs-time.coerce :as time.coerce]
-               [cljs-time.format :as time.format]])
+    #?@(:cljs [[java.time :refer [LocalDate LocalDateTime]]
+               [java.time.format :refer [DateTimeFormatter]]])
+    [cljc.java-time.day-of-week :as dow]
+    [cljc.java-time.format.date-time-formatter :as dtf]
+    [cljc.java-time.instant :as inst]
+    [cljc.java-time.local-date :as ld]
+    [cljc.java-time.local-date-time :as ldt]
+    [cljc.java-time.zone-id :as zi]
+    [cljc.java-time.zone-offset :as zo]
+    [cljc.java-time.zoned-date-time :as zdt]
     [clojure.string :as string]
-    [com.ben-allred.letshang.common.utils.logging :as log])
+    [com.ben-allred.letshang.common.utils.logging :as log]
+    [tick.format :as tf]
+    tick.locale-en-us)
   #?(:clj
      (:import
-       (java.time DayOfWeek LocalDate LocalDateTime LocalTime ZonedDateTime ZoneOffset)
+       (java.io Writer)
+       (java.time LocalDate LocalDateTime)
        (java.time.format DateTimeFormatter)
-       (java.util Date))
-     :cljs
-     (:import
-       (goog.date Date DateTime))))
+       (java.util Date))))
 
 #?(:cljs
-   (extend-protocol IEquiv
-     Date
-     (-equiv [this other]
-       (cond
-         (nil? other) false
-         (instance? Date other) (.equals this other)
-         :else (.equals this (Date. other))))
+   (do
+     (extend-protocol IEquiv
+       LocalDate
+       (-equiv [this other]
+         (and (some? other) (.equals this other)))
 
-     DateTime
-     (-equiv [this other]
-       (cond
-         (nil? other) false
-         (instance? DateTime other) (.equals this other)
-         :else (.equals this (DateTime. other))))))
+       LocalDateTime
+       (-equiv [this other]
+         (and (some? other) (.equals this other))))
 
-(declare ->inst)
+     (extend-protocol IComparable
+       LocalDate
+       (-compare [this other]
+         (ld/compare-to this other))
+
+       LocalDateTime
+       (-compare [this other]
+         (ldt/compare-to this other)))))
 
 (def ^:private formats
-  {:datetime/view     "EEE, MMM d, yyyy 'at' h:mm a"
+  {:datetime/view     "EEE, MMM d, yyyy h:mm a"
    :date/system       "yyyy-MM-dd"
    :date/view         "EEE, MMM d, yyyy"
    :date.no-year/view "EEE, MMM d"
@@ -43,85 +52,63 @@
    :date/day          "d"
    :date/month        "MMM"})
 
-(defn ^:private at-midnight [local-date]
-  #?(:clj  (LocalDateTime/of local-date (LocalTime/of 0 0 0))
-     :cljs (time/at-midnight local-date)))
+(defn ^:private ->date [v]
+  (cond
+    (or (instance? LocalDateTime v) (instance? LocalDate v)) v
+    (string? v) (ldt/parse v)
+    (inst? v) (ldt/of-instant (inst/of-epoch-milli (.getTime v)) zo/utc)))
 
-(defn ^:private ->internal [v]
-  #?(:clj  (cond
-             (instance? LocalDate v) (at-midnight v)
-             (instance? LocalDateTime v) v
-             (string? v) (LocalDateTime/parse v)
-             (inst? v) (LocalDateTime/ofInstant (.toInstant v) ZoneOffset/UTC))
-     :cljs (cond
-             (time/date? v) (time.coerce/to-date-time v)
-             (string? v) (time.format/parse-local v)
-             (inst? v) (time.coerce/from-date v))))
+(defn ^:private ->ldt [v]
+  (let [d (->date v)]
+    (cond-> d
+      (instance? LocalDate d) (ld/at-start-of-day))))
 
 (defn format
   ([inst]
    (format inst :datetime/view))
   ([inst fmt]
-    #?(:clj  (-> fmt
-                 (formats fmt)
-                 (DateTimeFormatter/ofPattern)
-                 (.withZone ZoneOffset/UTC)
-                 (.format (->internal inst)))
-       :cljs (-> fmt
-                 (formats fmt)
-                 (->> (hash-map :format-str))
-                 (time.format/unparse (time/to-default-time-zone (->internal inst)))))))
-
-(defn ->inst [v]
-  #?(:clj  (cond
-             (instance? LocalDate v) (Date/from (.toInstant (at-midnight v) ZoneOffset/UTC))
-             (instance? LocalDateTime v) (Date/from (.toInstant v ZoneOffset/UTC))
-             (string? v) (Date/from (.toInstant (ZonedDateTime/parse v)))
-             (inst? v) v)
-     :cljs (cond
-             (time/date? v) (.-date (time.coerce/to-date-time v))
-             (string? v) (.-date (time.coerce/to-date-time (time.format/parse v)))
-             (inst? v) v)))
+   (let [inst' (if (instance? LocalDate inst)
+                 inst
+                 (zdt/of-instant (ldt/to-instant (->ldt inst) zo/utc) (zi/system-default)))]
+     (-> fmt
+         (formats fmt)
+         (tf/formatter)
+         (dtf/format inst')))))
 
 (defn plus [inst? amt interval]
-  #?(:clj  (-> inst?
-               (->internal)
-               (cond->
-                 (= :years interval) (.plusYears amt)
-                 (= :months interval) (.plusMonths amt)
-                 (= :weeks interval) (.plusWeeks amt)
-                 (= :days interval) (.plusDays amt)
-                 (= :hours interval) (.plusHours amt)
-                 (= :minutes interval) (.plusMinutes amt)
-                 (= :seconds interval) (.plusSeconds amt)))
-     :cljs (-> inst?
-               (->internal)
-               (time/plus (time/period interval amt)))))
+  (let [d (->date inst?)]
+    (if (instance? LocalDate d)
+      (cond-> d
+        (= :years interval) (ld/plus-years amt)
+        (= :months interval) (ld/plus-months amt)
+        (= :weeks interval) (ld/plus-weeks amt)
+        (= :days interval) (ld/plus-days amt))
+      (cond-> d
+        (= :years interval) (ldt/plus-years amt)
+        (= :months interval) (ldt/plus-months amt)
+        (= :weeks interval) (ldt/plus-weeks amt)
+        (= :days interval) (ldt/plus-days amt)
+        (= :hours interval) (ldt/plus-hours amt)
+        (= :minutes interval) (ldt/plus-minutes amt)
+        (= :seconds interval) (ldt/plus-seconds amt)))))
 
 (defn minus [inst? amt interval]
   (plus inst? (* -1 amt) interval))
 
 (defn with [inst? amt interval]
-  #?(:clj  (-> inst?
-               (->internal)
-               (cond->
-                 (= :year interval) (.withYear amt)
-                 (= :month interval) (.withMonth amt)
-                 (= :day interval) (.withDayOfMonth amt)
-                 (= :hour interval) (.withHour amt)
-                 (= :minute interval) (.withMinute amt)
-                 (= :second interval) (.withSecond amt))
-               (->inst))
-     :cljs (let [m {interval amt}
-                 dt (->internal inst?)]
-             (-> (time/date-time (:year m (.getYear dt))
-                                 (:month m (inc (.getMonth dt)))
-                                 (:day m (.getDate dt))
-                                 (:hour m (.getHours dt))
-                                 (:minute m (.getMinutes dt))
-                                 (:second m (.getSeconds dt))
-                                 (.getUTCMilliseconds dt))
-                 (->inst)))))
+  (let [d (->date inst?)]
+    (if (instance? LocalDate d)
+      (cond-> d
+              (= :year interval) (ld/with-year amt)
+              (= :month interval) (ld/with-month amt)
+              (= :day interval) (ld/with-day-of-month amt))
+      (cond-> d
+              (= :year interval) (ldt/with-year amt)
+              (= :month interval) (ldt/with-month amt)
+              (= :day interval) (ldt/with-day-of-month amt)
+              (= :hour interval) (ldt/with-hour amt)
+              (= :minute interval) (ldt/with-minute amt)
+              (= :second interval) (ldt/with-second amt)))))
 
 (defn year [inst]
   (format inst :date/year))
@@ -133,63 +120,60 @@
   (format inst :date/day))
 
 (defn day-of-week [inst?]
-  #?(:clj  (-> inst?
-               (->internal)
-               (.getDayOfWeek)
-               ({DayOfWeek/SUNDAY    :sunday
-                 DayOfWeek/MONDAY    :monday
-                 DayOfWeek/TUESDAY   :tuesday
-                 DayOfWeek/WEDNESDAY :wednesday
-                 DayOfWeek/THURSDAY  :thursday
-                 DayOfWeek/FRIDAY    :friday
-                 DayOfWeek/SATURDAY  :saturday}))
-     :cljs (-> inst?
-               (->internal)
-               (time/day-of-week)
-               (dec)
-               ([:monday :tuesday :wednesday :thursday :friday :saturday :sunday]))))
+  (-> inst?
+      (->ldt)
+      (ldt/get-day-of-week)
+      ({dow/sunday    :sunday
+        dow/monday    :monday
+        dow/tuesday   :tuesday
+        dow/wednesday :wednesday
+        dow/thursday  :thursday
+        dow/friday    :friday
+        dow/saturday  :saturday})))
 
 (defn after? [date-1 date-2]
-  #?(:clj  (-> date-1
-               (->internal)
-               (.isAfter (->internal date-2)))
-     :cljs (time/after? (->internal date-1) (->internal date-2))))
+  (-> date-1
+      (->ldt)
+      (ldt/is-after (->ldt date-2))))
 
 (defn before? [date-1 date-2]
-  #?(:clj  (-> date-1
-               (->internal)
-               (.isBefore (->internal date-2)))
-     :cljs (time/before? (->internal date-1) (->internal date-2))))
+  (-> date-1
+      (->ldt)
+      (ldt/is-before (->ldt date-2))))
 
 (defn now []
-  #?(:clj  (LocalDateTime/now ZoneOffset/UTC)
-     :cljs (time/now)))
+  (ldt/now zo/utc))
 
 (defn today []
-  #?(:clj  (.toLocalDate (now))
-     :cljs (time/today-at-midnight)))
+  (ld/now))
 
 (defn inst->ms [inst?]
-  (.getTime (->inst inst?)))
+  (inst/to-epoch-milli (ldt/to-instant (->ldt inst?) zo/utc)))
 
 (defn date? [value]
-  (or (inst? value)
-      #?@(:clj  [(instance? LocalDate value)
-                 (instance? LocalDateTime value)]
-          :cljs [(time/date? value)])))
+  (or (instance? LocalDate value)
+      (instance? LocalDateTime value)))
 
 (defn relative [inst]
-  (let [now (->inst (now))
-        inst' (->inst inst)]
+  (let [now (if (instance? LocalDate inst)
+              (today)
+              (now))
+        inst' (->date inst)]
     (cond
       (= (format now :date/system) (format inst' :date/system))
       "Today"
 
+      (= (format now :date/system) (format (minus inst' 1 :days) :date/system))
+      "Tomorrow"
+
       (not= (year now) (year inst'))
       (format inst' :date/view)
 
-      (and (after? inst' now) (before? (minus inst' 1 :weeks) now))
+      (and (after? inst' now) (before? (minus inst' 6 :days) now))
       (str "This " (string/capitalize (name (day-of-week inst'))))
+
+      (and (after? inst' now) (before? (minus inst' 13 :days) now))
+      (str "Next " (string/capitalize (name (day-of-week inst'))))
 
       :else
       (format inst' :date.no-year/view))))

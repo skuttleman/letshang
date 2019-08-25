@@ -45,8 +45,7 @@
 (defn ^:private fetch-moment [token hangout-id window]
   (some-> (h/fetch-moments token hangout-id)
           (->> (colls/find (comp window :window)))
-          (select-keys #{:window :date})
-          (update :date (comp #(.toLocalDate %) #'dates/->internal))))
+          (select-keys #{:window :date})))
 
 (defn ^:private fetch-location [token hangout-id location]
   (-> (h/fetch-locations token hangout-id)
@@ -225,7 +224,7 @@
                               (h/create-hangout token)
                               (:id))]
           (testing "the creator can suggest a moment"
-            (h/suggest-when token hangout-id {:window :morning :date (dates/->inst (dates/today))})
+            (h/suggest-when token hangout-id {:window :morning :date (dates/today)})
 
             (is (-> (fetch-moment token hangout-id #{:morning})
                     (= {:window :morning :date (dates/today)}))))
@@ -235,7 +234,7 @@
               (h/suggest-who token hangout-id [user-2-id])
 
               (testing "the invited user can suggest a moment"
-                (h/suggest-when (h/login "user2@example.test") hangout-id {:window :any-time :date (dates/->inst (dates/today))})
+                (h/suggest-when (h/login "user2@example.test") hangout-id {:window :any-time :date (dates/today)})
 
                 (is (-> (fetch-moment token hangout-id #{:any-time})
                         (= {:window :any-time :date (dates/today)}))))))))
@@ -245,7 +244,7 @@
                               (h/create-hangout token)
                               (:id))]
           (testing "the creator can suggest a moment"
-            (h/suggest-when token hangout-id {:window :morning :date (dates/->inst (dates/today))})
+            (h/suggest-when token hangout-id {:window :morning :date (dates/today)})
 
             (is (= {:window :morning :date (dates/today)} (fetch-moment token hangout-id #{:morning}))))
 
@@ -254,7 +253,7 @@
               (h/suggest-who token hangout-id [user-2-id])
 
               (testing "the invited user cannot suggest a moment"
-                (h/suggest-when (h/login "user2@example.test") hangout-id {:window :any-time :date (dates/->inst (dates/today))})
+                (h/suggest-when (h/login "user2@example.test") hangout-id {:window :any-time :date (dates/today)})
 
                 (is (nil? (fetch-moment token hangout-id #{:any-time})))))))))))
 

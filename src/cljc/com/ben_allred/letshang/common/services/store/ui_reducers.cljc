@@ -64,6 +64,7 @@
      state)))
 
 (def ^:private messages-init [{:status [:init] :length 0 :realized? false} []])
+
 (defn ^:private messages
   ([] messages-init)
   ([[meta data :as state] [type response]]

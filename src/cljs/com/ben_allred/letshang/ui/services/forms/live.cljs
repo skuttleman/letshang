@@ -6,23 +6,27 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.ui.services.forms.shared :as forms.shared]))
 
-(defn ^:private swap* [sync state validator f f-args]
+(defn ^:private swap* [api state validator f f-args]
   (let [current @state
         next (forms.shared/swap* current validator f f-args)]
     (if (and (nil? (:errors next))
              (not= (:working current) (:working next)))
       (do (swap! state assoc :status :pending)
-          (-> sync
-              (forms/save! {:model (forms.shared/trackable->model (:working next))})
-              (forms.shared/request* state validator)
-              (ch/peek #(reset! state next) #(reset! state current))))
+          ;;TODO BROKEN???
+          (-> api
+              (forms/persist! (forms.shared/trackable->model (:working next)))
+              (ch/then (fn [_] (forms/fetch api)))
+              (forms.shared/request* state validator)))
       (reset! state next))))
 
-(defn create [model sync validator]
-  (let [state (r/atom (forms.shared/init validator model))
+(defn create [api validator]
+  (let [state (r/atom nil)
         validator (or validator (constantly nil))]
+    (-> api
+        (forms/fetch)
+        (ch/then (comp (partial reset! state) (partial forms.shared/init validator))))
     (reify
-      forms/ISync
+      forms/IBlock
       (ready? [_]
         (= :ready (:status @state)))
 
@@ -56,17 +60,17 @@
       ISwap
       (-swap! [this f]
         (when (forms/ready? this)
-          (swap* sync state validator f [])
+          (swap* api state validator f [])
           nil))
       (-swap! [this f a]
         (when (forms/ready? this)
-          (swap* sync state validator f [a])
+          (swap* api state validator f [a])
           nil))
       (-swap! [this f a b]
         (when (forms/ready? this)
-          (swap* sync state validator f [a b])
+          (swap* api state validator f [a b])
           nil))
       (-swap! [this f a b xs]
         (when (forms/ready? this)
-          (swap* sync state validator f (into [a b] xs))
+          (swap* api state validator f (into [a b] xs))
           nil)))))

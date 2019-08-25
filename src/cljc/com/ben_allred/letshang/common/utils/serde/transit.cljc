@@ -1,36 +1,43 @@
 (ns com.ben-allred.letshang.common.utils.serde.transit
   (:require
+    #?(:cljs [java.time :refer [LocalDate LocalDateTime]])
+    [cljc.java-time.local-date :as ld]
+    [cljc.java-time.local-date-time :as ldt]
     [cognitect.transit :as trans]
+    [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.serde.core :as serde])
   #?(:clj
      (:import
-       (java.io ByteArrayInputStream ByteArrayOutputStream InputStream))))
+       (clojure.lang IFn)
+       (java.io ByteArrayInputStream ByteArrayOutputStream InputStream)
+       (java.time LocalDate LocalDateTime))))
 
 (defn ^:private string->stream [s]
-  #?(:clj  (-> s
-               (.getBytes)
-               (ByteArrayInputStream.))
-     :cljs nil))
-
-(def ^:private reader
-  #?(:clj  nil
-     :cljs (trans/reader :json)))
-
-(def ^:private writer
-  #?(:clj  nil
-     :cljs (trans/writer :json)))
+  #?(:clj  (cond-> s
+             (not (instance? InputStream s)) (-> (.getBytes)
+                                                 (ByteArrayInputStream.)))
+     :cljs s))
 
 (defn decode [value]
-  #?(:clj  (if (instance? InputStream value)
-             (trans/read (trans/reader value :json))
-             (trans/read (trans/reader (string->stream value) :json)))
-     :cljs (trans/read reader value)))
+  #?(:clj  (-> value
+               (string->stream)
+               (trans/reader :json {:handlers {"inst/date"     (trans/read-handler #(ld/parse %))
+                                               "inst/datetime" (trans/read-handler #(ldt/parse %))}})
+               (trans/read))
+     :cljs (-> (trans/reader :json {:handlers {"inst/date"     (trans/read-handler #(ld/parse %))
+                                               "inst/datetime" (trans/read-handler #(ldt/parse %))}})
+               (trans/read value))))
 
 (defn encode [value]
   #?(:clj  (let [out (ByteArrayOutputStream. 4096)]
-             (trans/write (trans/writer out :json) value)
+             (-> out
+                 (trans/writer :json {:handlers {LocalDate     (trans/write-handler (constantly "inst/date") #(ld/to-string %))
+                                                 LocalDateTime (trans/write-handler (constantly "inst/datetime") #(ldt/to-string %))}})
+                 (trans/write value))
              (.toString out))
-     :cljs (trans/write writer value)))
+     :cljs (-> (trans/writer :json {:handlers {LocalDate     (trans/write-handler (constantly "inst/date") #(ld/to-string %))
+                                               LocalDateTime (trans/write-handler (constantly "inst/datetime") #(ldt/to-string %))}})
+               (trans/write value))))
 
 (def serde
   (reify serde/ISerDe

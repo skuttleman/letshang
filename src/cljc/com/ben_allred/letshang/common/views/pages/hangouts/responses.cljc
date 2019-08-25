@@ -26,8 +26,9 @@
                           {:text     (res.responses/response->text response)
                            :position :right}])))))
 
-(defn form [response-type {:keys [id response]}]
-  (let [form (res.responses/form response-type {:id id :response response :user-id (:id @store/user)})
+(defn form [response-type {model-id :id}]
+  (let [user-id (:id @store/user)
+        form (res.responses/form response-type user-id model-id)
         unsubscribe (store/subscribe #{:suggestions.where/success :suggestions.when/success} (res.responses/sub response-type form))]
     (r/create-class
       {:component-will-unmount

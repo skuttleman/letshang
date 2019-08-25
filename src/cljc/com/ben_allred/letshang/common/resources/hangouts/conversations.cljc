@@ -26,8 +26,10 @@
 (defn ^:private response-api [hangout-id]
   (let [ready? (r/atom true)]
     (reify
-      forms/ISync
-      (save! [_ {:keys [model]}]
+      forms/IResource
+      (fetch [_]
+        (ch/resolve))
+      (persist! [_ model]
         (reset! ready? false)
         (-> model
             (model->source)
@@ -37,12 +39,14 @@
             (ch/peek (constantly nil)
                      (res/toast-error "Something went wrong."))
             (ch/then (constantly nil))))
+
+      forms/IBlock
       (ready? [_]
         @ready?))))
 
 (defn form [hangout-id]
   #?(:clj  (forms.noop/create nil)
-     :cljs (forms.std/create nil (response-api hangout-id) message-validator)))
+     :cljs (forms.std/create (response-api hangout-id) message-validator)))
 
 (defn with-attrs
   ([form path]

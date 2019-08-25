@@ -17,11 +17,13 @@
 (def ^:private model->source
   (partial hash-map :data))
 
-(defn ^:private api []
+(defn ^:private api [user]
   (let [ready? (r/atom true)]
     (reify
-      forms/ISync
-      (save! [_ {:keys [model]}]
+      forms/IResource
+      (fetch [_]
+        (ch/resolve user))
+      (persist! [_ model]
         (reset! ready? false)
         (-> model
             (model->source)
@@ -31,6 +33,8 @@
             (ch/peek (fn [_]
                        (nav/go-to! (nav/path-for :auth/login {:query-params (select-keys model #{:email})})))
                      (res/toast-error "Something went wrong."))))
+
+      forms/IBlock
       (ready? [_]
         @ready?))))
 
@@ -58,5 +62,5 @@
   (forms/with-attrs attrs form path nil view->model))
 
 (defn form [new-user]
-  #?(:cljs    (forms.std/create new-user (api) validator)
+  #?(:cljs    (forms.std/create (api new-user) validator)
      :default (forms.noop/create new-user)))

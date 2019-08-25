@@ -4,6 +4,7 @@
     [#?(:clj  com.ben-allred.letshang.api.services.navigation
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [#?(:clj clj-http.client :cljs cljs-http.client) :as client]
+    [#?(:clj clj-http.core :cljs cljs-http.core) :as http*]
     [#?(:clj clojure.core.async :cljs cljs.core.async) :as async]
     [clojure.set :as set]
     [com.ben-allred.letshang.common.services.content :as content]
@@ -15,7 +16,8 @@
     [com.ben-allred.letshang.common.utils.serde.core :as serde]
     [com.ben-allred.letshang.common.utils.serde.edn :as edn]
     [com.ben-allred.letshang.common.utils.serde.json :as json]
-    [com.ben-allred.letshang.common.utils.serde.transit :as transit]))
+    [com.ben-allred.letshang.common.utils.serde.transit :as transit]
+    #?(:clj clj-http.cookies)))
 
 (def ^:private header-keys #{:content-type :accept})
 
@@ -86,21 +88,45 @@
                  :http.status/unauthorized (nav/go-to! (nav/path-for :auth/logout))
                  result)))))
 
+(def ^:private client*
+  (-> http*/request
+      client/wrap-query-params
+      client/wrap-basic-auth
+      client/wrap-oauth
+      client/wrap-url
+      client/wrap-accept
+      client/wrap-content-type
+      client/wrap-form-params
+      client/wrap-method
+      #?@(:clj  [client/wrap-request-timing
+                 client/wrap-decompression
+                 client/wrap-input-coercion
+                 client/wrap-user-info
+                 client/wrap-additional-header-parsing
+                 client/wrap-output-coercion
+                 client/wrap-exceptions
+                 client/wrap-nested-params
+                 client/wrap-accept-encoding
+                 client/wrap-flatten-nested-params
+                 client/wrap-unknown-host]
+          :cljs [client/wrap-multipart-params
+                 client/wrap-channel-from-request-map])))
+
 (defn ^:private client [request]
   #?(:clj  (let [cs (clj-http.cookies/cookie-store)
                  ch (async/chan)]
              (-> request
                  (update :headers (partial maps/map-keys keywords/safe-name))
                  (merge {:async? true :cookie-store cs})
-                 (client/request (fn [response]
-                                   (async/put! ch (assoc response :cookies (clj-http.cookies/get-cookies cs))))
-                                 (fn [exception]
-                                   (async/put! ch (assoc (ex-data exception) :cookies (clj-http.cookies/get-cookies cs))))))
+                 (client* (fn [response]
+                            (async/put! ch (assoc response :cookies (clj-http.cookies/get-cookies cs))))
+                          (fn [exception]
+                            (async/put! ch (assoc (ex-data exception) :cookies (clj-http.cookies/get-cookies cs))))))
              ch)
      :cljs (-> request
                (assoc-in [:headers :x-csrf-token] (env/get :csrf-token))
                (update :headers (partial maps/map-keys keywords/safe-name))
-               (client/request))))
+               (client*))))
 
 (defn ^:private request* [chan]
   (async/go

@@ -67,9 +67,9 @@
         (->row [_] (transient {}))
         (column-count [_] col-count)
         (with-column [_ row i]
-          (assoc! row
-                  (nth cols (dec i))
-                  (result-set/read-column-by-index (.getObject rs ^Integer i) meta i)))
+          (let [k (nth cols (dec i))
+                v (result-set/read-column-by-index (.getObject rs ^Integer i) meta i)]
+            (assoc! row k (cond-> v (instance? java.sql.Date v) (.toLocalDate)))))
         (row! [_ row] (persistent! row))
         result-set/ResultSetBuilder
         (->rs [_] (transient []))

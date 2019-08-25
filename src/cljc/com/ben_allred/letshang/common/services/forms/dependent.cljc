@@ -13,6 +13,8 @@
       (if (forms/ready? isync)
         (forms/save! form)
         (ch/reject)))
+
+    forms/IBlock
     (ready? [_]
       (and (forms/ready? isync)
            (forms/ready? form)))
