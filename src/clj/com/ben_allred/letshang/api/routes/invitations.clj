@@ -2,6 +2,7 @@
   (:require
     [com.ben-allred.letshang.api.services.db.models.invitations :as models.invitations]
     [com.ben-allred.letshang.api.services.handlers :refer [PUT context]]
+    [com.ben-allred.letshang.api.services.ws :as ws]
     [com.ben-allred.letshang.common.resources.hangouts.responses :as res.responses]
     [com.ben-allred.letshang.common.utils.uuids :as uuids]
     [compojure.core :refer [defroutes]]))
@@ -14,10 +15,15 @@
 
 (defroutes routes
   (context "/invitations/:invitation-id" ^{:transformer transform-spec} _
-    (PUT "/responses" ^{:request-spec save-spec} {{:keys [invitation-id]} :params :keys [auth/user body db]}
-      (if-let [invitation-response (models.invitations/set-response db
-                                                                    invitation-id
-                                                                    (get-in body [:data :response])
-                                                                    (:id user))]
-        [:http.status/ok {:data invitation-response}]
+    (PUT "/responses"
+         ^{:request-spec save-spec}
+         {{:keys [invitation-id]} :params {user-id :id} :auth/user :keys [body db]}
+      (if-let [{:keys [hangout-id] :as response} (models.invitations/set-response db
+                                                                                  invitation-id
+                                                                                  (get-in body [:data :response])
+                                                                                  user-id)]
+        (do (ws/publish! :topic
+                         [:hangout hangout-id]
+                         [:hangout.invitation/response {:data response}])
+            [:http.status/ok {:data response}])
         [:http.status/not-found {:message "Invitation not found for user"}]))))

@@ -31,7 +31,7 @@
 
             (testing "receives the message via websocket"
               (let [msg (async/<!! (h/with-timeout ws))]
-                (is (= [:ws/message {:topic [:hangout hangout-id] :body [:messages/new message]}]
+                (is (= [:ws/message {:topic [:hangout hangout-id] :body [:messages/new {:data message}]}]
                        msg))))))
 
         (async/close! ws)))
@@ -51,7 +51,7 @@
 
             (testing "receives the message via websocket"
               (let [msg (async/<!! (h/with-timeout ws))]
-                (is (= [:ws/message {:topic [:hangout hangout-id] :body [:messages/new message]}]
+                (is (= [:ws/message {:topic [:hangout hangout-id] :body [:messages/new {:data message}]}]
                        msg))))))
 
         (async/close! ws)))

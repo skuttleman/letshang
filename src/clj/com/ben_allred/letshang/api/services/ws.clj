@@ -8,7 +8,9 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.serde.transit :as transit]
     [com.ben-allred.letshang.common.utils.uuids :as uuids]
-    [immutant.web.async :as web.async]))
+    [immutant.web.async :as web.async])
+  (:import
+    (clojure.lang IDeref)))
 
 (defn has-hangout? [hangout-id user-id]
   (repos/transact #(models.hangouts/find-for-user % hangout-id user-id)))
@@ -80,10 +82,13 @@
 
 (defmulti publish! #'publish-dispatch)
 
-(defn ^:private publish* [ch-ids body]
-  (doseq [ch-id ch-ids
-          :let [ch (get-in @subscribers [:channels ch-id :ch])]]
-    (send! ch body)))
+(defn ^:private publish* [ch-ids message]
+  (when-let [chs (seq (sequence (comp (map #(get-in @subscribers [:channels % :ch]))
+                                      (remove nil?))
+                                ch-ids))]
+    (let [msg (update-in message [1 :body] #(cond-> % (instance? IDeref %) (deref)))]
+      (doseq [ch chs]
+        (send! ch msg)))))
 
 (defmethod publish! :topic
   [_ topic body]

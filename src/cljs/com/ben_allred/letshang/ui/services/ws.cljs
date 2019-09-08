@@ -19,8 +19,11 @@
     (async/put! ws body)))
 
 (defn ^:private on-message [dispatch msg]
-  (when-let [event (match msg
-                     [:ws/message {:topic [:hangout _] :body [:messages/new body]}] [:ws/message.new body]
+  (when-let [event (match (cond-> msg
+                            (env/get :dev?) (js/console.log))
+                     [:ws/message {:topic [:hangout _] :body [:messages/new {:data body}]}]
+                     [:ws/message.new body]
+
                      :else nil)]
     (dispatch event)))
 

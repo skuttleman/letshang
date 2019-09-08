@@ -82,14 +82,16 @@
              (colls/find (comp #{location-id} :id)))))))
 
 (defn set-response [db location-id response user-id]
-  (when (-> location-id
-            (repo.locations/id-clause)
-            (repo.invitations/has-hangout-clause user-id)
-            (repo.invitations/select-by)
-            (entities/inner-join entities/hangouts [:= :hangouts.id :invitations.hangout-id])
-            (entities/inner-join entities/locations [:= :locations.hangout-id :hangouts.id])
-            (repos/exec! db)
-            (seq))
-    (models.location-responses/respond db {:location-id location-id
-                                           :user-id     user-id
-                                           :response    response})))
+  (when-let [hangout-id (-> location-id
+                            (repo.locations/id-clause)
+                            (repo.invitations/has-hangout-clause user-id)
+                            (repo.invitations/select-by)
+                            (entities/inner-join entities/hangouts [:= :hangouts.id :invitations.hangout-id])
+                            (entities/inner-join entities/locations [:= :locations.hangout-id :hangouts.id])
+                            (repos/exec! db)
+                            (first)
+                            (:hangout-id))]
+    (assoc (models.location-responses/respond db {:location-id location-id
+                                                   :user-id     user-id
+                                                   :response    response})
+           :hangout-id hangout-id)))

@@ -86,12 +86,14 @@
              (colls/find (comp #{moment-id} :id)))))))
 
 (defn set-response [db moment-id response user-id]
-  (when (-> moment-id
-            (repo.moments/id-clause)
-            (can-moment user-id)
-            (entities/inner-join entities/moments [:= :moments.hangout-id :hangouts.id])
-            (repos/exec! db)
-            (seq))
-    (models.moment-responses/respond db {:moment-id moment-id
-                                         :user-id   user-id
-                                         :response  response})))
+  (when-let [hangout-id (-> moment-id
+                            (repo.moments/id-clause)
+                            (can-moment user-id)
+                            (entities/inner-join entities/moments [:= :moments.hangout-id :hangouts.id])
+                            (repos/exec! db)
+                            (first)
+                            (:hangout-id))]
+    (assoc (models.moment-responses/respond db {:moment-id moment-id
+                                                :user-id   user-id
+                                                :response  response})
+           :hangout-id hangout-id)))
