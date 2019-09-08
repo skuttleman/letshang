@@ -5,18 +5,19 @@
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [#?(:clj clj-http.client :cljs cljs-http.client) :as client]
     [#?(:clj clj-http.core :cljs cljs-http.core) :as http*]
-    [#?(:clj clojure.core.async :cljs cljs.core.async) :as async]
+    [clojure.core.async :as async]
     [clojure.set :as set]
     [com.ben-allred.letshang.common.services.content :as content]
     [com.ben-allred.letshang.common.services.env :as env]
-    [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log #?@(:cljs [:include-macros true])]
     [com.ben-allred.letshang.common.utils.maps :as maps]
+    [com.ben-allred.letshang.common.utils.proms :as proms]
     [com.ben-allred.letshang.common.utils.serde.core :as serde]
     [com.ben-allred.letshang.common.utils.serde.edn :as edn]
     [com.ben-allred.letshang.common.utils.serde.json :as json]
     [com.ben-allred.letshang.common.utils.serde.transit :as transit]
+    [com.ben-allred.vow.core :as v #?@(:cljs [:include-macros true])]
     #?(:clj clj-http.cookies)))
 
 (def ^:private header-keys #{:content-type :accept})
@@ -80,13 +81,11 @@
 (def ^{:arglists '([response])} server-error?
   (partial check-status 500 599))
 
-(defn ^:private handle-ui-error! [ch]
-  #?(:clj  ch
-     :cljs (async/go
-             (let [[_ {:keys [status]} :as result] (async/<! ch)]
-               (case status
-                 :http.status/unauthorized (nav/go-to! (nav/path-for :auth/logout))
-                 result)))))
+(defn ^:private handle-ui-error! [{:keys [status] :as result}]
+  #?(:clj  result
+     :cljs (case status
+             :http.status/unauthorized (nav/go-to! (nav/path-for :auth/logout))
+             result)))
 
 (def ^:private client*
   (-> http*/request
@@ -157,9 +156,10 @@
         (update :headers merge headers)
         (client)
         (request*)
-        (handle-ui-error!)
-        (cond->
-          (not response?) (ch/then :body)))))
+        (proms/from-ch)
+        (v/then-> (handle-ui-error!)
+                  (cond->
+                    (not response?) (:body))))))
 
 (defn get
   ([url]

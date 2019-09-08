@@ -1,6 +1,6 @@
 (ns com.ben-allred.letshang.common.services.store.actions.toast
   (:require
-    [#?(:clj clojure.core.async :cljs cljs.core.async) :as async]
+    [clojure.core.async :as async]
     [com.ben-allred.letshang.common.utils.dates :as dates]))
 
 

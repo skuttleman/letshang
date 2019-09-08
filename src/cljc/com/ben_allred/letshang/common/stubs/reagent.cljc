@@ -14,6 +14,7 @@
 
 (def argv #?(:clj (constantly nil) :cljs reagent/argv))
 
-(def adapt-react-class #?(:clj (constantly nil) :cljs reagent/adapt-react-class))
+(def adapt-react-class #?(:clj (constantly :div) :cljs reagent/adapt-react-class))
 
-(def make-reaction #?(:clj (constantly (reify IDeref (deref [_] nil))) :cljs ratom/make-reaction))
+(def make-reaction #?(:clj  #(reify IDeref (deref [_] (%)))
+                      :cljs ratom/make-reaction))

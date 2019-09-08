@@ -13,10 +13,6 @@
   #?(:clj  (instance? IAtom value)
      :cljs (satisfies? ISwap value)))
 
-(defprotocol IResource
-  (fetch [this])
-  (persist! [this model]))
-
 (defprotocol IBlock
   (ready? [this]))
 

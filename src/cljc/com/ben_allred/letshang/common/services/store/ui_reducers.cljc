@@ -19,27 +19,30 @@
 
 (defn ^:private add-or-replace-respondable [respondable response]
   (cond-> respondable
-          (= (:id respondable) (:id response)) (-> (assoc :responses (:responses response))
-                                                   (count-respondable))))
+    (= (:id respondable) (:id response)) (-> (assoc :responses (:responses response))
+                                             (count-respondable))))
 
 (defn ^:private add-or-replace-respondables [respondables response]
   (colls/assoc-by :id (count-respondable response) (map #(add-or-replace-respondable % response) respondables)))
 
-(defn ^:private resource [namespace]
-  (let [[request success error] (->> [:request :success :error]
-                                     (map (partial keywords/namespaced namespace)))]
+(defn ^:private resource [namespace invalidate?]
+  (let [[request success error invalidate!] (map (partial keywords/namespaced namespace)
+                                                 [:request :success :error :invalidate!])]
     (fn
       ([] [:init])
-      ([state [type response]]
+      ([state [type data]]
        (condp = type
          request [:requesting]
-         success [:success (:data response)]
-         error [:error response]
+         success [:success (:data data)]
+         error [:error data]
+         invalidate! (if (invalidate? (second state) data)
+                       [:init]
+                       state)
          state)))))
 
-(def ^:private associates (resource :associates))
-(def ^:private hangouts (resource :hangouts))
-(def ^:private hangout (resource :hangout))
+(def ^:private associates (resource :associates (constantly false)))
+(def ^:private hangouts (resource :hangouts (constantly true)))
+(def ^:private hangout (resource :hangout #(= (:id %1) %2)))
 
 (defn ^:private invitations
   ([] [:init])
@@ -48,6 +51,7 @@
      :invitations/request [:requesting]
      :invitations/success [:success (:data response)]
      :invitations/error [:error response]
+     :invitations/invalidate! [:init]
      :response.invitation/success [:success (colls/assoc-by :id (:data response) (second state))]
      :suggestions.who/success [:success (reduce add-or-replace-respondables (second state) (:data response))]
      state)))
@@ -59,12 +63,14 @@
      :locations/request [:requesting]
      :locations/success [:success (map count-respondable (:data response))]
      :locations/error [:error response]
+     :locations/invalidate! [:init]
      :location/success [:success (add-or-replace-respondables (second state) (:data response))]
+
      :response.location/success [:success (colls/supdate (second state) map add-or-replace-response :location-id (:data response))]
      :suggestions.where/success [:success (add-or-replace-respondables (second state) (:data response))]
      state)))
 
-(def ^:private messages-init [{:status [:init] :length 0 :realized? false} []])
+(def ^:private messages-init [{:status :init :length 0 :realized? false} []])
 
 (defn ^:private messages
   ([] messages-init)
@@ -78,8 +84,8 @@
                               (cond-> (zero? length) (assoc :realized? true)))
                           (concat data (:data response))])
      :messages/error [(assoc meta :status :error :error response) data]
+     :messages/invalidate! messages-init
      :ws/message.new [(update meta :length inc) (cons response data)]
-     :router/navigate messages-init
      state)))
 
 (defn ^:private moments
@@ -90,6 +96,7 @@
      :moments/success [:success (map count-respondable (:data response))]
      :moments/error [:error response]
      :moment/success [:success (add-or-replace-respondables (second state) (:data response))]
+     :moments/invalidate! [:init]
      :response.moment/success [:success (colls/supdate (second state) map add-or-replace-response :moment-id (:data response))]
      :suggestions.when/success [:success (add-or-replace-respondables (second state) (:data response))]
      state)))

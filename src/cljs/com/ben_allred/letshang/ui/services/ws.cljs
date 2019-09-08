@@ -1,7 +1,7 @@
 (ns com.ben-allred.letshang.ui.services.ws
   (:require
-    [cljs.core.async :as async]
-    [cljs.core.match :refer [match]]
+    [clojure.core.async :as async]
+    [clojure.core.match :refer-macros [match]]
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.logging :as log]

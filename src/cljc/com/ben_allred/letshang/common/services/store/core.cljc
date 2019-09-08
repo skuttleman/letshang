@@ -11,6 +11,7 @@
   (apply collaj/create-custom-store
          r/atom
          reducers/root
+         (env/get :initial-state)
          collaj.enhancers/with-fn-dispatch
          collaj.enhancers/with-subscribers
          (cond-> nil
@@ -18,7 +19,7 @@
                                             (partial js/console.log "Action dispatched:")
                                             (partial js/console.log "New state:")))))))
 
-(defonce get-state (:get-state store))
+(defonce ^:dynamic get-state (:get-state store))
 
 (defonce dispatch (:dispatch store))
 
@@ -29,4 +30,4 @@
 (defonce sign-up (delay (:auth/sign-up (get-state))))
 
 (defn reaction [path]
-  (r/make-reaction (comp #(get-in % path) get-state)))
+  (r/make-reaction (fn [] (get-in (get-state) path))))

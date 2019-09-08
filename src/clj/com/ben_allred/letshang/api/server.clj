@@ -43,10 +43,10 @@
   (let [env (maps/map-keys (comp keyword string/lower-case strings/snake->kebab) env)
         port (server-port env :port 3000)
         nrepl-port (server-port env :nrepl-port 7000)
-        base-url (format "http://%s:%d" (:canonicalHostName (bean (InetAddress/getLocalHost))) port)
+        base-url (format "http://%s:%d" (.getCanonicalHostName (InetAddress/getLocalHost)) port)
         server (start! port #'routes/app-dev)]
     (alter-var-root #'env/get merge env {:dev? true :base-url base-url :port port})
-    (println "Server is running with #'wrap-reload")
+    (println "Server is running with #'wrap-reload at" base-url)
     (nrepl/start-server :port nrepl-port)
     (println "REPL is listening on port" nrepl-port)
     server))

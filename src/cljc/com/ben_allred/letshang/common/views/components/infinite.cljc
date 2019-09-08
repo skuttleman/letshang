@@ -1,8 +1,8 @@
 (ns com.ben-allred.letshang.common.views.components.infinite
   (:refer-clojure :exclude [list])
   (:require
-    [com.ben-allred.letshang.common.views.components.loading :as loading]
-    [com.ben-allred.letshang.common.utils.logging :as log]))
+    [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.views.components.loading :as loading]))
 
 (defn list [{:keys [fetch loading?]} items]
   (when (and (not loading?)

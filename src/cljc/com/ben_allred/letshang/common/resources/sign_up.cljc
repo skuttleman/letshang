@@ -1,42 +1,15 @@
 (ns com.ben-allred.letshang.common.resources.sign-up
   (:require
     #?(:cljs [com.ben-allred.letshang.ui.services.forms.standard :as forms.std])
-    [#?(:clj  com.ben-allred.letshang.api.services.navigation
-        :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
     [clojure.string :as string]
     [com.ben-allred.formation.core :as f]
-    [com.ben-allred.letshang.common.resources.core :as res]
+    [com.ben-allred.letshang.common.resources.remotes.users :as rem.users]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
-    [com.ben-allred.letshang.common.services.store.actions.users :as act.users]
-    [com.ben-allred.letshang.common.services.store.core :as store]
-    [com.ben-allred.letshang.common.services.validators :as validators]
-    [com.ben-allred.letshang.common.stubs.reagent :as r]
-    [com.ben-allred.letshang.common.utils.chans :as ch]))
+    [com.ben-allred.letshang.common.services.validators :as validators]))
 
 (def ^:private model->source
   (partial hash-map :data))
-
-(defn ^:private api [user]
-  (let [ready? (r/atom true)]
-    (reify
-      forms/IResource
-      (fetch [_]
-        (ch/resolve user))
-      (persist! [_ model]
-        (reset! ready? false)
-        (-> model
-            (model->source)
-            (act.users/register-user)
-            (store/dispatch)
-            (ch/peek (fn [_] (reset! ready? true)))
-            (ch/peek (fn [_]
-                       (nav/go-to! (nav/path-for :auth/login {:query-params (select-keys model #{:email})})))
-                     (res/toast-error "Something went wrong."))))
-
-      forms/IBlock
-      (ready? [_]
-        @ready?))))
 
 (def validator
   (f/validator
@@ -62,5 +35,5 @@
   (forms/with-attrs attrs form path nil view->model))
 
 (defn form [new-user]
-  #?(:cljs    (forms.std/create (api new-user) validator)
+  #?(:cljs    (forms.std/create (rem.users/sign-up new-user) validator)
      :default (forms.noop/create new-user)))

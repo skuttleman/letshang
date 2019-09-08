@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.ui.app
   (:require
+    [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.utils.dom :as dom]
     [com.ben-allred.letshang.common.utils.logging :as log :include-macros true]

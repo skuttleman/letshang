@@ -20,9 +20,9 @@
     " at "
     (dates/format (:created-at message))]])
 
-(defn ^:private message-form [hangout-id]
-  (let [form (res.conversations/form hangout-id)]
-    (fn [_hangout-id]
+(defn ^:private message-form []
+  (let [form (res.conversations/form)]
+    (fn []
       [form-view/form
        {:inline?   true
         :form      form
@@ -36,7 +36,7 @@
 (defn conversation [_attrs {{hangout-id :id} :hangout :as state}]
   (let [[{:keys [status realized? length]} items] (:messages state)]
     [:div.layout--stack-between
-     [message-form hangout-id]
+     [message-form]
      [infinite/list
       {:component message-item
        :key-fn    :id

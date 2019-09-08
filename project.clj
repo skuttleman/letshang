@@ -19,6 +19,7 @@
                  [com.ben-allred/formation "0.6.2" :exclusions [[nrepl]]]
                  [com.ben-allred/ws-client-cljc "0.1.0-SNAPSHOT" :exclusions [[nrepl]
                                                                               [org.clojure/core.async]]]
+                 [com.ben-allred/vow "0.1.0"]
                  [com.cognitect/transit-clj "0.8.313"]
                  [com.cognitect/transit-cljs "0.8.256"]
                  [com.taoensso/timbre "4.10.0"]

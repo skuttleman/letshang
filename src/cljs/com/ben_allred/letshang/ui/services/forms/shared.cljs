@@ -1,8 +1,8 @@
 (ns com.ben-allred.letshang.ui.services.forms.shared
   (:require
-    [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.maps :as maps]))
+    [com.ben-allred.letshang.common.utils.maps :as maps]
+    [com.ben-allred.vow.core :as v]))
 
 (defn ^:private diff-paths [paths path old-model new-model]
   (reduce-kv (fn [paths k v]
@@ -73,5 +73,5 @@
 
 (defn request* [request state validator]
   (-> request
-      (ch/peek (comp (partial reset! state) (partial init validator))
-               (comp (partial swap! state add-api-errors) :data :errors))))
+      (v/peek (comp (partial reset! state) (partial init validator))
+              (comp (partial swap! state add-api-errors) :data :errors))))

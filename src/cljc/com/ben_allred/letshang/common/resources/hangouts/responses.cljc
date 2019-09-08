@@ -2,51 +2,19 @@
   (:require
     #?(:cljs [com.ben-allred.letshang.ui.services.forms.live :as forms.live])
     [com.ben-allred.formation.core :as f]
+    [com.ben-allred.letshang.common.resources.remotes.responses :as rem.responses]
     [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
     [com.ben-allred.letshang.common.services.store.actions.hangouts :as act.hangouts]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
-    [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.fns #?(:clj :refer :cljs :refer-macros) [=> =>>]]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
-    [com.ben-allred.letshang.common.utils.logging :as log]))
-
-(defn ^:private response-api [response-type user-id model-id]
-  (let [ready? (r/atom false)
-        resource (case response-type
-                   :moment :moments
-                   :location :locations
-                   :invitation :invitations)]
-    (reify
-      forms/IResource
-      (fetch [_]
-        (-> (store/reaction [resource])
-            (ch/from-reaction)
-            (cond->
-              (not= :invitation response-type)
-              (ch/then (=>> (filter (comp #{model-id} :id))
-                            (first)
-                            (:responses))))
-            (ch/then (=>> (filter (comp #{user-id} :user-id))
-                          (first)))
-            (ch/then (=> (select-keys #{:user-id :response})
-                         (assoc :id model-id)))
-            (ch/peek (fn [_] (reset! ready? true)))))
-      (persist! [_ model]
-        (reset! ready? false)
-        (-> {:data (select-keys model #{:response})}
-            (->> (act.hangouts/set-response response-type model-id))
-            (store/dispatch)
-            (ch/peek (fn [_] (reset! ready? true)))
-            (ch/peek (constantly nil)
-                     (res/toast-error "Something went wrong."))))
-
-      forms/IBlock
-      (ready? [_]
-        @ready?))))
+    [com.ben-allred.letshang.common.utils.logging :as log]
+    [com.ben-allred.letshang.common.utils.proms :as proms]
+    [com.ben-allred.vow.core :as v #?@(:cljs [:include-macros true])]))
 
 (def response-validator
   (f/validator
@@ -93,9 +61,10 @@
                  (:response)
                  (swap! form assoc :response))))))
 
-(defn form [response-type user-id model-id]
-  #?(:clj  (forms.noop/create nil)
-     :cljs (forms.live/create (response-api response-type user-id model-id) (constantly nil))))
+(defn form [response-type model-id]
+  #?(:clj  (forms.noop/create @(rem.responses/response response-type model-id))
+     :cljs (forms.live/create (rem.responses/response response-type model-id)
+                              (constantly nil))))
 
 (defn with-attrs
   ([form path]

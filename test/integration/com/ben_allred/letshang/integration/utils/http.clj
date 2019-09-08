@@ -14,7 +14,7 @@
                        auth-token (assoc-in [:headers "cookie"] (str "auth-token=" auth-token))
                        csrf-token (assoc-in [:headers "x-csrf-token"] csrf-token))
                      (->> (f (str (env/get :base-url) path)))
-                     (async/<!!))]
+                     (deref))]
     (when assert? (assert (http/success? response) (pr-str (second response))))
     response))
 

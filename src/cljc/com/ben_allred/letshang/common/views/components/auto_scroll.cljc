@@ -1,6 +1,6 @@
 (ns com.ben-allred.letshang.common.views.components.auto-scroll
   (:require
-    [#?(:clj clojure.core.async :cljs cljs.core.async) :as async]
+    [clojure.core.async :as async]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 

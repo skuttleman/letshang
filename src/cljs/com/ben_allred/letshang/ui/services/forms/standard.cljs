@@ -1,37 +1,36 @@
 (ns com.ben-allred.letshang.ui.services.forms.standard
   (:require
+    [com.ben-allred.letshang.common.resources.remotes.core :as remotes]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
-    [com.ben-allred.letshang.common.utils.chans :as ch]
+    [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.ui.services.forms.shared :as forms.shared]
-    [com.ben-allred.letshang.common.utils.logging :as log]))
+    [com.ben-allred.vow.core :as v]))
 
-(defn create [api validator]
+(defn create [remote validator]
   (let [state (r/atom nil)
         validator (or validator (constantly nil))]
-    (-> api
-        (forms/fetch)
-        (ch/then (comp (partial reset! state) (partial forms.shared/init validator))))
+    (-> remote
+        (v/then-> (->> (forms.shared/init validator) (reset! state))))
     (reify
       forms/ISync
       (save! [this]
         (swap! state assoc :persist-attempted? true)
         (-> (cond
               (not (forms/ready? this))
-              (ch/reject {:message "Form not ready"})
+              (v/reject {:message "Form not ready"})
 
               (not (forms/valid? this))
-              (ch/reject {:message "Form not valid" :errors (forms/errors this)})
+              (v/reject {:message "Form not valid" :errors (forms/errors this)})
 
               (not (forms/changed? this))
-              (ch/resolve @this)
+              (v/resolve @this)
 
               :else
               (let [model @this]
                 (swap! state assoc :status :pending)
-                (-> api
-                    (forms/persist! model)
-                    (ch/then (fn [_] (forms/fetch api)))
+                (-> remote
+                    (remotes/persist! model)
                     (forms.shared/request* state validator))))))
 
       forms/IBlock

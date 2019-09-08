@@ -6,10 +6,12 @@
     [clojure.set :as set]
     [com.ben-allred.letshang.common.resources.hangouts :as res.hangouts]
     [com.ben-allred.letshang.common.resources.hangouts.suggestions :as res.suggestions]
+    [com.ben-allred.letshang.common.resources.remotes.hangouts :as rem.hangouts]
+    [com.ben-allred.letshang.common.resources.remotes.invitations :as rem.invitations]
+    [com.ben-allred.letshang.common.resources.remotes.locations :as rem.locations]
+    [com.ben-allred.letshang.common.resources.remotes.moments :as rem.moments]
+    [com.ben-allred.letshang.common.resources.remotes.users :as rem.users]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
-    [com.ben-allred.letshang.common.services.store.actions.hangouts :as act.hangouts]
-    [com.ben-allred.letshang.common.services.store.actions.shared :as act]
-    [com.ben-allred.letshang.common.services.store.actions.users :as act.users]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.logging :as log]
@@ -41,21 +43,21 @@
    (when creator?
      [:<>
       [fields/checkbox
-       (-> {:label "Attendees can invite people?"
+       (-> {:label            "Attendees can invite people?"
             :form-field-class ["inline" "reverse"]}
            (res.hangouts/with-attrs form [:others-invite?]))]
       [fields/checkbox
-       (-> {:label "Attendees can suggest when?"
+       (-> {:label            "Attendees can suggest when?"
             :form-field-class ["inline" "reverse"]}
            (res.hangouts/with-attrs form [:when-suggestions?]))]
       [fields/checkbox
-       (-> {:label "Attendees can suggest where?"
+       (-> {:label            "Attendees can suggest where?"
             :form-field-class ["inline" "reverse"]}
            (res.hangouts/with-attrs form [:where-suggestions?]))]])])
 
-(defn ^:private edit-form [hangout _change-state]
-  (let [form (res.hangouts/form hangout)]
-    (fn [_hangout change-state]
+(defn ^:private edit-form [_change-state]
+  (let [form (res.hangouts/form)]
+    (fn [change-state]
       [:div.layout--space-below
        [hangout-form
         form
@@ -75,7 +77,7 @@
   (let [current-section (get-in page [:route-params :section])]
     [:div.layout--stack-between
      (if (= state :edit)
-       [edit-form hangout change-state]
+       [edit-form change-state]
        [:div.layout--space-between
         [:h1.title.is-5 {:style {:margin-bottom 0}} "Name: "]
         [:span (:name hangout)]
@@ -89,7 +91,7 @@
          ^{:key section}
          [:li
           {:class [(when (= current-section section) "is-active")]}
-          [:a {:href (nav/path-for :ui/hangout {:route-params {:hangout-id (:id hangout) :section section}})
+          [:a {:href     (nav/path-for :ui/hangout {:route-params {:hangout-id (:id hangout) :section section}})
                :on-click #(change-state nil)}
            label]])]]]))
 
@@ -128,39 +130,32 @@
    suggestions/location-suggestion
    (sort res.suggestions/location-sorter locations)])
 
-(defn ^:private hangout-who [{:keys [creator?] :as attrs} {:keys [hangout page] :as state}]
-  (let [{hangout-id :id :keys [others-invite?] :as hangout} hangout]
-    [:div.layout--stack-between
-     [loading/with-status
-      {:action (act.hangouts/fetch-invitations hangout-id)
-       :keys   #{:invitations}
-       :state  state}
-      [hangout-who* attrs]]
-     (when (or creator? others-invite?)
-       [suggestions/invitation-form hangout])]))
+(defn ^:private hangout-who [{:keys [creator?] :as attrs} {:keys [hangout] :as state}]
+  [:div.layout--stack-between
+   [loading/with-resource
+    {:state     state
+     :resources {:invitations rem.invitations/invitations}}
+    [hangout-who* attrs]]
+   (when (or creator? (:others-invite? hangout))
+     [suggestions/invitation-form hangout])])
 
-(defn ^:private hangout-when [{:keys [creator?]} {:keys [page hangout] :as state}]
-  (let [{hangout-id :id :keys [when-suggestions?]} hangout]
-    [:div.layout--stack-between
-     [loading/with-status
-      {:action (act.hangouts/fetch-moments hangout-id)
-       :keys   #{:moments}
-       :state  state}
-      hangout-when*]
-     (when (or creator? when-suggestions?)
-       [suggestions/moment-form hangout-id])]))
+(defn ^:private hangout-when [{:keys [creator?]} {:keys [hangout] :as state}]
+  [:div.layout--stack-between
+   [loading/with-resource
+    {:state     state
+     :resources {:moments rem.moments/moments}}
+    hangout-when*]
+   (when (or creator? (:when-suggestions? hangout))
+     [suggestions/moment-form hangout])])
 
 (defn ^:private hangout-where [{:keys [creator?]} {:keys [hangout] :as state}]
-  (let [{hangout-id :id :keys [where-suggestions?]} hangout]
-    [:div.layout--stack-between
-     [loading/with-status
-      {:action (act.hangouts/fetch-locations hangout-id)
-       :keys   #{:locations}
-       :state  state
-       :size   :medium}
-      hangout-where*]
-     (when (or creator? where-suggestions?)
-       [suggestions/location-form hangout-id])]))
+  [:div.layout--stack-between
+   [loading/with-resource
+    {:state     state
+     :resources {:locations rem.locations/locations}}
+    hangout-where*]
+   (when (or creator? (:where-suggestions? hangout))
+     [suggestions/location-form hangout])])
 
 (def ^:private section->component
   {:conversation conversations/conversation
@@ -221,22 +216,19 @@
            "Cancel"])]])))
 
 (defn hangouts [state]
-  [loading/with-status
-   {:action act.hangouts/fetch-hangouts
-    :keys   #{:hangouts}
-    :state  state}
+  [loading/with-resource
+   {:state     state
+    :resources {:hangouts rem.hangouts/hangouts}}
    hangouts*])
 
-(defn hangout [{:keys [page] :as state}]
-  [loading/with-status
-   {:action (act.hangouts/fetch-hangout (get-in page [:route-params :hangout-id]))
-    :keys   #{:hangout}
-    :state  state}
+(defn hangout [state]
+  [loading/with-resource
+   {:state     state
+    :resources {:hangout rem.hangouts/hangout}}
    hangout*])
 
 (defn create [state]
-  [loading/with-status
-   {:action act.users/fetch-associates
-    :keys   #{:associates}
-    :state  state}
+  [loading/with-resource
+   {:resources {:associates rem.users/users}
+    :state     state}
    create*])

@@ -2,16 +2,11 @@
   (:require
     #?(:cljs [com.ben-allred.letshang.ui.services.forms.standard :as forms.std])
     [com.ben-allred.formation.core :as f]
-    [com.ben-allred.letshang.common.resources.core :as res]
+    [com.ben-allred.letshang.common.resources.remotes.suggestions :as rem.suggestions]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
-    [com.ben-allred.letshang.common.services.store.actions.hangouts :as act.hangouts]
-    [com.ben-allred.letshang.common.services.store.core :as store]
-    [com.ben-allred.letshang.common.stubs.reagent :as r]
-    [com.ben-allred.letshang.common.utils.chans :as ch]
     [com.ben-allred.letshang.common.utils.dates :as dates]
-    [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.maps :as maps]))
+    [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (def windows [:any-time :morning :mid-day :afternoon :after-work :evening :night :twilight])
 
@@ -31,34 +26,6 @@
     {:name [(f/required "You must select a place")
             (f/pred string? "Must be a string")]}))
 
-(def ^:private model->source
-  (partial hash-map :data))
-
-(defn ^:private suggest-api [initial action-fn resources]
-  (let [ready? (r/atom false)]
-    (reify
-      forms/IResource
-      (fetch [_]
-        (-> resources
-            (->> (maps/map-vals ch/from-reaction))
-            (ch/all)
-            (ch/peek (fn [_] (reset! ready? true)))
-            (ch/then (constantly initial))))
-      (persist! [_ model]
-        (reset! ready? false)
-        (-> model
-            (model->source)
-            (action-fn)
-            (store/dispatch)
-            (ch/peek (fn [_] (reset! ready? true)))
-            (ch/peek (constantly nil)
-                     (res/toast-error "Something went wrong."))
-            (ch/then (constantly initial))))
-
-      forms/IBlock
-      (ready? [_]
-        @ready?))))
-
 (defn ^:private sorter* [k]
   (fn [{response-counts-1 :response-counts value-1 k} {response-counts-2 :response-counts value-2 k}]
     (let [score (compare (- (:positive response-counts-2 0) (:negative response-counts-2 0))
@@ -74,19 +41,16 @@
 
 (def location-sorter (sorter* :name))
 
-(def ^:private default-when
-  {:window :any-time})
-
-(defn who-form [hangout-id resources]
-  #?(:cljs    (forms.std/create (suggest-api nil (partial act.hangouts/suggest :who hangout-id) resources) who-validator)
+(defn who-form []
+  #?(:cljs    (forms.std/create rem.suggestions/who who-validator)
      :default (forms.noop/create nil)))
 
-(defn when-form [hangout-id resources]
-  #?(:cljs    (forms.std/create (suggest-api default-when (partial act.hangouts/suggest :when hangout-id) resources) when-validator)
+(defn when-form []
+  #?(:cljs    (forms.std/create rem.suggestions/when when-validator)
      :default (forms.noop/create nil)))
 
-(defn where-form [hangout-id resources]
-  #?(:cljs    (forms.std/create (suggest-api nil (partial act.hangouts/suggest :where hangout-id) resources) where-validator)
+(defn where-form []
+  #?(:cljs    (forms.std/create rem.suggestions/where where-validator)
      :default (forms.noop/create nil)))
 
 (defn with-attrs

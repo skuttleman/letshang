@@ -33,6 +33,6 @@
     (cond
       (not handler) [loading/spinner {:size :large}]
       user [with-layout component state]
-      (not= :ui/home handler) (nav/nav-and-replace! :ui/home {:query-params {:redirect-uri (nav/path-for handler page)}})
+      #?@(:cljs [(not= :ui/home handler) (nav/nav-and-replace! :ui/home {:query-params {:redirect-uri (nav/path-for handler page)}})])
       sign-up [sign-up/root state sign-up]
       :else [dashboard/root state])))

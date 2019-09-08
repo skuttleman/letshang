@@ -27,7 +27,9 @@
 
 (defn ^:private render* [arg]
   (cond
-    (vector? arg) (render arg)
+    (vector? arg) (if (= :<> (first arg))
+                    (map render (rest arg))
+                    (render arg))
     (colls/cons? arg) (map render arg)
     (map? arg) (clean-attrs arg)
     :else arg))

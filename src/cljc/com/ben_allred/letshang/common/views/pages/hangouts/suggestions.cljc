@@ -2,13 +2,13 @@
   (:require
     #?(:cljs [com.ben-allred.letshang.ui.services.forms.standard :as forms.std])
     [com.ben-allred.letshang.common.resources.hangouts.suggestions :as res.suggestions]
-    [com.ben-allred.letshang.common.services.store.actions.users :as act.users]
-    [com.ben-allred.letshang.common.services.store.core :as store]
+    [com.ben-allred.letshang.common.resources.remotes.invitations :as rem.invitations]
+    [com.ben-allred.letshang.common.resources.remotes.users :as rem.users]
+    [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.dates :as dates]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.maps :as maps #?@(:cljs [:include-macros true])]
     [com.ben-allred.letshang.common.utils.strings :as strings]
     [com.ben-allred.letshang.common.utils.users :as users]
     [com.ben-allred.letshang.common.views.components.calendar :as calendar]
@@ -48,11 +48,15 @@
     [components/icon (if (:open? attrs) :chevron-up :chevron-down)]]])
 
 (defn invitation-form [hangout]
-  (store/dispatch act.users/fetch-associates)
-  (let [associates (store/reaction [:associates])
-        invitations (store/reaction [:invitations])
-        form (res.suggestions/who-form (:id hangout) (maps/->map associates invitations))]
-    (fn [hangout]
+  (let [form (res.suggestions/who-form)
+        options (r/make-reaction (fn []
+                                   (->> @rem.users/users
+                                        (remove (-> (map :user-id @rem.invitations/invitations)
+                                                    (set)
+                                                    (conj (:created-by hangout))
+                                                    (comp :id)))
+                                        (map (juxt :id users/full-name)))))]
+    (fn [_hangout]
       [:div.layout--space-below
        [form-view/form
         {:inline?   true
@@ -60,20 +64,12 @@
          :save-text "Invite"}
         [dropdown/dropdown
          (-> {:label   "Invitees"
-              :options (let [invited? (-> (map :user-id (second @invitations))
-                                          (set)
-                                          (conj (:created-by hangout))
-                                          (comp :id))]
-                         (->> @associates
-                              (second)
-                              (remove invited?)
-                              (map (juxt :id users/full-name))))}
+              :options @options}
              (res.suggestions/with-attrs form [:invitation-ids]))]]])))
 
-(defn moment-form [hangout-id]
-  (let [moments (store/reaction [:moments])
-        form (res.suggestions/when-form hangout-id {:moments moments})]
-    (fn [_hangout-id]
+(defn moment-form [_hangout]
+  (let [form (res.suggestions/when-form)]
+    (fn [_hangout]
       [form-view/form
        {:form      form
         :inline?   true
@@ -87,16 +83,15 @@
             (res.suggestions/with-attrs form [:window])
             (dropdown/oneable))]])))
 
-(defn location-form [hangout-id]
-  (let [locations (store/reaction [:locations])
-        form (res.suggestions/where-form hangout-id {:locations locations})]
-    (fn [_hangout-id]
+(defn location-form [_hangout]
+  (let [form (res.suggestions/where-form)]
+    (fn [_hangout]
       [form-view/form
        {:form      form
         :inline?   true
         :save-text "Suggest"}
        [fields/input
-        (-> {:label    "Name of the place"}
+        (-> {:label "Name of the place"}
             (res.suggestions/with-attrs form [:name]))]])))
 
 (defn location-suggestion [{location-id :id :keys [name response-counts responses]} user-id]

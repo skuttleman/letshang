@@ -21,6 +21,8 @@
        (models/select ::repo.messages/model (models/under :messages))
        (repos/exec! db))))
 
+(def LIMIT 30)
+
 (defn select-for-hangout [db hangout-id user-id pagination]
   (when (-> hangout-id
             (repo.hangouts/id-clause)
