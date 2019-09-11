@@ -146,6 +146,14 @@
                            (and serde (string? %)) (serde/deserialize serde)))
           (->> (conj [(if (success? response) :success :error)]))))))
 
+(defn ^:private response*
+  ([response?]
+   (fn [value]
+     (response* value response?)))
+  ([value response?]
+   (cond-> value
+     (not response?) (:body))))
+
 (defn ^:private go [method url {:keys [response?] :as request}]
   (assert url "Cannot make http request without specifying URI")
   (let [content-type (if (env/get :dev?) "application/edn" "application/transit+json")
@@ -158,9 +166,8 @@
         (client)
         (request*)
         (proms/from-ch)
-        (v/then-> (handle-ui-error!)
-                  (cond->
-                    (not response?) (:body))))))
+        (v/catch (comp v/reject (response* response?)))
+        (v/then-> (handle-ui-error!) (response* response?)))))
 
 (defn get
   ([url]
