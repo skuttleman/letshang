@@ -22,4 +22,4 @@
 (defn from-ch [ch]
   (-> ch
       (v/ch->prom (comp #{:success} first))
-      (v/then second second)))
+      (v/then second (comp v/reject second))))

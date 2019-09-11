@@ -19,7 +19,7 @@
 
 (defn ^:private deref* [match? [status value] fetch]
   (let [match? (match?)]
-    (when (and fetch (or (= :init status) (not match?)))
+    (when (and fetch (or (= :init status) (and (= :success status) (not match?))))
       (store/dispatch (fetch)))
     (when match?
       value)))
@@ -31,7 +31,9 @@
     (success? [_]
       (and (match?) (= :success (first @reaction))))
     (ready? [_]
-      (and (match?) (contains? #{:success :error} (first @reaction))))
+      (let [[status] @reaction]
+        (or (= :error status)
+            (and (match?) (= :success status)))))
     (persist! [_ model]
       (if persist
         (-> (persist model)

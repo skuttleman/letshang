@@ -1,14 +1,11 @@
 (ns com.ben-allred.letshang.common.views.components.loading
   (:require
     [com.ben-allred.letshang.common.resources.remotes.core :as remotes]
-    [com.ben-allred.letshang.common.services.env :as env]
-    [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]
-    [com.ben-allred.letshang.common.views.components.core :as components]
-    [com.ben-allred.vow.core :as v]))
+    [com.ben-allred.letshang.common.views.components.core :as components]))
 
 (defn ^:private status-messages [messages]
   [:div
@@ -45,7 +42,8 @@
            (and ready? (not success?))
            [components/alert :error [status-messages (->> resource-vals
                                                           (remove remotes/success?)
-                                                          (map (comp :message deref)))]]
+                                                          (map (comp :message deref))
+                                                          (remove nil?))]]
 
            ready?
            [components/render control (merge state (maps/map-vals deref resources))]

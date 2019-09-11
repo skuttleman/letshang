@@ -4,7 +4,8 @@ VALUES
     ('user2@example.test', 'User', 'Two', 'user2', '7654321098'),
     ('user3@example.test', 'User', 'Three', 'user3', '3456789012'),
     ('user4@example.test', 'User', 'Four', 'user4', '8273645647'),
-    ('user5@example.test', 'User', 'Five', 'user5', '2938475671');
+    ('user5@example.test', 'User', 'Five', 'user5', '2938475671'),
+    ('user6@example.test', 'User', 'Six', 'user6', '9343234014');
 
 INSERT INTO hangouts (name, created_by)
 VALUES

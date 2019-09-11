@@ -1,13 +1,12 @@
 (ns com.ben-allred.letshang.integration.utils.http
   (:refer-clojure :exclude [get])
   (:require
-    [clojure.core.async :as async]
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.services.http :as http]
     [com.ben-allred.letshang.common.utils.fns :as fns]
     [com.ben-allred.letshang.common.utils.logging :as log]))
 
-(defn request* [f [auth-token csrf-token] path request assert?]
+(defn request* [f [_ auth-token csrf-token] path request assert?]
   (let [response (-> request
                      (update [:headers "accept"] fns/or "application/transit+json")
                      (cond->

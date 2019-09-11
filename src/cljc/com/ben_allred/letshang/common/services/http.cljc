@@ -67,9 +67,10 @@
   (set/map-invert status->kw))
 
 (defn ^:private check-status [lower upper response]
-  (when-let [status (if (vector? response)
-                      (kw->status (clojure.core/get response 2))
-                      (:status response))]
+  (let [status (as-> response $
+                     (cond-> $ (vector? $) (second))
+                     (:status $)
+                     (cond-> $ (keyword? $) (kw->status)))]
     (<= lower status upper)))
 
 (def ^{:arglists '([response])} success?
