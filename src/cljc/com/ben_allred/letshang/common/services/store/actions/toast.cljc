@@ -3,7 +3,6 @@
     [clojure.core.async :as async]
     [com.ben-allred.letshang.common.utils.dates :as dates]))
 
-
 (defn remove-toast! [toast-id]
   (fn [[dispatch]]
     #?@(:cljs

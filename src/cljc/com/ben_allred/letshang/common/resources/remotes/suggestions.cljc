@@ -9,45 +9,68 @@
     [com.ben-allred.letshang.common.services.store.actions.hangouts :as act.hangouts]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.stubs.reagent :as r]
-    [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.vow.core :as v]))
+    [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (defonce who
   (let [reactions {:associates  rem.users/users
                    :invitations rem.invitations/invitations}
-        reaction (r/atom [:init])
+        reaction (r/make-reaction (fn []
+                                    (let [reactions (vals reactions)]
+                                      (cond
+                                        (every? r.impl/success? reactions)
+                                        [:success nil]
+
+                                        (every? r.impl/ready? reactions)
+                                        (->> reactions
+                                             (remove r.impl/success?)
+                                             (first)
+                                             (deref))
+
+                                        :else
+                                        [:init]))))
         hangout-id (store/reaction [:page :route-params :hangout-id])]
-    (r.impl/create {:fetch    #(fn [_]
-                                 (-> reactions
-                                     (v/all)
-                                     (v/then (constantly nil))
-                                     (v/peek (partial reset! reaction))))
-                    :reaction reaction
+    (r.impl/create {:reaction reaction
                     :persist  (fn [model]
                                 (act.hangouts/suggest :who @hangout-id {:data model}))})))
 
 (defonce when
   (let [reactions {:moment rem.moments/moments}
-        reaction (r/atom [:init])
+        reaction (r/make-reaction (fn []
+                                    (let [reactions (vals reactions)]
+                                      (cond
+                                        (every? r.impl/success? reactions)
+                                        [:success {:window :any-time}]
+
+                                        (every? r.impl/ready? reactions)
+                                        (->> reactions
+                                             (remove r.impl/success?)
+                                             (first)
+                                             (deref))
+
+                                        :else
+                                        [:init]))))
         hangout-id (store/reaction [:page :route-params :hangout-id])]
-    (r.impl/create {:fetch    #(fn [_]
-                                 (-> reactions
-                                     (v/all)
-                                     (v/then (constantly {:window :any-time}))
-                                     (v/peek (partial reset! reaction))))
-                    :reaction reaction
+    (r.impl/create {:reaction reaction
                     :persist  (fn [model]
                                 (act.hangouts/suggest :when @hangout-id {:data model}))})))
 
 (defonce where
   (let [reactions {:locations rem.locations/locations}
-        reaction (r/atom [:init])
+        reaction (r/make-reaction (fn []
+                                    (let [reactions (vals reactions)]
+                                      (cond
+                                        (every? r.impl/success? reactions)
+                                        [:success nil]
+
+                                        (every? r.impl/ready? reactions)
+                                        (->> reactions
+                                             (remove r.impl/success?)
+                                             (first)
+                                             (deref))
+
+                                        :else
+                                        [:init]))))
         hangout-id (store/reaction [:page :route-params :hangout-id])]
-    (r.impl/create {:fetch    #(fn [_]
-                                 (-> reactions
-                                     (v/all)
-                                     (v/then (constantly nil))
-                                     (v/peek (partial reset! reaction))))
-                    :reaction reaction
+    (r.impl/create {:reaction reaction
                     :persist  (fn [model]
                                 (act.hangouts/suggest :where @hangout-id {:data model}))})))

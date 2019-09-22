@@ -7,8 +7,7 @@
     [com.ben-allred.letshang.common.stubs.reagent :as r]
     [com.ben-allred.letshang.common.utils.fns #?(:clj :refer :cljs :refer-macros) [=>]]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.letshang.common.utils.strings :as strings]
-    [com.ben-allred.vow.core :as v #?@(:cljs [:include-macros true])]))
+    [com.ben-allred.letshang.common.utils.strings :as strings]))
 
 (def model->source
   (comp (partial hash-map :data)
@@ -23,9 +22,8 @@
     value))
 
 (defonce hangouts
-  (r.impl/create {:fetch       (constantly act.hangouts/fetch-hangouts)
-                  :reaction    (store/reaction [:hangouts])
-                  :invalidate! (constantly [:hangouts/invalidate!])}))
+  (r.impl/create {:fetch      (constantly act.hangouts/fetch-hangouts)
+                  :reaction   (store/reaction [:hangouts])}))
 
 (defonce hangout
   (let [hangout-id (store/reaction [:page :route-params :hangout-id])
@@ -33,15 +31,11 @@
         reaction (r/make-reaction #(if @hangout-id
                                      @hangout
                                      [:success {:where-suggestions? true :when-suggestions? true :others-invite? false}]))]
-    (r.impl/create {:match?      #(= @hangout-id (:id (second @reaction)))
-                    :fetch       #(if-some [id @hangout-id]
-                                    (act.hangouts/fetch-hangout id)
-                                    [::store/noop])
-                    :reaction    reaction
-                    :persist     (fn [model]
-                                   (if-some [id @hangout-id]
-                                     (act.hangouts/update-hangout id (model->source model))
-                                     (act.hangouts/create-hangout (model->source model))))
-                    :invalidate! #(if-some [id @hangout-id]
-                                    [:hangout/invalidate! id]
-                                    [::store/noop])})))
+    (r.impl/create {:fetch      #(if-some [id @hangout-id]
+                                   (act.hangouts/fetch-hangout id)
+                                   [::store/noop])
+                    :reaction   reaction
+                    :persist    (fn [model]
+                                  (if-some [id @hangout-id]
+                                    (act.hangouts/update-hangout id (model->source model))
+                                    (act.hangouts/create-hangout (model->source model))))})))

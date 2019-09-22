@@ -5,7 +5,8 @@
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]
-    [com.ben-allred.letshang.common.views.components.core :as components]))
+    [com.ben-allred.letshang.common.views.components.core :as components]
+    [com.ben-allred.vow.core :as v]))
 
 (defn ^:private status-messages [messages]
   [:div
@@ -26,27 +27,25 @@
     {:class [(keywords/safe-name size)]}]))
 
 (defn with-resource [{:keys [resources]} _control]
-  (r/create-class
-    {:component-did-mount
-     (fn [_]
-       (run! (comp deref val) resources))
-     :component-will-unmount
-     (fn [_]
-       (run! remotes/invalidate! (vals resources)))
-     :reagent-render
-     (fn [{:keys [state] :as attrs} control]
-       (let [resource-vals (vals resources)
-             ready? (every? remotes/ready? resource-vals)
-             success? (every? remotes/success? resource-vals)]
-         (cond
-           (and ready? (not success?))
-           [components/alert :error [status-messages (->> resource-vals
-                                                          (remove remotes/success?)
-                                                          (map (comp :message deref))
-                                                          (remove nil?))]]
+  (let [resource-vals (vals resources)
+        to-fetch (remove remotes/hydrated? resource-vals)
+        fetched? (r/atom (empty? to-fetch))]
+    (when (seq to-fetch)
+      (-> (map remotes/fetch! resource-vals)
+          (v/all)
+          (v/peek (fn [_] (reset! fetched? true)))))
+    (fn [{:keys [state] :as attrs} control]
+      (let [ready? (and @fetched? (every? remotes/ready? resource-vals))
+            success? (and @fetched? (every? remotes/success? resource-vals))]
+        (cond
+          (and ready? (not success?))
+          [components/alert :error [status-messages (->> resource-vals
+                                                         (remove remotes/success?)
+                                                         (map (comp :message deref))
+                                                         (remove nil?))]]
 
-           ready?
-           [components/render control (merge state (maps/map-vals deref resources))]
+          ready?
+          [components/render control (merge state (maps/map-vals deref resources))]
 
-           :else
-           [:div.layout--center-content [spinner {:size (:size attrs :large)}]])))}))
+          :else
+          [:div.layout--center-content [spinner {:size (:size attrs :large)}]])))))

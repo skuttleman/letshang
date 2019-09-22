@@ -33,14 +33,14 @@
             (res.conversations/with-attrs form [:body])
             (update :errors #(when (forms/attempted? form) %)))]])))
 
-(defn conversation [_attrs {{hangout-id :id} :hangout :as state}]
+(defn conversation [_attrs {{:keys [route-params]} :page :as state}]
   (let [[{:keys [status realized? length]} items] (:messages state)]
     [:div.layout--stack-between
      [message-form]
      [infinite/list
       {:component message-item
        :key-fn    :id
-       :fetch     #(store/dispatch (act.hangouts/fetch-messages hangout-id length))
+       :fetch     #(store/dispatch (act.hangouts/fetch-messages (:hangout-id route-params) length))
        :loading?  (= :requesting status)
        :more?     (not realized?)}
       items]]))

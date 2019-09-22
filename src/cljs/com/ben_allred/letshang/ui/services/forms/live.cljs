@@ -15,9 +15,7 @@
       (do (swap! state assoc :status :pending)
           (-> remote
               (remotes/persist! (forms.shared/trackable->model (:working next)))
-              (v/then (fn [_]
-                        (remotes/invalidate! remote)
-                        remote))
+              (v/then (constantly remote))
               (forms.shared/request* state validator)))
       (reset! state next))))
 

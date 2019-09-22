@@ -8,4 +8,3 @@
   (v/peek request
           (fn [[status result]]
             (dispatch [(keywords/namespaced kwd-ns status) result]))))
-

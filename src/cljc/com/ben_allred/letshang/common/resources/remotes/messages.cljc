@@ -17,11 +17,13 @@
           {:body strings/trim-to-nil})
         #(select-keys % #{:body})))
 
+(def reaction
+  (reify IDeref
+    #?(:clj  (deref [_] [:success])
+       :cljs (-deref [_] [:success]))))
+
 (defonce messages
   (let [hangout-id (store/reaction [:page :route-params :hangout-id])]
-    (r.impl/create {:reaction    (reify IDeref
-                                   #?(:clj  (deref [_] [:success])
-                                      :cljs (-deref [_] [:success])))
-                    :invalidate! (constantly [:messages/invalidate!])
-                    :persist     (fn [model]
-                                   (act.hangouts/save-message @hangout-id (model->source model)))})))
+    (r.impl/create {:reaction   reaction
+                    :persist    (fn [model]
+                                  (act.hangouts/save-message @hangout-id (model->source model)))})))

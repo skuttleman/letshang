@@ -60,46 +60,59 @@
      {:type "text/javascript"}
      "com.ben_allred.letshang.ui.app.mount_BANG_();"]]])
 
-(defn ^:private hydrate* [{:keys [dispatch get-state]} page {user-id :id}]
-  (repos/transact
-    (fn [db]
-      (case (:handler page)
-        :ui/hangouts (dispatch [:hangouts/success {:data (models.hangouts/select-for-user db user-id)}])
-        :ui/hangout (let [{:keys [hangout-id section]} (:route-params page)]
-                      (dispatch [:hangout/success {:data (models.hangouts/find-for-user db hangout-id user-id)}])
-                      (case section
-                        :conversation (->> {:data (models.messages/select-for-hangout db
-                                                                                      hangout-id
-                                                                                      user-id
-                                                                                      {:limit  models.messages/LIMIT
-                                                                                       :offset 0})}
-                                           (conj [:messages/success])
-                                           (dispatch))
-                        :invitations (do
-                                       (->> {:data (models.invitations/select-for-hangout db hangout-id user-id)}
-                                            (conj [:invitations/success])
-                                            (dispatch))
-                                       (->> {:data (models.users/find-known-associates db user-id)}
-                                            (conj [:associates/success])
-                                            (dispatch)))
-                        :locations (->> {:data (models.locations/select-for-hangout db hangout-id user-id)}
-                                        (conj [:locations/success])
-                                        (dispatch))
+(defn ^:private dispatch*
+  ([dispatch ns data]
+   (dispatch* dispatch ns data nil))
+  ([dispatch ns data request-id]
+   (let [ns' (name ns)]
+     (if data
+       (dispatch [(keyword ns' "success") {:data data} {:request-id request-id :pre? true}])
+       (dispatch [(keyword ns' "error") nil {:request-id request-id :pre? true}]))
+     dispatch)))
 
-                        :moments (->> {:data (models.moments/select-for-hangout db hangout-id user-id)}
-                                      (conj [:moments/success])
-                                      (dispatch))))
-        :ui/hangouts.new (->> {:data (models.users/find-known-associates db user-id)}
-                              (conj [:associates/success])
-                              (dispatch))
-        nil)
-      (get-state))))
+(defn ^:private hydrate* [page {user-id :id}]
+  (let [{:keys [dispatch get-state]} (collaj/create-store ui-reducers/root)]
+    (repos/transact
+      (fn [db]
+        (case (:handler page)
+          :ui/hangouts (dispatch* dispatch :hangouts (models.hangouts/select-for-user db user-id))
+          :ui/hangout (let [{:keys [hangout-id section]} (:route-params page)]
+                        (dispatch* dispatch :hangout (models.hangouts/find-for-user db hangout-id user-id) hangout-id)
+                        (case section
+                          :conversation (dispatch* dispatch
+                                                   :messages
+                                                   (models.messages/select-for-hangout db
+                                                                                       hangout-id
+                                                                                       user-id
+                                                                                       {:limit  models.messages/LIMIT
+                                                                                        :offset 0})
+                                                   hangout-id)
+                          :invitations (-> dispatch
+                                           (dispatch* :invitations
+                                                      (models.invitations/select-for-hangout db hangout-id user-id)
+                                                      hangout-id)
+                                           (dispatch* :associates
+                                                      (models.users/find-known-associates db user-id)
+                                                      hangout-id))
+                          :locations (dispatch* dispatch
+                                                :locations
+                                                (models.locations/select-for-hangout db hangout-id user-id))
+                          :moments (dispatch* dispatch
+                                              :moments
+                                              (models.moments/select-for-hangout db hangout-id user-id)
+                                              hangout-id)))
+          :ui/hangouts.new (dispatch* dispatch
+                                      :associates
+                                      (models.users/find-known-associates db user-id))
+          nil)
+        (get-state)))))
 
 (defn hydrate [page user sign-up]
   (let [csrf-ch (async/go
                   (when user
                     (:id (repos/transact #(models.sessions/upsert % (:id user))))))
-        state (-> (hydrate* (collaj/create-store ui-reducers/root) page user)
+        state (-> page
+                  (hydrate* user)
                   (assoc :page page
                          :auth/user user
                          :auth/sign-up sign-up))]

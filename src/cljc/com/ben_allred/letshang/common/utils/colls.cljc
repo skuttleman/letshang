@@ -74,3 +74,6 @@
 
 (defn find [pred coll]
   (first (filter pred coll)))
+
+(defn third [coll]
+  (nth coll 2 nil))

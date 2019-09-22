@@ -2,6 +2,7 @@
   (:require
     [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.services.store.core :as store]
+    [com.ben-allred.letshang.common.utils.colls :as colls]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.vow.core :as v]
     [com.ben-allred.vow.impl.protocol :as vp])
@@ -12,59 +13,54 @@
 (defprotocol IRemote
   (success? [this])
   (ready? [this])
+  (fetch! [this])
+  (hydrated? [this])
   (persist! [this model]))
 
-(defprotocol ICache
-  (invalidate! [this]))
+(def ^:private -ready?
+  (comp #{:success :error} first))
 
-(defn ^:private deref* [match? [status value] fetch]
-  (let [match? (match?)]
-    (when (and fetch (or (= :init status) (and (= :success status) (not match?))))
-      (store/dispatch (fetch)))
-    (when match?
-      value)))
+(def ^:private -success?
+  (comp #{:success} first))
 
-(defn create [{:keys [error-message fetch invalidate! match? persist reaction success-message]
-               :or {match? (constantly true)}}]
-  (reify
-    IRemote
-    (success? [_]
-      (and (match?) (= :success (first @reaction))))
-    (ready? [_]
-      (let [[status] @reaction]
-        (or (= :error status)
-            (and (match?) (= :success status)))))
-    (persist! [_ model]
-      (if persist
-        (-> (persist model)
-            (store/dispatch)
-            (v/peek (res/toast-success (or success-message "Success"))
-                    (res/toast-error (or error-message "Something went wrong"))))
-        (v/reject {:message "Remote cannot be persisted" :data model})))
+(defrecord Remote [fetch persist reaction success-message error-message]
+  IRemote
+  (success? [_]
+    (boolean (-success? @reaction)))
+  (ready? [_]
+    (boolean (-ready? @reaction)))
+  (fetch! [this]
+    (if (and fetch (not (hydrated? this)))
+      (store/dispatch (fetch))
+      (v/resolve)))
+  (hydrated? [_]
+    (some? (colls/third @reaction)))
+  (persist! [_ model]
+    (if persist
+      (-> (persist model)
+          (store/dispatch)
+          (v/peek (res/toast-success (or success-message "Success"))
+                  (res/toast-error (or error-message "Something went wrong"))))
+      (v/reject {:message "Remote cannot be persisted" :data model})))
 
-    ICache
-    (invalidate! [this]
-      (when invalidate!
-        (store/dispatch (invalidate!)))
-      this)
+  vp/IPromise
+  (then [this on-success on-error]
+    (v/create (fn [resolve _]
+                (letfn [(handle! [[status value]]
+                          (resolve (case status
+                                     :success (on-success value)
+                                     :error (on-error value))))]
+                  (if (ready? this)
+                    (handle! @reaction)
+                    (do (add-watch reaction (gensym) (fn [k _ _ result]
+                                                       (when (-ready? result)
+                                                         (remove-watch reaction k)
+                                                         (handle! result))))
+                        (fetch! this)))))))
 
-    vp/IPromise
-    (then [this on-success on-error]
-      (v/create (fn [resolve reject]
-                  @this
-                  (letfn [(handle! [[status value]]
-                            (try (case status
-                                   :success (resolve (on-success value))
-                                   :error (resolve (on-error value)))
-                                 (catch #?(:clj Throwable :cljs :default) ex
-                                   (reject ex))))]
-                    (if (ready? this)
-                      (handle! @reaction)
-                      (add-watch reaction (gensym) (fn [k _ _ result]
-                                                     (when (ready? this)
-                                                       (remove-watch reaction k)
-                                                       (handle! result)))))))))
+  IDeref
+  #?(:clj  (deref [_] (second @reaction))
+     :cljs (-deref [_] (second @reaction))))
 
-    IDeref
-    #?(:clj  (deref [_] (deref* match? @reaction fetch))
-       :cljs (-deref [_] (deref* match? @reaction fetch)))))
+(defn create [{:keys [error-message fetch persist reaction success-message]}]
+  (->Remote fetch persist reaction success-message error-message))

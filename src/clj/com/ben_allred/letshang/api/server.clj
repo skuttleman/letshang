@@ -4,7 +4,6 @@
     [clojure.string :as string]
     [nrepl.server :as nrepl]
     [com.ben-allred.letshang.api.routes.core :as routes]
-    [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.env :as env]
     [com.ben-allred.letshang.common.utils.maps :as maps]
     [com.ben-allred.letshang.common.utils.numbers :as numbers]
@@ -15,13 +14,7 @@
     [immutant.web :as web]
     [ring.middleware.reload :refer [wrap-reload]])
   (:import
-    (clojure.lang IPersistentVector)
     (java.net InetAddress)))
-
-(extend-protocol Renderable
-  IPersistentVector
-  (render [this _]
-    (respond/with this)))
 
 (defn ^:private server-port [env key fallback]
   (let [port (str (or (get env key) (env/get key) fallback))]

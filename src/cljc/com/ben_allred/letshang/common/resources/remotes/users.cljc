@@ -2,7 +2,6 @@
   (:require
     [#?(:clj  com.ben-allred.letshang.api.services.navigation
         :cljs com.ben-allred.letshang.ui.services.navigation) :as nav]
-    [com.ben-allred.letshang.common.resources.core :as res]
     [com.ben-allred.letshang.common.resources.remotes.impl :as r.impl]
     [com.ben-allred.letshang.common.services.store.actions.users :as act.users]
     [com.ben-allred.letshang.common.services.store.core :as store]
@@ -19,6 +18,8 @@
       r.impl/IRemote
       (success? [_] @status)
       (ready? [_] @status)
+      (fetch! [_] nil)
+      (hydrated? [_] true)
       (persist! [_ model]
         (reset! status false)
         (-> {:data model}
@@ -28,9 +29,6 @@
                       (nav/go-to! (nav/path-for :auth/login {:query-params (select-keys model #{:email})})))
                     nil)
             (v/peek (fn [_] (reset! status true)))))
-
-      r.impl/ICache
-      (invalidate! [this] this)
 
       vp/IPromise
       (then [_ on-success _]

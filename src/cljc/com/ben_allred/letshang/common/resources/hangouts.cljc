@@ -10,8 +10,7 @@
     [com.ben-allred.letshang.common.resources.remotes.hangouts :as rem.hangouts]
     [com.ben-allred.letshang.common.services.forms.core :as forms]
     [com.ben-allred.letshang.common.services.forms.noop :as forms.noop]
-    [com.ben-allred.letshang.common.utils.logging :as log]
-    [com.ben-allred.vow.core :as v]))
+    [com.ben-allred.letshang.common.utils.logging :as log]))
 
 (def ^:private view->model
   {:name not-empty})

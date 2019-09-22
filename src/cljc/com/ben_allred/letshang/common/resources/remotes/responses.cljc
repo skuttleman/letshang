@@ -14,9 +14,10 @@
                  :moment rem.moments/moments
                  :location rem.locations/locations
                  :invitation rem.invitations/invitations)]
-    (r.impl/create {:reaction (r/make-reaction (fn []
-                                                 (if-let [value @remote]
-                                                   (-> value
+    (r.impl/create {:reaction   (r/make-reaction (fn []
+                                                   (cond-> @remote
+                                                     (r.impl/success? remote)
+                                                     (->
                                                        (cond->
                                                          (not= :invitation response-type)
                                                          (->> (filter (comp #{model-id} :id))
@@ -26,11 +27,10 @@
                                                        (first)
                                                        (select-keys #{:user-id :response})
                                                        (assoc :id model-id)
-                                                       (->> (conj [:success])))
-                                                   [:init])))
-                    :persist  (fn [model]
-                                (->> (select-keys model #{:response})
-                                     (hash-map :data)
-                                     (act.hangouts/set-response response-type model-id)))})))
+                                                       (->> (conj [:success]))))))
+                    :persist    (fn [model]
+                                  (->> (select-keys model #{:response})
+                                       (hash-map :data)
+                                       (act.hangouts/set-response response-type model-id)))})))
 
 (defonce ^{:arglists '([response-type model-id])} response #?(:clj response* :cljs (memoize response*)))

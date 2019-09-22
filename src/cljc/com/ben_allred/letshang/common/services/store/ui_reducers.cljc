@@ -1,4 +1,5 @@
 (ns com.ben-allred.letshang.common.services.store.ui-reducers
+  (:refer-clojure :exclude [with-meta])
   (:require
     [com.ben-allred.collaj.reducers :as collaj.reducers]
     [com.ben-allred.letshang.common.services.env :as env]
@@ -25,56 +26,58 @@
 (defn ^:private add-or-replace-respondables [respondables response]
   (colls/assoc-by :id (count-respondable response) (map #(add-or-replace-respondable % response) respondables)))
 
-(defn ^:private resource [namespace invalidate?]
-  (let [[request success error invalidate!] (map (partial keywords/namespaced namespace)
-                                                 [:request :success :error :invalidate!])]
-    (fn
-      ([] [:init])
-      ([state [type data]]
-       (condp = type
-         request [:requesting]
-         success [:success (:data data)]
-         error [:error data]
-         invalidate! (if (invalidate? (second state) data)
-                       [:init]
-                       state)
-         state)))))
-
-(def ^:private associates (resource :associates (constantly false)))
-(def ^:private hangouts (resource :hangouts (constantly true)))
-(def ^:private hangout (resource :hangout #(= (:id %1) %2)))
-
-(defn ^:private invitations
+(defn ^:private with-meta
   ([] [:init])
-  ([state [type response]]
-   (case type
-     :invitations/request [:requesting]
-     :invitations/success [:success (:data response)]
-     :invitations/error [:error response]
-     :invitations/invalidate! [:init]
-     :response.invitation/success [:success (colls/assoc-by :id (:data response) (second state))]
-     :suggestions.who/success [:success (reduce add-or-replace-respondables (second state) (:data response))]
-     state)))
+  ([[status value :as state] [type _ meta]]
+   (cond
+     (= :app/initialized type) [status value]
+     meta [status value meta]
+     :else state)))
 
-(defn ^:private locations
-  ([] [:init])
-  ([state [type response]]
-   (case type
-     :locations/request [:requesting]
-     :locations/success [:success (map count-respondable (:data response))]
-     :locations/error [:error response]
-     :locations/invalidate! [:init]
-     :location/success [:success (add-or-replace-respondables (second state) (:data response))]
+(defn ^:private resource [namespace]
+  (let [[request success error] (map (partial keywords/namespaced namespace) [:request :success :error])]
+    (fn [state [type data]]
+      (condp = type
+        request [:requesting]
+        success [:success (:data data)]
+        error [:error data]
+        state))))
 
-     :response.location/success [:success (colls/supdate (second state) map add-or-replace-response :location-id (:data response))]
-     :suggestions.where/success [:success (add-or-replace-respondables (second state) (:data response))]
-     state)))
+(def ^:private associates (collaj.reducers/comp with-meta (resource :associates)))
+(def ^:private hangouts (collaj.reducers/comp with-meta (resource :hangouts)))
+(def ^:private hangout (collaj.reducers/comp with-meta (resource :hangout)))
+
+(def ^:private invitations
+  (collaj.reducers/comp
+    with-meta
+    (fn [state [type response]]
+      (case type
+        :invitations/request [:requesting]
+        :invitations/success [:success (:data response)]
+        :invitations/error [:error response]
+        :response.invitation/success [:success (colls/assoc-by :id (:data response) (second state))]
+        :suggestions.who/success [:success (reduce add-or-replace-respondables (second state) (:data response))]
+        state))))
+
+(def ^:private locations
+  (collaj.reducers/comp
+    with-meta
+    (fn [state [type response]]
+      (case type
+        :locations/request [:requesting]
+        :locations/success [:success (map count-respondable (:data response))]
+        :locations/error [:error response]
+        :location/success [:success (add-or-replace-respondables (second state) (:data response))]
+
+        :response.location/success [:success (colls/supdate (second state) map add-or-replace-response :location-id (:data response))]
+        :suggestions.where/success [:success (add-or-replace-respondables (second state) (:data response))]
+        state))))
 
 (def ^:private messages-init [{:status :init :length 0 :realized? false} []])
 
 (defn ^:private messages
   ([] messages-init)
-  ([[meta data :as state] [type response]]
+  ([[meta data m' :as state] [type response m]]
    (case type
      :messages/request [(assoc meta :status :requesting) data]
      :messages/success (let [length (count (:data response))]
@@ -82,24 +85,28 @@
                               (assoc :status :success)
                               (update :length + length)
                               (cond-> (zero? length) (assoc :realized? true)))
-                          (concat data (:data response))])
-     :messages/error [(assoc meta :status :error :error response) data]
-     :messages/invalidate! messages-init
+                          (concat data (:data response))
+                          m])
+     :messages/error [(assoc meta :status :error :error response) data m]
      :ws/message.new [(update meta :length inc) (cons response data)]
+     :app/initialized [meta data]
+     :router/navigate (if m'
+                        state
+                        messages-init)
      state)))
 
-(defn ^:private moments
-  ([] [:init])
-  ([state [type response]]
-   (case type
-     :moments/request [:requesting (when (not= [:init] state) state)]
-     :moments/success [:success (map count-respondable (:data response))]
-     :moments/error [:error response]
-     :moment/success [:success (add-or-replace-respondables (second state) (:data response))]
-     :moments/invalidate! [:init]
-     :response.moment/success [:success (colls/supdate (second state) map add-or-replace-response :moment-id (:data response))]
-     :suggestions.when/success [:success (add-or-replace-respondables (second state) (:data response))]
-     state)))
+(def ^:private moments
+  (collaj.reducers/comp
+    with-meta
+    (fn [state [type response]]
+      (case type
+        :moments/request [:requesting]
+        :moments/success [:success (map count-respondable (:data response))]
+        :moments/error [:error response]
+        :moment/success [:success (add-or-replace-respondables (second state) (:data response))]
+        :response.moment/success [:success (colls/supdate (second state) map add-or-replace-response :moment-id (:data response))]
+        :suggestions.when/success [:success (add-or-replace-respondables (second state) (:data response))]
+        state))))
 
 (defn ^:private page
   ([] nil)

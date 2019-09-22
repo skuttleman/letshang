@@ -10,15 +10,24 @@
     [com.ben-allred.letshang.api.services.html :as html]
     [com.ben-allred.letshang.api.services.middleware :as middleware]
     [com.ben-allred.letshang.api.services.ws :as ws]
+    [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [compojure.core :refer [defroutes]]
+    [compojure.response :refer [Renderable]]
     [compojure.route :as route]
     [ring.middleware.cookies :refer [wrap-cookies]]
     [ring.middleware.keyword-params :refer [wrap-keyword-params]]
     [ring.middleware.multipart-params :refer [wrap-multipart-params]]
     [ring.middleware.nested-params :refer [wrap-nested-params]]
     [ring.middleware.params :refer [wrap-params]]
-    [ring.middleware.reload :refer [wrap-reload]]))
+    [ring.middleware.reload :refer [wrap-reload]])
+  (:import
+    (clojure.lang IPersistentVector)))
+
+(extend-protocol Renderable
+  IPersistentVector
+  (render [this _]
+    (respond/with this)))
 
 (defroutes api*
   #'hangouts/routes

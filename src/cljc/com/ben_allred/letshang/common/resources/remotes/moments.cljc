@@ -6,6 +6,5 @@
 
 (defonce moments
   (let [hangout-id (store/reaction [:page :route-params :hangout-id])]
-    (r.impl/create {:fetch #(act.hangouts/fetch-moments @hangout-id)
-                    :reaction (store/reaction [:moments])
-                    :invalidate! (constantly [:moments/invalidate!])})))
+    (r.impl/create {:fetch      #(act.hangouts/fetch-moments @hangout-id)
+                    :reaction   (store/reaction [:moments])})))

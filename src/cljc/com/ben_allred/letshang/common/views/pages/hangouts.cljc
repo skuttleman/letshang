@@ -134,7 +134,8 @@
   [:div.layout--stack-between
    [loading/with-resource
     {:state     state
-     :resources {:invitations rem.invitations/invitations}}
+     :resources {:invitations rem.invitations/invitations
+                 :associates  rem.users/users}}
     [hangout-who* attrs]]
    (when (or creator? (:others-invite? hangout))
      [suggestions/invitation-form hangout])])

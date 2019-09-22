@@ -13,7 +13,7 @@
     honeysql-postgres.format
     honeysql-postgres.helpers)
   (:import
-    (java.sql ResultSet)))
+    (java.sql Date ResultSet)))
 
 (defn ^:private sql-value* [table column _]
   [table column])
@@ -69,7 +69,7 @@
         (with-column [_ row i]
           (let [k (nth cols (dec i))
                 v (result-set/read-column-by-index (.getObject rs ^Integer i) meta i)]
-            (assoc! row k (cond-> v (instance? java.sql.Date v) (.toLocalDate)))))
+            (assoc! row k (cond-> v (instance? Date v) (.toLocalDate)))))
         (row! [_ row] (persistent! row))
         result-set/ResultSetBuilder
         (->rs [_] (transient []))
