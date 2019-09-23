@@ -6,59 +6,62 @@
     [com.ben-allred.letshang.api.routes.locations :as locations]
     [com.ben-allred.letshang.api.routes.moments :as moments]
     [com.ben-allred.letshang.api.routes.users :as users]
-    [com.ben-allred.letshang.api.services.handlers :refer [GET ANY context]]
-    [com.ben-allred.letshang.api.services.html :as html]
+    [com.ben-allred.letshang.api.services.handlers :as handlers]
     [com.ben-allred.letshang.api.services.middleware :as middleware]
+    [com.ben-allred.letshang.api.services.navigation :as nav]
     [com.ben-allred.letshang.api.services.ws :as ws]
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [compojure.core :refer [defroutes]]
-    [compojure.response :refer [Renderable]]
-    [compojure.route :as route]
+    [com.ben-allred.letshang.common.utils.maps :as maps]
     [ring.middleware.cookies :refer [wrap-cookies]]
     [ring.middleware.keyword-params :refer [wrap-keyword-params]]
     [ring.middleware.multipart-params :refer [wrap-multipart-params]]
     [ring.middleware.nested-params :refer [wrap-nested-params]]
     [ring.middleware.params :refer [wrap-params]]
-    [ring.middleware.reload :refer [wrap-reload]])
-  (:import
-    (clojure.lang IPersistentVector)))
+    [ring.middleware.reload :refer [wrap-reload]]))
 
-(extend-protocol Renderable
-  IPersistentVector
-  (render [this _]
-    (respond/with this)))
+(defn ^:private update-maps [m f & f-args]
+  (cond-> m
+    (map? m) (as-> $
+                   (apply maps/update-all $ f f-args)
+                   (with-meta $ (meta m)))))
 
-(defroutes api*
-  #'hangouts/routes
-  #'invitations/routes
-  #'locations/routes
-  #'moments/routes
-  #'users/routes
-  (GET "/events" req
-    (ws/connect req)))
+(def ^:private base
+  {:ui/*              {:get #'handlers/home}
+   :resources/health  {:get #'handlers/health}
+   :resources/js      {:get #'handlers/resources}
+   :resources/css     {:get #'handlers/resources}
+   :resources/images  {:get #'handlers/resources}
+   :resources/favicon {:get #'handlers/resources}})
 
-(def ^:private api
-  (-> #'api*
-      (#'middleware/with-authentication)))
+(def ^:private handlers
+  (-> (merge hangouts/routes
+             invitations/routes
+             locations/routes
+             moments/routes
+             users/routes
+             ws/routes)
+      (update-maps update-maps middleware/with-authentication)
+      (merge auth/routes base)
+      (handlers/wrap-meta)))
 
-(defroutes ^:private base
-  (context "/api" []
-    #'api
-    (ANY "/*" [] [:http.status/not-found]))
-  (context "/" []
-    #'auth/routes
-    (route/resources "/")
-    (GET "/health" [] [:http.status/ok {:a :ok}])
-    (GET "/*" req [:http.status/ok
-                   (-> req
-                       (select-keys #{:auth/sign-up :auth/user :query-string :uri})
-                       (html/render))
-                   {"content-type" "text/html"}])
-    (ANY "/*" [] [:http.status/not-found])))
+(defn ^:private app* [req]
+  (let [{:keys [route-params handler query-params]} (nav/match-route (:uri req))
+        handler (if (= "ui" (namespace handler))
+                  :ui/*
+                  handler)]
+    (if-let [handler (some-> handlers
+                             (apply [handler])
+                             (apply [(:request-method req)]))]
+      (-> req
+          (update :params merge route-params query-params)
+          (update :query-params merge query-params)
+          (handler)
+          (respond/with))
+      (respond/with [:http.status/not-found]))))
 
 (def app
-  (-> #'base
+  (-> #'app*
       (#'middleware/with-transaction)
       (#'middleware/with-jwt)
       (#'middleware/with-logging)

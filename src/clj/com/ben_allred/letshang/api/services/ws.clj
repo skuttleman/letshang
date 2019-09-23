@@ -71,13 +71,6 @@
       [:subscriptions/unsubscribe topic] (handle-unsubscribe ch ch-id topic)
       else (log/debug "Unknown message" else))))
 
-(defn connect [{:keys [auth/user] :as req}]
-  (let [user-id (:id user)
-        ch-id (uuids/random)]
-    (web.async/as-channel req {:on-open    (handle-open ch-id user-id)
-                               :on-message (handle-message ch-id user-id)
-                               :on-close   (handle-close ch-id user-id)})))
-
 (defn ^:private publish-dispatch [target _ _] target)
 
 (defmulti publish! #'publish-dispatch)
@@ -105,6 +98,15 @@
 (defmethod publish! :default
   [_ _ _]
   nil)
+
+(defn connect [{{user-id :id} :auth/user :as req}]
+  (let [ch-id (uuids/random)]
+    (web.async/as-channel req {:on-open    (handle-open ch-id user-id)
+                               :on-message (handle-message ch-id user-id)
+                               :on-close   (handle-close ch-id user-id)})))
+
+(def routes
+  {:api/events {:get #'connect}})
 
 (defn ^:private pinger! [ch]
   (when ch

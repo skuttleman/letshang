@@ -2,15 +2,12 @@
   (:require
     [clojure.core.async :as async]
     [com.ben-allred.collaj.core :as collaj]
-    [com.ben-allred.letshang.api.services.db.models.hangouts :as models.hangouts]
-    [com.ben-allred.letshang.api.services.db.models.invitations :as models.invitations]
-    [com.ben-allred.letshang.api.services.db.models.locations :as models.locations]
-    [com.ben-allred.letshang.api.services.db.models.messages :as models.messages]
-    [com.ben-allred.letshang.api.services.db.models.moments :as models.moments]
+    [com.ben-allred.letshang.api.routes.hangouts :as hangouts]
+    [com.ben-allred.letshang.api.routes.users :as users]
     [com.ben-allred.letshang.api.services.db.models.sessions :as models.sessions]
-    [com.ben-allred.letshang.api.services.db.models.users :as models.users]
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.common.services.env :as env]
+    [com.ben-allred.letshang.common.services.http :as http]
     [com.ben-allred.letshang.common.services.navigation :as nav*]
     [com.ben-allred.letshang.common.services.store.core :as store]
     [com.ben-allred.letshang.common.services.store.ui-reducers :as ui-reducers]
@@ -47,64 +44,56 @@
     [:div#app content]
     [:script
      {:type "text/javascript"}
-     (format "window.ENV=%s;" (-> {}
-                                  (maps/assoc-maybe :dev? (env/get :dev?)
-                                                    :auth/user user
-                                                    :auth/sign-up sign-up
-                                                    :csrf-token (async/<!! csrf-ch)
-                                                    :initial-state state)
-                                  (transit/encode)
-                                  (pr-str)))]
+     (-> {}
+         (maps/assoc-maybe :dev? (env/get :dev?)
+                           :auth/user user
+                           :auth/sign-up sign-up
+                           :csrf-token (async/<!! csrf-ch)
+                           :initial-state state)
+         (transit/encode)
+         (pr-str)
+         (->> (format "window.ENV=%s;")))]
     [:script {:type "text/javascript" :src "/js/compiled/app.js"}]
     [:script
      {:type "text/javascript"}
      "com.ben_allred.letshang.ui.app.mount_BANG_();"]]])
 
-(defn ^:private dispatch*
-  ([dispatch ns data]
-   (dispatch* dispatch ns data nil))
-  ([dispatch ns data request-id]
-   (let [ns' (name ns)]
-     (if data
-       (dispatch [(keyword ns' "success") {:data data} {:request-id request-id :pre? true}])
-       (dispatch [(keyword ns' "error") nil {:request-id request-id :pre? true}]))
-     dispatch)))
+(defn ^:private dispatch* [dispatch req ns]
+  (let [ns' (name ns)
+        f (case ns
+            :associates users/associates
+            :hangout hangouts/hangout
+            :hangouts hangouts/hangouts
+            :invitations hangouts/invitations
+            :locations hangouts/locations
+            :messages hangouts/messages
+            :moments hangouts/moments)
+        [_ body :as response] (f req)
+        action (if (http/success? response)
+                 (keyword ns' "success")
+                 (keyword ns' "error"))]
+    (dispatch [action body {:pre? true}])
+    dispatch))
 
-(defn ^:private hydrate* [page {user-id :id}]
+(defn ^:private hydrate* [page user]
   (let [{:keys [dispatch get-state]} (collaj/create-store ui-reducers/root)]
     (repos/transact
       (fn [db]
-        (case (:handler page)
-          :ui/hangouts (dispatch* dispatch :hangouts (models.hangouts/select-for-user db user-id))
-          :ui/hangout (let [{:keys [hangout-id section]} (:route-params page)]
-                        (dispatch* dispatch :hangout (models.hangouts/find-for-user db hangout-id user-id) hangout-id)
-                        (case section
-                          :conversation (dispatch* dispatch
-                                                   :messages
-                                                   (models.messages/select-for-hangout db
-                                                                                       hangout-id
-                                                                                       user-id
-                                                                                       {:limit  models.messages/LIMIT
-                                                                                        :offset 0})
-                                                   hangout-id)
-                          :invitations (-> dispatch
-                                           (dispatch* :invitations
-                                                      (models.invitations/select-for-hangout db hangout-id user-id)
-                                                      hangout-id)
-                                           (dispatch* :associates
-                                                      (models.users/find-known-associates db user-id)
-                                                      hangout-id))
-                          :locations (dispatch* dispatch
-                                                :locations
-                                                (models.locations/select-for-hangout db hangout-id user-id))
-                          :moments (dispatch* dispatch
-                                              :moments
-                                              (models.moments/select-for-hangout db hangout-id user-id)
-                                              hangout-id)))
-          :ui/hangouts.new (dispatch* dispatch
-                                      :associates
-                                      (models.users/find-known-associates db user-id))
-          nil)
+        (let [req {:auth/user user :db db}]
+          (case (:handler page)
+            :ui/hangouts (dispatch* dispatch req :hangouts)
+            :ui/hangout (let [{:keys [hangout-id section]} (:route-params page)
+                              req (assoc req :params {:hangout-id hangout-id :offset 0})]
+                          (dispatch* dispatch req :hangout)
+                          (case section
+                            :conversation (dispatch* dispatch req :messages)
+                            :invitations (-> dispatch
+                                             (dispatch* req :invitations)
+                                             (dispatch* req :associates))
+                            :locations (dispatch* dispatch req :locations)
+                            :moments (dispatch* dispatch req :moments)))
+            :ui/hangouts.new (dispatch* dispatch req :associates)
+            nil))
         (get-state)))))
 
 (defn hydrate [page user sign-up]

@@ -12,7 +12,6 @@
 
 (def ^:private handler->component
   {:ui/home         main/home
-   :ui/not-found    main/not-found
    :ui/hangouts     hangouts/hangouts
    :ui/hangouts.new hangouts/create
    :ui/hangout      hangouts/hangout})

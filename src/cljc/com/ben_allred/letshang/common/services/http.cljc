@@ -67,10 +67,12 @@
   (set/map-invert status->kw))
 
 (defn ^:private check-status [lower upper response]
-  (let [status (as-> response $
-                     (cond-> $ (vector? $) (second))
-                     (:status $)
-                     (cond-> $ (keyword? $) (kw->status)))]
+  (let [status (or (when (vector? response)
+                     (kw->status (first response)))
+                   (as-> response $
+                         (cond-> $ (vector? $) (second))
+                         (:status $)
+                         (cond-> $ (keyword? $) (kw->status))))]
     (<= lower status upper)))
 
 (def ^{:arglists '([response])} success?

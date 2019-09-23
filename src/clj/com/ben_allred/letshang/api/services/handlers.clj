@@ -1,37 +1,47 @@
 (ns com.ben-allred.letshang.api.services.handlers
   (:require
+    [com.ben-allred.letshang.api.services.html :as html]
     [com.ben-allred.letshang.api.services.middleware :as middleware]
     [com.ben-allred.letshang.common.utils.logging :as log]
-    [compojure.core :as compojure]))
+    [ring.util.mime-type :as mime]
+    [ring.util.response :as response]
+    [com.ben-allred.letshang.common.utils.maps :as maps]))
 
-(defn ^:private wrap* [meta handler]
-  `(-> ~handler
-       (compojure/wrap-routes #'middleware/with-request-conforming (:transformer ~meta))
-       (compojure/wrap-routes #'middleware/with-request-validation (:request-spec ~meta))))
+(defn ^:private add-mime-type [response path]
+  (if-let [mime-type (mime/ext-mime-type path {})]
+    (response/content-type response mime-type)
+    response))
 
-(defmacro context [path args & routes]
-  (wrap* (meta args) `(compojure/context ~path ~args ~@routes)))
+(defn ^:private wrap-meta* [{:keys [transformer request-spec]} handler]
+  (-> handler
+      (#'middleware/with-request-conforming transformer)
+      (#'middleware/with-request-validation request-spec)))
 
-(defmacro ANY [path args & body]
-  (wrap* (meta args) `(compojure/ANY ~path ~args ~@body)))
+(defn ^:private with-meta* [handler m handlers]
+  (-> m
+      (meta)
+      (merge (meta handlers)
+             (meta handler))
+      (wrap-meta* handler)))
 
-(defmacro DELETE [path args & body]
-  (wrap* (meta args) `(compojure/DELETE ~path ~args ~@body)))
+(defn resources [{:keys [uri]}]
+  (some-> (response/resource-response (str "public" uri))
+          (add-mime-type uri)))
 
-(defmacro GET [path args & body]
-  (wrap* (meta args) `(compojure/GET ~path ~args ~@body)))
+(defn wrap-meta [m]
+  (maps/update-all m (fn [handlers]
+                       (if (map? handlers)
+                         (maps/update-all handlers with-meta* m handlers)
+                         (-> handlers
+                             (cond-> (var? handlers) (var-get))
+                             (vary-meta (partial merge (meta m))))))))
 
-(defmacro HEAD [path args & body]
-  (wrap* (meta args) `(compojure/HEAD ~path ~args ~@body)))
+(defn home [req]
+  [:http.status/ok
+   (-> req
+       (select-keys #{:auth/sign-up :auth/user :query-string :uri})
+       (html/render))
+   {"content-type" "text/html"}])
 
-(defmacro OPTIONS [path args & body]
-  (wrap* (meta args) `(compojure/OPTIONS ~path ~args ~@body)))
-
-(defmacro PATCH [path args & body]
-  (wrap* (meta args) `(compojure/PATCH ~path ~args ~@body)))
-
-(defmacro POST [path args & body]
-  (wrap* (meta args) `(compojure/POST ~path ~args ~@body)))
-
-(defmacro PUT [path args & body]
-  (wrap* (meta args) `(compojure/PUT ~path ~args ~@body)))
+(def health
+  (constantly [:http.status/ok {:a :ok}]))

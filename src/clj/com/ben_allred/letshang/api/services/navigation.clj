@@ -2,6 +2,9 @@
   (:require
     [com.ben-allred.letshang.common.services.navigation :as nav*]))
 
+(defn match-route [path]
+  (nav*/match-route nav*/app-routes path))
+
 (defn path-for
   ([page]
    (nav*/path-for nav*/app-routes page nil))

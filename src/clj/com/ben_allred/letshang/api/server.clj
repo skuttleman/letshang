@@ -8,9 +8,6 @@
     [com.ben-allred.letshang.common.utils.maps :as maps]
     [com.ben-allred.letshang.common.utils.numbers :as numbers]
     [com.ben-allred.letshang.common.utils.strings :as strings]
-    [compojure.core :refer [ANY DELETE GET POST PUT context defroutes]]
-    [compojure.handler :refer [site]]
-    [compojure.response :refer [Renderable]]
     [immutant.web :as web]
     [ring.middleware.reload :refer [wrap-reload]])
   (:import

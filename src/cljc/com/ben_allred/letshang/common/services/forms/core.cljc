@@ -1,5 +1,6 @@
 (ns com.ben-allred.letshang.common.services.forms.core
   (:require
+    [com.ben-allred.letshang.common.utils.fns :as fns]
     [com.ben-allred.letshang.common.utils.logging :as log])
   #?(:clj
      (:import
@@ -44,7 +45,7 @@
         to-model (get-in view->model path)]
     (-> attrs
         (assoc :attempted? attempted? :visited? visited?)
-        (update :disabled #(or % (not (ready? form))))
+        (update :disabled fns/or (not (ready? form)))
         (update :on-blur (fn [on-blur]
                            (fn [e]
                              (visit! form path)

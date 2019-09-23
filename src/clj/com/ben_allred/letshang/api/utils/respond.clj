@@ -18,7 +18,8 @@
       headers (assoc :headers headers))))
 
 (defn with [reason]
-  (->response {:status 200} reason))
+  (cond->> reason
+    (not (map? reason)) (->response {:status 200})))
 
 (defn abort! [reason]
   (->> reason

@@ -23,7 +23,6 @@
                  [com.cognitect/transit-clj "0.8.313"]
                  [com.cognitect/transit-cljs "0.8.256"]
                  [com.taoensso/timbre "4.10.0"]
-                 [compojure "1.6.0"]
                  [environ "1.1.0"]
                  [hiccup "1.0.5"]
                  [honeysql "0.9.2" :exclusions [[honeysql]]]
@@ -41,9 +40,7 @@
                  [ragtime "0.7.2"]
                  [reagent "0.8.1"]
                  [ring/ring-core "1.3.2"]
-                 [ring/ring-defaults "0.2.1" :exclusions [[ring/ring-core]]]
                  [ring/ring-devel "1.6.3" :exclusions [[ring/ring-core]]]
-                 [ring/ring-json "0.3.1"]
                  [seancorfield/next.jdbc "1.0.5"]
                  [tick "0.4.19-alpha"]]
 

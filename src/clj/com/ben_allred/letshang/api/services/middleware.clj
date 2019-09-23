@@ -6,6 +6,7 @@
     [com.ben-allred.letshang.api.services.db.repositories.core :as repos]
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.services.content :as content]
+    [com.ben-allred.letshang.common.utils.fns :as fns]
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.maps :as maps]
     [com.ben-allred.letshang.common.utils.serde.jwt :as jwt])
@@ -44,7 +45,7 @@
 
 (defn with-jwt [handler]
   (fn [{:keys [headers params uri] :as request}]
-    (let [{:keys [user sign-up]} (when (or (re-find #"^(/api|/auth|/ws)" uri)
+    (let [{:keys [user sign-up]} (when (or (re-find #"^(/api|/auth)" uri)
                                            (re-find #"text/html" (str (get headers "accept"))))
                                    (some-> request
                                            (get-in [:cookies "auth-token" :value] (:auth-token params))
@@ -66,16 +67,19 @@
       (handler request)
       (catch ExceptionInfo ex
         (if-let [response (:response (.getData ex))]
-          (update response :status #(or % 500))
+          (update response :status fns/or 500)
           (throw ex))))))
 
 (defn with-authentication [handler]
-  (fn [{:keys [auth/user db headers params] :as request}]
-    (if (models.sessions/exists? db
-                                 (get headers "x-csrf-token" (:x-csrf-token params))
-                                 (:id user))
-      (handler request)
-      (respond/with [:http.status/unauthorized {:message "You must authenticate to use this API."}]))))
+  (let [handler' (cond-> handler
+                   (vector? handler) (first))]
+    (with-meta (fn [{:keys [auth/user db headers params] :as request}]
+                 (if (models.sessions/exists? db
+                                              (get headers "x-csrf-token" (:x-csrf-token params))
+                                              (:id user))
+                   (handler' request)
+                   (respond/with [:http.status/unauthorized {:message "You must authenticate to use this API."}])))
+               (merge (meta handler) (meta handler')))))
 
 (defn with-request-conforming [handler spec]
   (if-not spec

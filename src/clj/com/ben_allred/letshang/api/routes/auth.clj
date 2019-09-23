@@ -1,7 +1,6 @@
 (ns com.ben-allred.letshang.api.routes.auth
   (:require
     [com.ben-allred.letshang.api.services.db.models.users :as models.users]
-    [com.ben-allred.letshang.api.services.handlers :refer [GET POST context]]
     [com.ben-allred.letshang.api.services.navigation :as nav]
     [com.ben-allred.letshang.api.utils.respond :as respond]
     [com.ben-allred.letshang.common.resources.sign-up :as sign-up.res]
@@ -9,7 +8,6 @@
     [com.ben-allred.letshang.common.utils.logging :as log]
     [com.ben-allred.letshang.common.utils.serde.jwt :as jwt]
     [com.ben-allred.letshang.common.utils.serde.query-params :as qp]
-    [compojure.core :refer [defroutes]]
     [ring.util.response :as resp])
   (:import (java.net URI)))
 
@@ -38,10 +36,10 @@
          (resp/redirect)
          (token->cookie cookie value)))))
 
-(defn ^:private logout []
+(defn ^:private logout* []
   (redirect :ui/home "" {:max-age 0}))
 
-(defn ^:private login [user sign-up-user redirect-uri]
+(defn ^:private login* [user sign-up-user redirect-uri]
   (cond
     (seq user)
     (redirect redirect-uri (jwt/encode {:user user}))
@@ -54,7 +52,7 @@
     (redirect redirect-uri (jwt/encode {:sign-up sign-up-user}))
 
     :else
-    (logout)))
+    (logout*)))
 
 (defn ^:private check-conflicts! [db user]
   (if-let [conflict (models.users/select-conflicts db user)]
@@ -72,24 +70,33 @@
         (respond/abort!))
     user))
 
-(defroutes routes
-  (context "/auth" ^{:transformer transform-spec} _
-    (POST "/register"
-          ^{:request-spec sign-up-spec}
-          {{:keys [data]} :body :keys [db auth/sign-up]}
-      (->> (merge sign-up (select-keys data #{:handle :first-name :last-name :mobile-number}))
-           (check-conflicts! db)
-           (models.users/create db)
-           (hash-map :data)
-           (conj [:http.status/created])))
-    (GET "/login" {:keys [params]}
-      (-> (env/get :base-url)
-          (str (nav/path-for :auth/callback {:query-params (select-keys params #{:email :redirect-uri})}))
-          (resp/redirect)))
-    (GET "/callback" {{:keys [email redirect-uri]} :params :keys [db]}
-      (-> email
-          (->> (models.users/find-by-email db))
-          (some-> (select-keys #{:first-name :last-name :id :handle}))
-          (login {:email email} redirect-uri)))
-    (GET "/logout" []
-      (logout))))
+(defn register [{{:keys [data]} :body :keys [db auth/sign-up]}]
+  (->> (merge sign-up (select-keys data #{:handle :first-name :last-name :mobile-number}))
+       (check-conflicts! db)
+       (models.users/create db)
+       (hash-map :data)
+       (conj [:http.status/created])))
+
+(defn login [{:keys [params]}]
+  (-> (env/get :base-url)
+      (str (nav/path-for :auth/callback {:query-params (select-keys params #{:email :redirect-uri})}))
+      (resp/redirect)))
+
+(defn logout [_]
+  (logout*))
+
+(defn callback [{{:keys [email redirect-uri]} :params :keys [db]}]
+  (-> email
+      (->> (models.users/find-by-email db))
+      (some-> (select-keys #{:first-name :last-name :id :handle}))
+      (login* {:email email} redirect-uri)))
+
+(def routes
+  {:auth/callback ^{:transformer transform-spec}
+                  {:get #'callback}
+   :auth/login    ^{:transformer transform-spec}
+                  {:get #'login}
+   :auth/logout   ^{:transformer transform-spec}
+                  {:get #'logout}
+   :auth/register ^{:transformer transform-spec :request-spec sign-up-spec}
+                  {:post #'register}})

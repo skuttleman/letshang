@@ -42,7 +42,8 @@
          [["" :api/moment]
           ["/responses" :api/moment.responses]]]]]
       ["/users"
-       [["/associates" :api/associates]]]]]
+       [["/associates" :api/associates]]]
+      [true :api/not-found]]]
 
     ;; UI
     ["/" :ui/home]
@@ -50,7 +51,14 @@
      [["" :ui/hangouts]
       ["/new" :ui/hangouts.new]
       [["/" [uuids/regex :hangout-id] "/" [#"conversation|invitations|locations|moments" :section]] :ui/hangout]]]
-    [true :ui/not-found]]])
+
+    ;; RESOURCES
+    ["/health" :resources/health]
+    ["/js" [[true :resources/js]]]
+    ["/css" [[true :resources/css]]]
+    ["/images" [[true :resources/images]]]
+    ["/favicon.ico" :resources/favicon]
+    [true :nav/not-found]]])
 
 (defn ^:private namify [[k v]]
   [k (str (keywords/safe-name v))])

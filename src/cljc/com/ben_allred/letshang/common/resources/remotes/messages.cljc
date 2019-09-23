@@ -24,6 +24,6 @@
 
 (defonce messages
   (let [hangout-id (store/reaction [:page :route-params :hangout-id])]
-    (r.impl/create {:reaction   reaction
-                    :persist    (fn [model]
-                                  (act.hangouts/save-message @hangout-id (model->source model)))})))
+    (r.impl/create {:reaction reaction
+                    :persist  (fn [model]
+                                (act.hangouts/save-message @hangout-id (model->source model)))})))

@@ -7,6 +7,8 @@
     [com.ben-allred.letshang.api.services.db.repositories.messages :as repo.messages]
     [com.ben-allred.letshang.common.utils.colls :as colls]))
 
+(def LIMIT 30)
+
 (defn ^:private select*
   ([db clause]
    (select* db nil clause))
@@ -20,8 +22,6 @@
          limit (entities/limit limit))
        (models/select ::repo.messages/model (models/under :messages))
        (repos/exec! db))))
-
-(def LIMIT 30)
 
 (defn select-for-hangout [db hangout-id user-id pagination]
   (when (-> hangout-id

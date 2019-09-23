@@ -2,6 +2,7 @@
   (:require
     [clojure.set :as set]
     [clojure.string :as string]
+    [com.ben-allred.letshang.common.utils.fns :as fns]
     [com.ben-allred.letshang.common.utils.keywords :as keywords]
     [com.ben-allred.letshang.common.utils.maps :as maps]
     [com.ben-allred.letshang.common.utils.preds :as preds]
@@ -54,7 +55,7 @@
 
 (defn ^:private style->css [{:keys [attribute] :or {attribute :normal} :as style}]
   (-> style
-      (update :color #(or % :white))
+      (update :color fns/or :white)
       (cond->
         (= :bright attribute) (assoc :font-weight :bold)
         (= :dim attribute) (assoc :opacity "0.5")
